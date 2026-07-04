@@ -7,18 +7,31 @@
  * unhandled 500 that leaks a raw DB error.
  *
  * postgres-js surfaces the SQLSTATE as `.code` and the offending constraint as
- * `.constraint_name` (see apps/web/src/lib/checkout/place.ts for the pattern).
- * Returns null when `e` is not a violation we translate — the caller rethrows.
+ * `.constraint_name`, but drizzle WRAPS it as `new Error('Failed query…', { cause })`,
+ * so we walk the `.cause` chain to find the underlying PostgresError (the same
+ * unwrap apps/web/src/lib/checkout/place.ts does). Returns null when `e` is not a
+ * violation we translate — the caller rethrows.
  */
 interface PgError {
-  code?: unknown;
+  code: string;
   constraint_name?: unknown;
 }
 
+/** Find the PostgresError (has a string `.code`) through drizzle's `.cause` wrapping. */
+function findPgError(e: unknown): PgError | null {
+  let cur: unknown = e;
+  for (let i = 0; i < 6 && cur !== null && typeof cur === 'object'; i += 1) {
+    const c = cur as { code?: unknown; cause?: unknown };
+    if (typeof c.code === 'string') return c as PgError;
+    cur = c.cause;
+  }
+  return null;
+}
+
 export function pgConstraintMessage(e: unknown): string | null {
-  if (typeof e !== 'object' || e === null) return null;
-  const err = e as PgError;
-  const code = typeof err.code === 'string' ? err.code : '';
+  const err = findPgError(e);
+  if (err === null) return null;
+  const code = err.code;
   const constraint = typeof err.constraint_name === 'string' ? err.constraint_name : '';
 
   if (code === '23505') {
@@ -26,6 +39,7 @@ export function pgConstraintMessage(e: unknown): string | null {
     if (constraint.includes('sku')) return 'That SKU is already in use.';
     if (constraint.includes('slug')) return 'A product or category with a similar name already exists.';
     if (constraint.includes('one_default')) return 'That product already has a default variant.';
+    if (constraint.includes('code')) return 'That code is already in use.';
     return 'That value is already in use.';
   }
   if (code === '23514') {
@@ -40,6 +54,10 @@ export function pgConstraintMessage(e: unknown): string | null {
   if (code === '23503') {
     // foreign_key_violation
     return 'A referenced record no longer exists.';
+  }
+  if (code === '22003' || code === '22P02') {
+    // numeric_value_out_of_range / invalid_text_representation
+    return 'That value is out of the allowed range.';
   }
   return null;
 }
