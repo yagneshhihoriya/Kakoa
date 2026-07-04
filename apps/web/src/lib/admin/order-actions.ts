@@ -65,10 +65,62 @@ function mapError(cause: unknown, toStatus: OrderStatus): AdminActionResult | ne
   throw cause;
 }
 
+/** A transaction handle (drizzle tx) — kept loose to avoid leaking the generic. */
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /**
- * Pure status transition (confirm-COD / advance): assert legality, update the
- * status + its timestamp, append history + audit. `expectedFrom` guards actions
- * that are only valid from one state (e.g. confirm-COD only from cod_pending).
+ * The order-write CORE, inside a caller-provided tx: assert legality against the
+ * state machine, update `status` + its timestamp, append `order_status_history`,
+ * and write the audit row. The caller MUST have locked the order row `FOR UPDATE`
+ * and pass its current `{ id, status }`. Throws `IllegalTransitionError` on an
+ * illegal move (the caller maps it to 422). This is the single order-status write
+ * path — the shipment module reuses it to mirror shipment → order transitions.
+ */
+export async function applyOrderTransitionTx(
+  tx: Tx,
+  order: { id: string; status: OrderStatus },
+  toStatus: OrderStatus,
+  opts: {
+    adminUserId: string;
+    action: string;
+    note: string;
+    actorType?: 'admin' | 'system' | 'webhook';
+  },
+): Promise<void> {
+  assertTransition(order.status, toStatus);
+
+  const stampCol = STAMP[toStatus];
+  await tx
+    .update(orders)
+    .set({
+      status: toStatus,
+      ...(stampCol ? { [stampCol]: sql`now()` } : {}),
+      updatedAt: sql`now()`,
+    })
+    .where(eq(orders.id, order.id));
+  await tx.insert(orderStatusHistory).values({
+    orderId: order.id,
+    fromStatus: order.status,
+    toStatus,
+    actorType: opts.actorType ?? 'admin',
+    actorId: opts.adminUserId,
+    note: opts.note,
+  });
+  await tx.insert(adminAuditLog).values({
+    adminUserId: opts.adminUserId,
+    action: opts.action,
+    entityType: 'order',
+    entityId: order.id,
+    before: { status: order.status },
+    after: { status: toStatus },
+  });
+}
+
+/**
+ * Pure status transition (confirm-COD / advance): lock the order, assert
+ * legality, update the status + its timestamp, append history + audit.
+ * `expectedFrom` guards actions that are only valid from one state (e.g.
+ * confirm-COD only from cod_pending).
  */
 async function applyStatusTransition(
   orderNumber: string,
@@ -92,32 +144,10 @@ async function applyStatusTransition(
       if (opts.expectedFrom !== undefined && order.status !== opts.expectedFrom) {
         throw new IllegalTransitionError(order.status, toStatus);
       }
-      assertTransition(order.status, toStatus);
-
-      const stampCol = STAMP[toStatus];
-      await tx
-        .update(orders)
-        .set({
-          status: toStatus,
-          ...(stampCol ? { [stampCol]: sql`now()` } : {}),
-          updatedAt: sql`now()`,
-        })
-        .where(eq(orders.id, order.id));
-      await tx.insert(orderStatusHistory).values({
-        orderId: order.id,
-        fromStatus: order.status,
-        toStatus,
-        actorType: 'admin',
-        actorId: opts.adminUserId,
-        note: opts.note,
-      });
-      await tx.insert(adminAuditLog).values({
+      await applyOrderTransitionTx(tx, order, toStatus, {
         adminUserId: opts.adminUserId,
         action: opts.action,
-        entityType: 'order',
-        entityId: order.id,
-        before: { status: order.status },
-        after: { status: toStatus },
+        note: opts.note,
       });
       return toStatus;
     });

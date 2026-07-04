@@ -32,6 +32,35 @@ export interface ServiceabilityResult {
   options: ServiceabilityOption[];
 }
 
+/**
+ * The parcel + destination facts a shipment push needs. Built by the caller ONLY
+ * from the order's address snapshot + variant physicals — the provider never
+ * reaches back into our DB.
+ */
+export interface CreateShipmentInput {
+  /** KAKOA order number (e.g. `KK-00042`) — the channel reference for idempotency. */
+  orderNumber: string;
+  cod: boolean;
+  /** Destination PIN (validated by the caller). */
+  pincode: string;
+  /** Total packed weight in grams (> 0, validated by the caller). */
+  weightGrams: number;
+}
+
+/** The gateway handles created for a shipment push. */
+export interface CreateShipmentResult {
+  shiprocketOrderId: string;
+  shiprocketShipmentId: string;
+}
+
+/** The AWB + courier assigned to a shipment. */
+export interface AssignAwbResult {
+  awbCode: string;
+  courierName: string;
+  courierCompanyId: number;
+  labelUrl: string | null;
+}
+
 export interface ShippingProvider {
   /**
    * Check whether a pincode is serviceable and which options apply.
@@ -47,4 +76,25 @@ export interface ShippingProvider {
     pincode: string;
     cod: boolean;
   }): Promise<ServiceabilityResult>;
+
+  /**
+   * Create a gateway order/shipment for a fulfilment-ready order (adhoc create).
+   * Returns the provider order + shipment handles KAKOA persists. Idempotency is
+   * the caller's job (channel reference = `orderNumber`).
+   * @throws On a hard upstream failure so the route surfaces `502 UPSTREAM_ERROR`.
+   */
+  createShipment(input: CreateShipmentInput): Promise<CreateShipmentResult>;
+
+  /**
+   * Assign an AWB (courier tracking number) + courier to a created shipment.
+   * `courierCompanyId` omitted ⇒ the provider picks the recommended courier.
+   * @throws On a hard upstream failure so the route surfaces `502 UPSTREAM_ERROR`.
+   */
+  assignAwb(input: {
+    shiprocketShipmentId: string;
+    courierCompanyId?: number;
+  }): Promise<AssignAwbResult>;
+
+  // TODO(shipping Phase 2-3): add `track(awb)` for the 30-min reconciliation
+  // poller, plus label/pickup/cancel gateway calls (docs/modules/shipping-fulfillment.md).
 }

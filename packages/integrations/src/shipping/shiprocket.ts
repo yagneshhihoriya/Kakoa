@@ -1,5 +1,8 @@
 import { parseServerEnv } from "@kakoa/config";
 import type {
+  AssignAwbResult,
+  CreateShipmentInput,
+  CreateShipmentResult,
   ServiceabilityResult,
   ShippingProvider,
 } from "./provider";
@@ -35,6 +38,27 @@ export class ShiprocketShippingProvider implements ShippingProvider {
     }
     throw new Error(
       "ShiprocketShippingProvider.serviceability not implemented — wire token + courier serviceability at integration",
+    );
+  }
+
+  // TODO(shipping Phase 2-3): implement against apiv2.shiprocket.in with the
+  // 240h bearer token (store_settings) + 401 refresh-and-retry-once. Until then
+  // this provider is only selected when SHIPROCKET_EMAIL is set and throws so a
+  // misconfiguration surfaces loudly rather than silently degrading.
+  // eslint-disable-next-line @typescript-eslint/require-await -- stub
+  async createShipment(_input: CreateShipmentInput): Promise<CreateShipmentResult> {
+    throw new Error(
+      "ShiprocketShippingProvider.createShipment not implemented — Phase 2-3 (POST /v1/external/orders/create/adhoc)",
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await -- stub
+  async assignAwb(_input: {
+    shiprocketShipmentId: string;
+    courierCompanyId?: number;
+  }): Promise<AssignAwbResult> {
+    throw new Error(
+      "ShiprocketShippingProvider.assignAwb not implemented — Phase 2-3 (POST /v1/external/courier/assign/awb)",
     );
   }
 }

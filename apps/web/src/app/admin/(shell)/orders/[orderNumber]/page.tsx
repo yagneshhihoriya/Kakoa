@@ -5,9 +5,12 @@ import { notFound } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { getOrderDetail } from "@/lib/admin/orders";
+import { getActiveShipmentForOrder } from "@/lib/admin/shipping";
+import { shipmentStatusLabel } from "@/lib/admin/shipping-status";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { NoAccess } from "@/components/admin/NoAccess";
 import { OrderActions } from "@/components/admin/OrderActions";
+import { CreateShipmentButton } from "@/components/admin/CreateShipmentButton";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +37,14 @@ export default async function AdminOrderDetailPage({
   if (order === null) notFound();
 
   const addr = order.shippingAddress;
+
+  const canReadShipping = resolved.ctx.can("shipping:read");
+  const canManageShipping = resolved.ctx.can("shipping:manage");
+  const shipment = canReadShipping ? await getActiveShipmentForOrder(order.id) : null;
+  const canCreateShipment =
+    canManageShipping &&
+    shipment === null &&
+    (order.status === "confirmed" || order.status === "packed");
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -167,6 +178,32 @@ export default async function AdminOrderDetailPage({
               </div>
             )}
           </Card>
+
+          {canReadShipping ? (
+            <Card title="Shipment">
+              {shipment !== null ? (
+                <div className="space-y-1 text-[13px]">
+                  <Row label="Status" value={shipmentStatusLabel(shipment.status)} />
+                  <Row label="AWB" value={shipment.awbCode ?? "—"} />
+                  {shipment.courierName ? <Row label="Courier" value={shipment.courierName} /> : null}
+                  <Link
+                    href={`/admin/shipping/${shipment.id}` as Route}
+                    className="mt-2 inline-block text-[12.5px] font-medium text-[#8a5a34] hover:underline"
+                  >
+                    Open shipment →
+                  </Link>
+                </div>
+              ) : canCreateShipment ? (
+                <CreateShipmentButton orderId={order.id} />
+              ) : (
+                <p className="text-[13px] text-[#8a7a68]">
+                  {order.status === "confirmed" || order.status === "packed"
+                    ? "No shipment yet."
+                    : "A shipment can be created once the order is confirmed or packed."}
+                </p>
+              )}
+            </Card>
+          ) : null}
 
           <OrderActions
             orderNumber={order.orderNumber}

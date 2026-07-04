@@ -113,6 +113,7 @@ export async function listOrders(
 }
 
 export interface AdminOrderDetail {
+  id: string;
   orderNumber: string;
   status: OrderStatus;
   paymentMode: PaymentMode;
@@ -188,6 +189,7 @@ export async function getOrderDetail(
     .orderBy(orderStatusHistory.createdAt);
 
   return {
+    id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
     paymentMode: order.paymentMode,

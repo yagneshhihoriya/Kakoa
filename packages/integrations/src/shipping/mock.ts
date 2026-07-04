@@ -1,4 +1,8 @@
+import { createHmac } from "node:crypto";
 import type {
+  AssignAwbResult,
+  CreateShipmentInput,
+  CreateShipmentResult,
   ServiceabilityResult,
   ShippingProvider,
 } from "./provider";
@@ -39,6 +43,11 @@ const UNSERVICEABLE_RESULT: ServiceabilityResult = {
   options: [],
 };
 
+/** Deterministic 8-hex tag from a seed — no Math.random, so it's replay-stable. */
+function tag(seed: string): string {
+  return createHmac("sha256", "kkmock").update(seed).digest("hex").slice(0, 8).toUpperCase();
+}
+
 export class MockShippingProvider implements ShippingProvider {
   async serviceability(a: {
     pincode: string;
@@ -52,6 +61,39 @@ export class MockShippingProvider implements ShippingProvider {
       serviceable: true,
       codAvailable: !COD_UNAVAILABLE.has(a.pincode),
       options: options(),
+    };
+  }
+
+  /**
+   * Mock create: fabricate deterministic SR order/shipment handles from the order
+   * number so the fulfilment flow runs end-to-end with no Shiprocket account.
+   */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async createShipment(input: CreateShipmentInput): Promise<CreateShipmentResult> {
+    if (!Number.isInteger(input.weightGrams) || input.weightGrams <= 0) {
+      throw new Error(`MockShippingProvider.createShipment: bad weightGrams ${input.weightGrams}`);
+    }
+    const t = tag(input.orderNumber);
+    return {
+      shiprocketOrderId: `KKMOCK-SO-${t}`,
+      shiprocketShipmentId: `KKMOCK-SH-${t}`,
+    };
+  }
+
+  /**
+   * Mock AWB assignment: fabricate a deterministic AWB + a fixed "Mock Express"
+   * courier. `labelUrl` is null (label generation is Phase 2-3).
+   */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async assignAwb(input: {
+    shiprocketShipmentId: string;
+    courierCompanyId?: number;
+  }): Promise<AssignAwbResult> {
+    return {
+      awbCode: `KKMOCK${tag(input.shiprocketShipmentId)}`,
+      courierName: "Mock Express",
+      courierCompanyId: input.courierCompanyId ?? 1,
+      labelUrl: null,
     };
   }
 }

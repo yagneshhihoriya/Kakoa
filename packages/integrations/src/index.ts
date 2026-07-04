@@ -39,6 +39,9 @@ export type {
   ShippingProvider,
   ServiceabilityResult,
   ServiceabilityOption,
+  CreateShipmentInput,
+  CreateShipmentResult,
+  AssignAwbResult,
 } from "./shipping/provider";
 export {
   getShippingProvider,

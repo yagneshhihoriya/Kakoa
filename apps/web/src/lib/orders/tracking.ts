@@ -23,8 +23,8 @@ import {
   type OrderTracking,
   type TimelineStep,
 } from '@kakoa/core';
-import { db, orderItems, orders, orderStatusHistory } from '@kakoa/db';
-import { asc, eq, sql } from 'drizzle-orm';
+import { db, orderItems, orders, orderStatusHistory, shipments } from '@kakoa/db';
+import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { getCurrentCustomer } from '@/lib/auth/session';
 import {
@@ -125,7 +125,34 @@ export async function getOrderTracking(
   const placedAtIso = new Date(row.placedAt).toISOString();
   const timeline = await buildTimeline(orderId, row.status, placedAtIso);
 
-  return { order: summary, timeline, shipment: null };
+  return { order: summary, timeline, shipment: await loadShipment(orderId) };
+}
+
+/**
+ * The active shipment's customer-safe tracking info, or `null` until an AWB is
+ * assigned. Only `awb` / `courierName` / `expectedDeliveryAt` are exposed —
+ * Shiprocket ids and label/manifest URLs are NEVER sent to the storefront.
+ */
+async function loadShipment(
+  orderId: string,
+): Promise<{ awb: string; courierName: string; expectedDeliveryAt: string | null } | null> {
+  const [row] = await db
+    .select({
+      awbCode: shipments.awbCode,
+      courierName: shipments.courierName,
+      expectedDeliveryAt: shipments.expectedDeliveryAt,
+    })
+    .from(shipments)
+    .where(and(eq(shipments.orderId, orderId), sql`${shipments.supersededAt} IS NULL`))
+    .limit(1);
+  if (!row || row.awbCode === null) return null;
+  return {
+    awb: row.awbCode,
+    courierName: row.courierName ?? 'Courier',
+    expectedDeliveryAt: row.expectedDeliveryAt
+      ? new Date(row.expectedDeliveryAt).toISOString()
+      : null,
+  };
 }
 
 async function countItems(orderId: string): Promise<number> {
