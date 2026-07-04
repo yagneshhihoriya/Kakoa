@@ -183,11 +183,22 @@ export async function updateRole(
       const newPerms = input.permissionsProvided ? input.permissions : currentPerms;
 
       // §4.3 — editing your OWN role must not strip your self-management perms.
+      // This ONLY applies when the actor is actually assigned to the role being
+      // edited; otherwise an owner (who holds everything) could never save a
+      // normal role that legitimately omits staff:manage / roles:manage.
       if (input.permissionsProvided) {
-        const selfManage: Permission[] = ['staff:manage', 'roles:manage'];
-        for (const p of selfManage) {
-          if (grantsPermission(actor.grants, p) && !grantsPermission(newPerms, p)) {
-            return { ok: false, code: 'VALIDATION_ERROR', message: "You can't remove your own admin access." };
+        const [actorOnRole] = await tx
+          .select({ id: adminUsers.id })
+          .from(adminUsers)
+          .where(and(eq(adminUsers.id, actor.id), eq(adminUsers.roleId, id)))
+          .limit(1);
+        const editingOwnRole = actorOnRole !== undefined;
+        if (editingOwnRole) {
+          const selfManage: Permission[] = ['staff:manage', 'roles:manage'];
+          for (const p of selfManage) {
+            if (grantsPermission(actor.grants, p) && !grantsPermission(newPerms, p)) {
+              return { ok: false, code: 'VALIDATION_ERROR', message: "You can't remove your own admin access." };
+            }
           }
         }
       }
