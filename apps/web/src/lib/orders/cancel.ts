@@ -243,7 +243,7 @@ export async function cancelOrder(input: {
 }
 
 /** The captured-payment refund to run after the cancel tx commits. */
-interface RefundIntent {
+export interface RefundIntent {
   /** `refunds.id` — also the gateway idempotency key. */
   refundId: string;
   /** `payments.id` of the captured payment — reconciled to `refunded` on success. */
@@ -262,7 +262,7 @@ interface RefundIntent {
  * later sweep/admin retry. Idempotent via the gateway's idempotency key
  * (`refunds.id`) — a re-run returns the same refund, never a second payout.
  */
-async function executeCancelRefund(intent: RefundIntent): Promise<void> {
+export async function executeCancelRefund(intent: RefundIntent): Promise<void> {
   // No gateway payment id (shouldn't happen for a `captured` row) → cannot call
   // the gateway; leave the row `initiated` for reconciliation.
   if (intent.providerPaymentId === null || intent.providerPaymentId === '') {
