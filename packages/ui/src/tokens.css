@@ -1,0 +1,59 @@
+/**
+ * KAKOA design tokens — the ONLY file in the workspace allowed to contain
+ * raw hex values (design-system.md §1.1). Components consume semantic
+ * aliases (`--color-bg`, `--color-danger`, `--color-success`) and the
+ * Tailwind utilities generated from this `@theme` block — never literals.
+ *
+ * Font variables are consumed from `next/font` CSS variables set by the
+ * app (`apps/web/app/layout.tsx`); `packages/ui` never imports `next/font`.
+ * The app must expose:
+ *   --font-dm-serif-display  (DM Serif Display — headlines only)
+ *   --font-hanken-grotesque  (Hanken Grotesque — body / UI default)
+ *   --font-dm-mono           (DM Mono — eyebrow labels, uppercase, 0.14em)
+ */
+@theme {
+  /* ---- Brand palette (Contract / design-system.md §1.1) ---- */
+  --color-ink: #2a1d12;
+  --color-cocoa: #4a2e1c;
+  --color-espresso: #8a5a34;
+  --color-cream: #fbf6ef;
+  --color-card: #f3e7d5;
+  --color-line: #eadbc6;
+  --color-gold: #c69a4c;
+  --color-caramel: #ce8a3e;
+  --color-raspberry: #c25b5b;
+  --color-pistachio: #7c8a4e;
+  --color-plum: #8a5a78;
+
+  /* ---- Semantic aliases (what components actually reference) ---- */
+  --color-bg: var(--color-cream);
+  --color-danger: var(--color-raspberry);
+  --color-success: var(--color-pistachio);
+
+  /* ---- Typography (vars provided by next/font in the app) ---- */
+  --font-display: var(--font-dm-serif-display, 'DM Serif Display', Georgia, serif);
+  --font-body: var(--font-hanken-grotesque, 'Hanken Grotesque', system-ui, sans-serif);
+  --font-mono: var(--font-dm-mono, 'DM Mono', ui-monospace, 'SFMono-Regular', monospace);
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---- Radius scale (buttons & chips are ALWAYS pill) ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* ---- Breakpoints (mobile-first, authored at 360px) ---- */
+  --breakpoint-sm: 640px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}

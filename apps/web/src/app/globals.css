@@ -1,0 +1,171 @@
+@import "tailwindcss";
+@import "@kakoa/ui/tokens.css";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+  overflow-x: clip;
+}
+
+/* Prototype selection + type polish (00-global-header-drawers.html) */
+::selection {
+  background: #e8c9a0;
+  color: var(--color-ink);
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+h2,
+h3 {
+  letter-spacing: -0.008em;
+}
+p {
+  text-wrap: pretty;
+}
+a {
+  text-underline-offset: 3px;
+}
+
+/* Prototype scrollbar treatment */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-thumb {
+  background: #dcc6a2;
+  border-radius: 999px;
+  border: 3px solid var(--color-cream);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c9a878;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+}
+
+/* ---- Prototype motion vocabulary (kk-*) ---- */
+@keyframes kk-fadeup {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes kk-drawer {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes kk-sheetdown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes kk-menu {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes kk-overlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes kk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes kk-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes kk-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@keyframes kk-drift {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.028);
+  }
+}
+
+/* ---- Section fade-up reveal (_enhance layer) ----
+ * Elements opt in with `data-reveal`. They only ever hide when JS is live
+ * (`.kk-js` set by <RevealInit/>), so no-JS never blanks content, and the
+ * 1.7s never-hide fallback in RevealInit force-reveals stragglers. */
+[data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+.kk-js [data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.kk-js [data-reveal].kk-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .kk-js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

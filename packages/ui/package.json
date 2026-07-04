@@ -1,0 +1,33 @@
+{
+  "name": "@kakoa/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": ["*.css"],
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./tokens.css": "./src/tokens.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@kakoa/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.8.0"
+  }
+}
