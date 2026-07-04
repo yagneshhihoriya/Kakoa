@@ -47,20 +47,30 @@ export default async function AdminProductsPage({
           </h1>
           <p className="text-[13px] text-[#8a7a68]">{list.total} total</p>
         </div>
-        <form action="/admin/products" className="flex gap-2">
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="Search name or slug"
-            className="w-56 rounded-lg border border-[#eadbc6] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#c69a4c]"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-[#2a1d12] px-4 py-2 text-[13px] font-semibold text-[#f3e7d5]"
-          >
-            Search
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <form action="/admin/products" className="flex gap-2">
+            <input
+              name="search"
+              defaultValue={search}
+              placeholder="Search name or slug"
+              className="w-56 rounded-lg border border-[#eadbc6] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#c69a4c]"
+            />
+            <button
+              type="submit"
+              className="rounded-lg border border-[#eadbc6] bg-white px-4 py-2 text-[13px] font-semibold text-[#2a1d12] hover:bg-[#f3e7d5]"
+            >
+              Search
+            </button>
+          </form>
+          {canWrite ? (
+            <Link
+              href={"/admin/products/new" as Route}
+              className="rounded-lg bg-[#2a1d12] px-4 py-2 text-[13px] font-semibold text-[#f3e7d5] hover:opacity-90"
+            >
+              + New product
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-1.5">

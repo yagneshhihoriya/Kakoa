@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AttributeDef, Capability } from '@platform/kernel';
-import { isUuid, validateAttributes } from './product-validation';
+import { isUuid, slugify, validateAttributes, validateVariantInput } from './product-validation';
 
 describe('isUuid', () => {
   it('accepts a well-formed uuid (any case)', () => {
@@ -63,5 +63,48 @@ describe('validateAttributes (the generic, business-agnostic mechanism)', () => 
   it('caps text length at 5000 chars', () => {
     const out = validateAttributes(schema, caps, { origin: 'x'.repeat(6000) });
     expect((out.origin as string).length).toBe(5000);
+  });
+});
+
+describe('slugify', () => {
+  it('lowercases, hyphenates, and strips edge punctuation', () => {
+    expect(slugify('Single-Origin Dark 70%')).toBe('single-origin-dark-70');
+    expect(slugify('  Café  Noir!  ')).toBe('caf-noir');
+    expect(slugify('!!!')).toBe('');
+  });
+});
+
+describe('validateVariantInput (guards the product_variants check constraints)', () => {
+  const good = { sku: 'KK-DRK-100', name: '100g bar', pricePaise: 49900, weightGrams: 100, stockQuantity: 25 };
+
+  it('accepts a well-formed variant and defaults active=true, default=false', () => {
+    const r = validateVariantInput(good);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value).toMatchObject({ sku: 'KK-DRK-100', pricePaise: 49900, isActive: true, isDefault: false });
+    }
+  });
+
+  it('rejects a bad SKU', () => {
+    expect(validateVariantInput({ ...good, sku: '' }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, sku: 'has space' }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, sku: 'x'.repeat(61) }).ok).toBe(false);
+  });
+
+  it('rejects non-positive / non-integer price (constraint price_paise > 0)', () => {
+    expect(validateVariantInput({ ...good, pricePaise: 0 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, pricePaise: -100 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, pricePaise: 49.9 }).ok).toBe(false);
+  });
+
+  it('rejects non-positive weight and negative stock', () => {
+    expect(validateVariantInput({ ...good, weightGrams: 0 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, stockQuantity: -1 }).ok).toBe(false);
+  });
+
+  it('honours explicit isActive / isDefault flags', () => {
+    const r = validateVariantInput({ ...good, isActive: false, isDefault: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value).toMatchObject({ isActive: false, isDefault: true });
   });
 });

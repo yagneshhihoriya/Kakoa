@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatPaise } from "@kakoa/core";
 import type { AttributeDef } from "@platform/kernel";
+import { VariantEditor } from "@/components/admin/VariantEditor";
 
 interface Variant {
   id: string;
@@ -160,38 +160,13 @@ export function ProductEditForm({
           </Card>
         ) : null}
 
-        {/* Variants (read-only this increment) */}
+        {/* Variants — editable (add / edit / set default / activate) */}
         <Card title="Variants">
-          <table className="w-full text-left text-[13px]">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-wider text-[#8a7a68]">
-                <th className="py-2 font-medium">SKU</th>
-                <th className="py-2 font-medium">Variant</th>
-                <th className="py-2 text-right font-medium">Price</th>
-                <th className="py-2 text-right font-medium">Stock</th>
-              </tr>
-            </thead>
-            <tbody>
-              {product.variants.map((v) => (
-                <tr key={v.id} className="border-t border-[#f3ece1]">
-                  <td className="py-2 text-[#5c4b3a]">{v.sku}</td>
-                  <td className="py-2 text-[#2a1d12]">
-                    {v.name}
-                    {v.isDefault ? (
-                      <span className="ml-1.5 rounded bg-[#f3e7d5] px-1.5 text-[10px] text-[#8a5a34]">default</span>
-                    ) : null}
-                  </td>
-                  <td className="py-2 text-right font-medium text-[#2a1d12]">
-                    {formatPaise(v.pricePaise)}
-                  </td>
-                  <td className="py-2 text-right text-[#5c4b3a]">{v.stockQuantity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-3 text-[11.5px] text-[#b8a88f]">
-            Variant editing arrives in the next increment.
-          </p>
+          <VariantEditor
+            productId={product.id}
+            initial={product.variants}
+            canWrite={canWrite}
+          />
         </Card>
       </div>
 

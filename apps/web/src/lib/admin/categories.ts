@@ -9,6 +9,7 @@
 import { adminAuditLog, categories, db, products } from '@kakoa/db';
 import { asc, eq, sql } from 'drizzle-orm';
 import { revalidateTag } from 'next/cache';
+import { withConstraintMapping } from './db-errors';
 
 export interface AdminCategoryRow {
   id: string;
@@ -63,7 +64,10 @@ export async function createCategory(
   if (base === '') {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Category name must contain letters or numbers.' };
   }
-  return db.transaction(async (tx) => {
+  // Race-safe backstop: a concurrent same-name create that slips past the slug
+  // SELECT becomes a clean VALIDATION_ERROR rather than a unique(slug) 500.
+  return withConstraintMapping(() =>
+    db.transaction(async (tx) => {
     // Unique slug: append -2, -3, … if taken.
     let slug = base;
     for (let n = 2; ; n += 1) {
@@ -98,7 +102,8 @@ export async function createCategory(
     });
     revalidateTag('categories', 'max');
     return { ok: true, id: row.id };
-  });
+    }),
+  );
 }
 
 export async function updateCategory(
