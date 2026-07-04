@@ -58,6 +58,13 @@ export const products = pgTable(
     isVeg: boolean('is_veg').notNull().default(true), // FSSAI green/brown dot
     badge: text('badge'), // 'Best seller' | 'New' | 'Limited' | 'Vegan' | 'Seasonal'
     tone: text('tone').notNull().default('dark'),
+    /**
+     * Generic per-business product attributes (docs/admin-platform §2.4, A5).
+     * Keyed by the active vertical preset's `attributeSchema` — the admin
+     * Products form reads/writes these, so the catalog is business-agnostic
+     * (chocolate/coffee/bakery/…) without schema changes per vertical.
+     */
+    attributes: jsonb('attributes').notNull().default(sql`'{}'::jsonb`),
     ratingAvg: numeric('rating_avg', { precision: 3, scale: 2 })
       .notNull()
       .default('0'), // DENORMALIZED: recomputed on review approve/reject

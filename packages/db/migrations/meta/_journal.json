@@ -15,6 +15,13 @@
       "when": 1783176025922,
       "tag": "0001_tiny_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783179807662,
+      "tag": "0002_solid_firebrand",
+      "breakpoints": true
     }
   ]
 }
