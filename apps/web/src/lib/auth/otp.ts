@@ -29,7 +29,11 @@ import {
  * challenge (order-tracking.md §1.1) — all share the same generate/store/
  * verify/consume machinery, differing only by `purpose` + `context`.
  */
-export type OtpPurpose = 'customer_login' | 'cod_verification' | 'order_lookup';
+export type OtpPurpose =
+  | 'customer_login'
+  | 'cod_verification'
+  | 'order_lookup'
+  | 'admin_login';
 
 // Re-export the dep-free crypto primitives so the pinned interface is stable.
 export {

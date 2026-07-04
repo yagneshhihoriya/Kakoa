@@ -38,6 +38,7 @@ import { Skeleton } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
 import { useCart } from "@/components/cart/CartProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useAddresses } from "@/components/account/useAddresses";
 import {
   useCheckout,
@@ -389,7 +390,19 @@ export function CheckoutClient({
   const router = useRouter();
   const { refresh: refreshCart } = useCart();
   const { toast } = useToast();
+  const auth = useAuth();
   const co = useCheckout(initial);
+
+  // A guest who signs in DURING checkout (via the Step-1 "Sign in for faster
+  // checkout" CTA): once the session lands, re-seed the whole flow from the
+  // server so their saved addresses + contact prefill load and Step 1 switches
+  // to the logged-in experience. Guarded by `!initial.loggedIn` so it fires at
+  // most once — after the reload the page is seeded logged-in and never loops.
+  useEffect(() => {
+    if (!initial.loggedIn && auth.customer !== null) {
+      window.location.reload();
+    }
+  }, [initial.loggedIn, auth.customer]);
 
   // Shared saved-address book, seeded from the server list. The picker mutates
   // through this; we mirror successful create/update back into checkout state so
@@ -896,6 +909,7 @@ function Step1AddressForm({
   co: UseCheckout;
   onContinue: () => void;
 }): ReactNode {
+  const auth = useAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const svcStatus = co.serviceabilityStatus;
@@ -1022,6 +1036,25 @@ function Step1AddressForm({
       >
         Contact &amp; shipping
       </h1>
+
+      {/* Optional sign-in for returning customers (guests only) — never a wall.
+          Amazon/Shopify pattern: log in to auto-fill saved addresses. */}
+      {!co.loggedIn ? (
+        <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-[#E8DBC6] bg-[#F9F3EA] px-4 py-3 font-body text-[13.5px] text-espresso">
+          <span>Already have an account?</span>
+          <button
+            type="button"
+            onClick={() => auth.open("Sign in for faster checkout")}
+            className={cx(
+              "font-semibold text-ink underline decoration-gold decoration-2 underline-offset-2 transition-colors hover:text-cocoa",
+              FOCUS_RING,
+              "rounded-sm",
+            )}
+          >
+            Sign in for faster checkout
+          </button>
+        </div>
+      ) : null}
 
       {/* Contact */}
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1324,11 +1357,12 @@ function Step1AddressForm({
           Save this to my address book for next time
         </label>
       ) : (
-        /* State D — guest: a non-blocking hint, no account wall (visual only). */
+        /* State D — guest: a non-blocking hint, no account wall (visual only).
+           Returning customers use the "Sign in for faster checkout" CTA above. */
         <p className="mb-5 font-body text-[13px] text-[#8a7a68]">
           Checking out as a guest.{" "}
           <span className="text-espresso">
-            Sign in later to save your details for next time.
+            Sign in anytime to save your details for next time.
           </span>
         </p>
       )}

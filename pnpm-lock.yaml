@@ -32,6 +32,9 @@ importers:
       '@kakoa/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@platform/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
       drizzle-orm:
         specifier: ^0.44.0
         version: 0.44.7(postgres@3.4.9)
@@ -98,6 +101,9 @@ importers:
       '@kakoa/core':
         specifier: workspace:*
         version: link:../core
+      '@platform/kernel':
+        specifier: workspace:*
+        version: link:../kernel
       drizzle-orm:
         specifier: ^0.44.0
         version: 0.44.7(postgres@3.4.9)
@@ -130,6 +136,15 @@ importers:
       typescript:
         specifier: ^5.8.0
         version: 5.9.3
+
+  packages/kernel:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   packages/ui:
     dependencies:

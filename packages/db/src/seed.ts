@@ -7,6 +7,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { db, queryClient } from './client';
+import { seedSystemRoles } from './seed-roles';
 import {
   adminUsers,
   categories,
@@ -446,6 +447,9 @@ async function main(): Promise<void> {
     name: 'Kakao Owner',
     role: 'owner',
   });
+
+  // 1b. System roles (permission-based RBAC) + link the owner admin's role_id.
+  await seedSystemRoles(db);
 
   // 2. store_settings (Contract §1.1).
   await db.insert(storeSettings).values(
