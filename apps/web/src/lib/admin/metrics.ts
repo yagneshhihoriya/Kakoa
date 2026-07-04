@@ -8,6 +8,7 @@
 import { db, orders, payments, productVariants } from '@kakoa/db';
 import { ORDER_STATUSES, type OrderStatus } from '@kakoa/core';
 import { sql } from 'drizzle-orm';
+import { COLLECTED_PAYMENT_STATUSES } from './payment-format';
 
 export interface DashboardMetrics {
   /** Gross collected (prepaid captured + COD collected) minus refunds. */
@@ -29,8 +30,15 @@ const toNum = (v: unknown): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/** Collected-money payment states (prepaid + COD). */
-const COLLECTED = sql`('captured','partially_refunded','refunded','cod_collected','cod_pending_remittance')`;
+/**
+ * Collected-money payment states (prepaid + COD), built from the shared
+ * `COLLECTED_PAYMENT_STATUSES` constant so revenue and the payments module can
+ * never drift on what "collected" means.
+ */
+const COLLECTED = sql`(${sql.join(
+  COLLECTED_PAYMENT_STATUSES.map((s) => sql`${s}`),
+  sql`, `,
+)})`;
 
 export async function computeDashboardMetrics(): Promise<DashboardMetrics> {
   // Revenue AND the paid-order count both come from the payment ledger, over the
