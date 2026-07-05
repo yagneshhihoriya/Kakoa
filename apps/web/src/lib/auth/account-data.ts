@@ -27,6 +27,8 @@ export interface AccountOrderRow {
   placedAt: Date;
   totalPaise: number;
   itemCount: number;
+  /** A tax invoice is available once the order is confirmed. */
+  invoiceAvailable: boolean;
 }
 
 export interface AccountAddressRow {
@@ -72,6 +74,7 @@ export async function loadCustomerOrders(
       placedAt: orders.placedAt,
       totalPaise: orders.totalPaise,
       itemCount: sql<number>`coalesce(sum(${orderItems.quantity}), 0)::int`,
+      invoiceAvailable: sql<boolean>`${orders.confirmedAt} is not null`,
     })
     .from(orders)
     .leftJoin(orderItems, eq(orderItems.orderId, orders.id))

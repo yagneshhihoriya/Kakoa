@@ -47,6 +47,10 @@ export default async function OrderDetailPage({
   }
 
   return (
-    <OrderDetailClient orderNumber={detail.orderNumber} items={detail.items} />
+    <OrderDetailClient
+      orderNumber={detail.orderNumber}
+      items={detail.items}
+      invoiceAvailable={detail.invoiceAvailable}
+    />
   );
 }

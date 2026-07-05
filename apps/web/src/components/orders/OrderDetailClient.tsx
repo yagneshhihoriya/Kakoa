@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import {
   formatPaise,
   type OrderSummary,
@@ -30,11 +31,13 @@ const SESSION_CREDENTIAL: TrackingCredential = { kind: "session" };
 export interface OrderDetailClientProps {
   orderNumber: string;
   items: OrderDetailItem[];
+  invoiceAvailable: boolean;
 }
 
 export function OrderDetailClient({
   orderNumber,
   items,
+  invoiceAvailable,
 }: OrderDetailClientProps): ReactNode {
   const { fetchTracking, cancelOrder } = useTracking();
   const { toast } = useToast();
@@ -117,6 +120,35 @@ export function OrderDetailClient({
       >
         Order #{orderNumber}
       </h1>
+
+      {invoiceAvailable ? (
+        <div className={cx(CARD, "mb-6 flex flex-wrap items-center justify-between gap-3 p-5")}>
+          <div>
+            <div className="font-body text-[15px] font-semibold text-ink">Tax invoice</div>
+            <div className="font-body text-[13px] text-[#8a7a68]">View, download the PDF, or print your GST invoice.</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/account/orders/${orderNumber}/invoice` as Route}
+              className="rounded-pill border border-[#E0CFB6] px-[16px] py-2 font-body text-[13px] font-semibold text-ink no-underline transition-colors hover:bg-[#F3E7D5]"
+            >
+              View invoice
+            </Link>
+            <a
+              href={`/api/orders/${orderNumber}/invoice.pdf`}
+              className="rounded-pill border border-[#E0CFB6] px-[16px] py-2 font-body text-[13px] font-semibold text-ink no-underline transition-colors hover:bg-[#F3E7D5]"
+            >
+              Download PDF
+            </a>
+            <Link
+              href={`/account/orders/${orderNumber}/invoice?print=1` as Route}
+              className="rounded-pill bg-ink px-[16px] py-2 font-body text-[13px] font-semibold text-card no-underline transition-colors hover:bg-[#3f2c1b]"
+            >
+              Print
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {loading && tracking === null ? (
         <DetailSkeleton />

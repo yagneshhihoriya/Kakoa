@@ -40,6 +40,7 @@ export default async function AccountPage() {
       placedAtIso: order.placedAt.toISOString(),
       totalPaise: order.totalPaise,
       itemCount: order.itemCount,
+      invoiceAvailable: order.invoiceAvailable,
     }));
     addresses = data.addresses.map((address) => ({
       id: address.id,

@@ -32,6 +32,8 @@ export interface AccountOrder {
   placedAtIso: string;
   totalPaise: number;
   itemCount: number;
+  /** A tax invoice is available (order confirmed) — enables the Invoice actions. */
+  invoiceAvailable: boolean;
 }
 
 export interface AccountAddress {
@@ -310,6 +312,28 @@ function OrdersSection({
                 >
                   Track
                 </Link>
+              </div>
+
+              {/* Actions row: details + (once confirmed) invoice view / download */}
+              <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#EEE1CE] pt-3 font-body text-[13px]">
+                <Link href={`/account/orders/${order.orderNumber}` as Route} className="font-semibold text-espresso underline">
+                  View details
+                </Link>
+                {order.invoiceAvailable ? (
+                  <>
+                    <Link href={`/account/orders/${order.orderNumber}/invoice` as Route} className="font-semibold text-espresso underline">
+                      View invoice
+                    </Link>
+                    <a href={`/api/orders/${order.orderNumber}/invoice.pdf`} className="font-semibold text-espresso underline">
+                      Download invoice
+                    </a>
+                    <Link href={`/account/orders/${order.orderNumber}/invoice?print=1` as Route} className="font-semibold text-espresso underline">
+                      Print
+                    </Link>
+                  </>
+                ) : (
+                  <span className="text-[#a08a72]">Invoice available after confirmation</span>
+                )}
               </div>
             </div>
           );

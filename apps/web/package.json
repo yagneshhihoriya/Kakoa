@@ -16,6 +16,7 @@
     "@kakoa/integrations": "workspace:*",
     "@kakoa/ui": "workspace:*",
     "@platform/kernel": "workspace:*",
+    "@react-pdf/renderer": "^4.5.1",
     "drizzle-orm": "^0.44.0",
     "next": "^16.0.0",
     "react": "^19.0.0",

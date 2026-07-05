@@ -24,6 +24,8 @@ export interface OrderDetail {
   id: string;
   orderNumber: string;
   status: string;
+  /** A tax invoice is available once the order is confirmed. */
+  invoiceAvailable: boolean;
   items: OrderDetailItem[];
 }
 
@@ -40,6 +42,7 @@ export async function loadOwnedOrderDetail(
       id: orders.id,
       orderNumber: orders.orderNumber,
       status: orders.status,
+      confirmedAt: orders.confirmedAt,
     })
     .from(orders)
     .where(
@@ -68,6 +71,7 @@ export async function loadOwnedOrderDetail(
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
+    invoiceAvailable: order.confirmedAt !== null,
     items,
   };
 }
