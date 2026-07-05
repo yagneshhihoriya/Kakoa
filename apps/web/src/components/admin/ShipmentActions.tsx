@@ -57,6 +57,33 @@ export function ShipmentActions({
     }
   }
 
+  async function bulk(key: string, action: "label" | "pickup"): Promise<void> {
+    setBusy(key);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/shipping/bulk`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, shipmentIds: [shipmentId] }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error?.message ?? "Action failed.");
+        setBusy(null);
+        return;
+      }
+      router.refresh();
+      setTimeout(() => setBusy(null), 500);
+    } catch {
+      setError("Network error. Please try again.");
+      setBusy(null);
+    }
+  }
+
+  // Label/pickup available once an AWB is assigned (i.e. beyond `pending`).
+  const hasAwb = status !== "pending";
+  const canPickup = status === "awb_assigned";
+
   if (superseded) {
     return (
       <div className="rounded-2xl border border-dashed border-[#d8c7b0] p-4 text-[12.5px] text-[#8a7a68]">
@@ -112,6 +139,29 @@ export function ShipmentActions({
             >
               {busy === "awb" ? "Assigning…" : "Assign AWB"}
             </button>
+          </div>
+        ) : null}
+
+        {hasAwb ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => bulk("label", "label")}
+              className="flex-1 rounded-lg border border-[#eadbc6] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#5c4b3a] hover:bg-[#f3e7d5] disabled:opacity-50"
+            >
+              {busy === "label" ? "Generating…" : "Generate label"}
+            </button>
+            {canPickup ? (
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => bulk("pickup", "pickup")}
+                className="flex-1 rounded-lg border border-[#eadbc6] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#5c4b3a] hover:bg-[#f3e7d5] disabled:opacity-50"
+              >
+                {busy === "pickup" ? "Requesting…" : "Request pickup"}
+              </button>
+            ) : null}
           </div>
         ) : null}
 

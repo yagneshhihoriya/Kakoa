@@ -95,6 +95,44 @@ export function nextShipmentStatuses(from: ShipmentStatus): ShipmentStatus[] {
   return FORWARD_NEXT[from].filter((s) => s !== 'awb_assigned');
 }
 
+const RTO_STATUSES = new Set<ShipmentStatus>(['rto_initiated', 'rto_in_transit', 'rto_delivered']);
+
+/**
+ * Monotonic lifecycle rank for TRACKING updates (webhook/poller) — unlike the
+ * manual console's strict adjacency (`canAdvanceShipment`), couriers skip scans
+ * and retry out of order, so tracking advances by rank and MAY skip steps.
+ * RTO ranks sit above the in-flight forward states (RTO happens after shipping).
+ */
+const LIFECYCLE_RANK: Record<ShipmentStatus, number> = {
+  pending: 0,
+  awb_assigned: 10,
+  pickup_scheduled: 20,
+  picked_up: 30,
+  in_transit: 40,
+  out_for_delivery: 50,
+  delivered: 60,
+  rto_initiated: 55,
+  rto_in_transit: 58,
+  rto_delivered: 62,
+  cancelled: 70,
+  lost: 70,
+};
+
+/**
+ * Forward-only tracking advance: never from a terminal state, never a rank
+ * regress, never back to the forward track once on the RTO track. `cancelled`/
+ * `lost` are enterable from any non-terminal. This is what the webhook + poller
+ * use to decide whether a scan advances the shipment (else the scan is recorded
+ * but the status is unchanged).
+ */
+export function canAdvanceTracking(from: ShipmentStatus, to: ShipmentStatus): boolean {
+  if (from === to) return false;
+  if (isTerminalShipment(from)) return false;
+  if (to === 'cancelled' || to === 'lost') return true;
+  if (RTO_STATUSES.has(from) && !RTO_STATUSES.has(to)) return false;
+  return LIFECYCLE_RANK[to] > LIFECYCLE_RANK[from];
+}
+
 export const SHIPMENT_STATUS_LABEL: Record<ShipmentStatus, string> = {
   pending: 'Pending',
   awb_assigned: 'AWB assigned',

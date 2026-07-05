@@ -86,4 +86,29 @@ export class FakeSmsProvider implements SmsProvider {
 
     return { providerMessageId };
   }
+
+  /**
+   * Fake transactional SMS: records nothing sensitive, logs a non-prod debug
+   * line so a developer can see what would have gone out. Never throws.
+   */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async sendText(a: {
+    phoneE164: string;
+    message: string;
+    template: string;
+  }): Promise<{ providerMessageId: string | null }> {
+    const providerMessageId = `fake-sms-${a.template}`;
+    if (parseServerEnv().APP_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.log(
+        JSON.stringify({
+          event: "sms.debug",
+          phoneE164Masked: maskForLog(a.phoneE164),
+          template: a.template,
+          message: a.message,
+        }),
+      );
+    }
+    return { providerMessageId };
+  }
 }

@@ -3,8 +3,12 @@ import type {
   AssignAwbResult,
   CreateShipmentInput,
   CreateShipmentResult,
+  LabelResult,
+  ManifestResult,
+  PickupResult,
   ServiceabilityResult,
   ShippingProvider,
+  TrackingResult,
 } from "./provider";
 
 /**
@@ -94,6 +98,45 @@ export class MockShippingProvider implements ShippingProvider {
       courierName: "Mock Express",
       courierCompanyId: input.courierCompanyId ?? 1,
       labelUrl: null,
+    };
+  }
+
+  /** Mock label: a deterministic fake URL so the bulk-print flow works in dev. */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async getLabel(shiprocketShipmentIds: string[]): Promise<LabelResult> {
+    const first = shiprocketShipmentIds[0] ?? "x";
+    return { labelUrl: `https://mock.kakoa.local/labels/${tag(first)}.pdf` };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async getManifest(shiprocketShipmentIds: string[]): Promise<ManifestResult> {
+    const first = shiprocketShipmentIds[0] ?? "x";
+    return { manifestUrl: `https://mock.kakoa.local/manifests/${tag(first)}.pdf` };
+  }
+
+  /** Mock pickup: schedules "tomorrow". */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async requestPickup(_shiprocketShipmentIds: string[]): Promise<PickupResult> {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    return { pickupScheduledDateIso: d.toISOString() };
+  }
+
+  /** Mock track: reports "in transit" (code 18) with a single scan. */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async track(awb: string): Promise<TrackingResult> {
+    return {
+      awb,
+      statusCode: 18,
+      statusLabel: "In Transit",
+      scans: [
+        {
+          statusCode: 18,
+          statusLabel: "In Transit",
+          activity: "Shipment in transit (mock)",
+          location: "Mumbai Hub",
+          occurredAtIso: new Date().toISOString(),
+        },
+      ],
     };
   }
 }

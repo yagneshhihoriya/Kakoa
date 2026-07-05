@@ -27,6 +27,7 @@ import {
   productVariants,
   shipmentEvents,
   shipments,
+  storeSettings,
   type AddressSnapshot,
 } from '@kakoa/db';
 import { type OrderStatus, type ShipmentStatus } from '@kakoa/core';
@@ -35,8 +36,10 @@ import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { withConstraintMapping } from './db-errors';
 import { isUuid } from './product-validation';
 import { applyOrderTransitionTx } from './order-actions';
+import { sendFulfilmentUpdate } from '@/lib/email/send';
 import {
   canAdvanceShipment,
+  canAdvanceTracking,
   isTerminalShipment,
   validateAwbInput,
 } from './shipping-status';
@@ -295,6 +298,16 @@ export type ShippingResult =
       message: string;
     };
 
+/** The registered Shiprocket pickup-location nickname (must match the dashboard). */
+async function getShiprocketPickupLocation(): Promise<string> {
+  const [row] = await db
+    .select({ value: storeSettings.value })
+    .from(storeSettings)
+    .where(eq(storeSettings.key, 'shiprocket_pickup_location'))
+    .limit(1);
+  return typeof row?.value === 'string' && row.value.trim() !== '' ? row.value : 'Primary';
+}
+
 /** A valid Indian pincode for a fulfilment push. */
 const PIN_RE = /^[1-9][0-9]{5}$/;
 const PHONE_RE = /^\+?[6-9][0-9]{9}$/;
@@ -329,7 +342,7 @@ export async function createShipment(
     return { ok: false, code: 'NOT_FOUND', message: 'Order not found.' };
   }
 
-  // Preload order + address + weight OUTSIDE the tx to build the provider payload;
+  // Preload order + address + items OUTSIDE the tx to build the provider payload;
   // the provider call must not run inside the DB transaction.
   const [order] = await db
     .select({
@@ -338,6 +351,11 @@ export async function createShipment(
       status: orders.status,
       paymentMode: orders.paymentMode,
       shippingAddress: orders.shippingAddress,
+      contactEmail: orders.contactEmail,
+      contactPhone: orders.contactPhone,
+      subtotalPaise: orders.subtotalPaise,
+      totalPaise: orders.totalPaise,
+      placedAt: orders.placedAt,
     })
     .from(orders)
     .where(eq(orders.id, orderId))
@@ -357,29 +375,56 @@ export async function createShipment(
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Shipment data incomplete: shipping address.' };
   }
 
-  const weightRows = await db
-    .select({ weight: productVariants.shipWeightGrams, qty: orderItems.quantity })
+  const itemRows = await db
+    .select({
+      productName: orderItems.productName,
+      sku: orderItems.sku,
+      quantity: orderItems.quantity,
+      unitPricePaise: orderItems.unitPricePaise,
+      weight: productVariants.shipWeightGrams,
+    })
     .from(orderItems)
     .innerJoin(productVariants, eq(productVariants.id, orderItems.variantId))
     .where(eq(orderItems.orderId, order.id));
-  if (weightRows.length === 0) {
+  if (itemRows.length === 0) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Shipment data incomplete: order has no items.' };
   }
   let totalWeight = 0;
-  for (const w of weightRows) {
+  for (const w of itemRows) {
     if (!Number.isInteger(w.weight) || w.weight <= 0) {
       return { ok: false, code: 'VALIDATION_ERROR', message: 'Shipment data incomplete: a product is missing its packed weight.' };
     }
-    totalWeight += w.weight * w.qty;
+    totalWeight += w.weight * w.quantity;
   }
 
-  // Provider call (mock) — outside the tx. A hard failure ⇒ UPSTREAM_ERROR.
+  const pickupLocation = await getShiprocketPickupLocation();
+  const cod = order.paymentMode === 'cod';
+
+  // Provider call (mock or real) — outside the tx. A hard failure ⇒ UPSTREAM_ERROR.
   let handles;
   try {
     handles = await getShippingProvider().createShipment({
       orderNumber: order.orderNumber,
-      cod: order.paymentMode === 'cod',
-      pincode: addr!.pincode,
+      orderDateIso: new Date(order.placedAt).toISOString(),
+      cod,
+      // COD collects the full order total; prepaid declares the goods subtotal.
+      subTotalPaise: cod ? order.totalPaise : order.subtotalPaise,
+      pickupLocation,
+      billing: {
+        name: addr!.fullName,
+        phone: addr!.phone,
+        address: [addr!.line1, addr!.line2, addr!.landmark].filter((p) => p).join(', '),
+        city: addr!.city,
+        state: addr!.state,
+        pincode: addr!.pincode,
+        ...(order.contactEmail ? { email: order.contactEmail } : {}),
+      },
+      items: itemRows.map((i) => ({
+        name: i.productName,
+        sku: i.sku,
+        units: i.quantity,
+        sellingPricePaise: i.unitPricePaise,
+      })),
       weightGrams: totalWeight,
     });
   } catch {
@@ -551,7 +596,11 @@ export async function advanceShipment(
     return { ok: false, code: 'NOT_FOUND', message: 'Shipment not found.' };
   }
 
-  return withConstraintMapping(() =>
+  // Set inside the tx when the order mirror reaches a customer-notifiable stage;
+  // the email/SMS fires best-effort AFTER commit (Gap C).
+  let notify: { orderId: string; stage: 'shipped' | 'out_for_delivery' | 'delivered' } | null = null;
+
+  const result = await withConstraintMapping(() =>
     db.transaction(async (tx): Promise<ShippingResult> => {
       const [shipment] = await tx
         .select({
@@ -609,6 +658,11 @@ export async function advanceShipment(
             .set({ status: 'cod_collected', updatedAt: sql`now()` })
             .where(and(eq(payments.orderId, shipment.orderId), eq(payments.status, 'cod_pending_collection')));
         }
+
+        // Queue the matching customer notification for after-commit (Gap C).
+        if (mirror === 'shipped') notify = { orderId: shipment.orderId, stage: 'shipped' };
+        else if (mirror === 'out_for_delivery') notify = { orderId: shipment.orderId, stage: 'out_for_delivery' };
+        else if (mirror === 'delivered') notify = { orderId: shipment.orderId, stage: 'delivered' };
       }
 
       const stamp: Record<string, unknown> = { status: toStatus, updatedAt: sql`now()` };
@@ -633,6 +687,160 @@ export async function advanceShipment(
       return { ok: true, shipmentId, status: toStatus };
     }),
   );
+
+  // Best-effort customer notification AFTER the tx commits (never blocks it).
+  if (result.ok && notify !== null) {
+    const n: { orderId: string; stage: 'shipped' | 'out_for_delivery' | 'delivered' } = notify;
+    void sendFulfilmentUpdate(n.orderId, n.stage).catch(() => {});
+  }
+  return result;
+}
+
+export interface TrackingUpdate {
+  toStatus: ShipmentStatus;
+  source: 'webhook' | 'poll';
+  activity?: string | null;
+  location?: string | null;
+  occurredAt?: Date | null;
+}
+
+/**
+ * Apply a courier tracking update (webhook / poller) to a shipment — the
+ * auto-sync counterpart of `advanceShipment`. The scan is ALWAYS recorded
+ * (dedup-safe); the status advances FORWARD-ONLY (`canAdvanceTracking`, skips
+ * allowed, never regress). Mirrors the order (best-effort — an illegal order
+ * transition is logged + skipped, never forced), collects COD on delivery, and
+ * fires the customer notification after commit. Never throws.
+ */
+export async function applyTrackingStatus(
+  shipmentId: string,
+  update: TrackingUpdate,
+): Promise<{ advanced: boolean }> {
+  let notify: { orderId: string; stage: 'shipped' | 'out_for_delivery' | 'delivered' } | null = null;
+
+  const advanced = await db.transaction(async (tx): Promise<boolean> => {
+    const [shipment] = await tx
+      .select({
+        id: shipments.id,
+        orderId: shipments.orderId,
+        status: shipments.status,
+        cod: shipments.cod,
+        supersededAt: shipments.supersededAt,
+      })
+      .from(shipments)
+      .where(eq(shipments.id, shipmentId))
+      .for('update')
+      .limit(1);
+    if (!shipment || shipment.supersededAt !== null) return false;
+
+    const occurredAt = update.occurredAt ?? new Date();
+    // Record the scan regardless of whether it advances the status (dedup-safe).
+    await tx
+      .insert(shipmentEvents)
+      .values({
+        shipmentId,
+        status: update.toStatus,
+        source: update.source,
+        activity: update.activity ?? null,
+        location: update.location ?? null,
+        occurredAt,
+      })
+      .onConflictDoNothing();
+
+    if (!canAdvanceTracking(shipment.status, update.toStatus)) {
+      return false; // out-of-order / duplicate / regress — recorded only
+    }
+
+    const mirror = ORDER_MIRROR[update.toStatus];
+    if (mirror !== undefined) {
+      const [order] = await tx
+        .select({ id: orders.id, status: orders.status })
+        .from(orders)
+        .where(eq(orders.id, shipment.orderId))
+        .for('update')
+        .limit(1);
+      if (order && order.status !== mirror) {
+        try {
+          await applyOrderTransitionTx(tx, order, mirror, {
+            adminUserId: null,
+            action: 'order.transition',
+            note: `Shipment ${update.toStatus.replace(/_/g, ' ')} (${update.source})`,
+            actorType: update.source === 'webhook' ? 'webhook' : 'system',
+          });
+        } catch {
+          // Illegal order mirror (e.g. out-of-sequence webhook) — log + skip,
+          // never force it; the shipment status still advances.
+          console.warn('shipping.track_mirror_skipped', {
+            shipment_id: shipmentId,
+            order_status: order.status,
+            mirror,
+          });
+        }
+      }
+      if (update.toStatus === 'delivered' && shipment.cod) {
+        await tx
+          .update(payments)
+          .set({ status: 'cod_collected', updatedAt: sql`now()` })
+          .where(and(eq(payments.orderId, shipment.orderId), eq(payments.status, 'cod_pending_collection')));
+      }
+      if (mirror === 'shipped') notify = { orderId: shipment.orderId, stage: 'shipped' };
+      else if (mirror === 'out_for_delivery') notify = { orderId: shipment.orderId, stage: 'out_for_delivery' };
+      else if (mirror === 'delivered') notify = { orderId: shipment.orderId, stage: 'delivered' };
+    }
+
+    const stamp: Record<string, unknown> = { status: update.toStatus, updatedAt: sql`now()`, lastSyncedAt: sql`now()` };
+    if (update.toStatus === 'pickup_scheduled') stamp.pickupScheduledAt = sql`now()`;
+    await tx.update(shipments).set(stamp).where(eq(shipments.id, shipmentId));
+
+    await tx.insert(adminAuditLog).values({
+      adminUserId: null,
+      action: 'shipment.track',
+      entityType: 'shipment',
+      entityId: shipmentId,
+      before: { status: shipment.status },
+      after: { status: update.toStatus, source: update.source },
+    });
+    return true;
+  });
+
+  if (advanced && notify !== null) {
+    const n: { orderId: string; stage: 'shipped' | 'out_for_delivery' | 'delivered' } = notify;
+    void sendFulfilmentUpdate(n.orderId, n.stage).catch(() => {});
+  }
+  return { advanced };
+}
+
+/** Find the active shipment for an AWB (webhook/poller correlation). */
+export async function findShipmentByAwb(
+  awbCode: string,
+): Promise<{ id: string; status: string } | null> {
+  const [row] = await db
+    .select({ id: shipments.id, status: shipments.status })
+    .from(shipments)
+    .where(eq(shipments.awbCode, awbCode))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Active, non-terminal shipments with a stale `last_synced_at` — the poller set. */
+export async function listStalePollShipments(
+  olderThanMinutes = 30,
+  limit = 100,
+): Promise<{ id: string; awbCode: string }[]> {
+  const rows = await db
+    .select({ id: shipments.id, awbCode: shipments.awbCode })
+    .from(shipments)
+    .where(
+      sql`${shipments.supersededAt} IS NULL
+        AND ${shipments.awbCode} IS NOT NULL
+        AND ${shipments.status} IN ('awb_assigned','pickup_scheduled','picked_up','in_transit','out_for_delivery','rto_initiated','rto_in_transit')
+        AND (${shipments.lastSyncedAt} IS NULL OR ${shipments.lastSyncedAt} < now() - (${olderThanMinutes} * interval '1 minute'))`,
+    )
+    .orderBy(sql`${shipments.lastSyncedAt} NULLS FIRST`)
+    .limit(Math.min(500, Math.max(1, limit)));
+  return rows
+    .filter((r): r is { id: string; awbCode: string } => r.awbCode !== null)
+    .map((r) => ({ id: r.id, awbCode: r.awbCode }));
 }
 
 /**
@@ -687,6 +895,159 @@ export async function cancelShipment(
       return { ok: true, shipmentId, status: nextStatus };
     }),
   );
+}
+
+/**
+ * Gap B — auto-fulfil an order that was just marked `packed`: create the
+ * shipment + assign an AWB (courier auto-picked by the provider) so the admin
+ * doesn't click "Create shipment". Best-effort and NEVER throws — a provider
+ * hiccup leaves the shipment `pending` (the console's "needs attention" state
+ * with a manual Assign-AWB fallback), and never blocks the packed transition.
+ *
+ * Idempotent: an order that already has an active shipment with a
+ * `shiprocketOrderId` is a no-op; a `pending` shipment (created but AWB failed)
+ * is retried at the AWB step; anything past `pending` is left alone.
+ */
+export async function pushToShiprocket(orderId: string, adminUserId: string): Promise<void> {
+  try {
+    if (!isUuid(orderId)) return;
+
+    const [active] = await db
+      .select({
+        id: shipments.id,
+        status: shipments.status,
+        shiprocketOrderId: shipments.shiprocketOrderId,
+      })
+      .from(shipments)
+      .where(and(eq(shipments.orderId, orderId), sql`${shipments.supersededAt} IS NULL`))
+      .limit(1);
+
+    let shipmentId: string;
+    if (active) {
+      // Already created + progressed → nothing to do (idempotent).
+      if (active.status !== 'pending') return;
+      shipmentId = active.id;
+    } else {
+      const created = await createShipment(orderId, adminUserId);
+      if (!created.ok) {
+        console.warn('shipping.auto_push_create_failed', { order_id: orderId, code: created.code });
+        return; // no shipment row (e.g. address/weight gap) — manual create remains
+      }
+      shipmentId = created.shipmentId;
+    }
+
+    // Auto-assign AWB (no courier_id → provider applies Courier-Priority).
+    const awb = await assignAwb(shipmentId, {}, adminUserId);
+    if (!awb.ok) {
+      // Leave the shipment `pending` = "needs attention"; admin can Retry AWB.
+      console.warn('shipping.auto_push_awb_failed', { order_id: orderId, shipment_id: shipmentId, code: awb.code });
+    }
+  } catch (cause) {
+    console.error('shipping.auto_push_failed', {
+      order_id: orderId,
+      cause: cause instanceof Error ? cause.message : 'unknown',
+    });
+  }
+}
+
+/** Resolve an order id by number and auto-push (best-effort). */
+export async function pushToShiprocketByOrderNumber(
+  orderNumber: string,
+  adminUserId: string,
+): Promise<void> {
+  try {
+    const [o] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.orderNumber, orderNumber))
+      .limit(1);
+    if (o) await pushToShiprocket(o.id, adminUserId);
+  } catch {
+    /* best-effort */
+  }
+}
+
+export type BulkAction = 'label' | 'pickup';
+
+export type BulkResult =
+  | { ok: true; action: BulkAction; count: number; labelUrl?: string | null; pickupScheduledAt?: string | null }
+  | { ok: false; code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'UPSTREAM_ERROR'; message: string };
+
+/**
+ * Bulk print labels / request pickup over selected shipments (the morning
+ * workflow). Labels store `labelUrl` per shipment; pickup advances each
+ * `awb_assigned` shipment to `pickup_scheduled`. Guarded + audited by the route.
+ */
+export async function bulkShipmentAction(
+  action: BulkAction,
+  shipmentIds: unknown,
+  adminUserId: string,
+): Promise<BulkResult> {
+  if (!Array.isArray(shipmentIds) || shipmentIds.length === 0 || shipmentIds.length > 100) {
+    return { ok: false, code: 'VALIDATION_ERROR', message: 'Select 1–100 shipments.' };
+  }
+  const ids = shipmentIds.filter((s): s is string => typeof s === 'string' && isUuid(s));
+  if (ids.length === 0) return { ok: false, code: 'VALIDATION_ERROR', message: 'No valid shipments selected.' };
+
+  const rows = await db
+    .select({ id: shipments.id, srShipmentId: shipments.shiprocketShipmentId, status: shipments.status })
+    .from(shipments)
+    .where(and(inArray(shipments.id, ids), sql`${shipments.supersededAt} IS NULL`));
+  const srIds = rows.map((r) => r.srShipmentId).filter((s): s is string => s !== null && s !== '');
+  if (srIds.length === 0) {
+    return { ok: false, code: 'NOT_FOUND', message: 'No provider shipments to act on (assign an AWB first).' };
+  }
+
+  if (action === 'label') {
+    let labelUrl: string | null;
+    try {
+      const res = await getShippingProvider().getLabel(srIds);
+      labelUrl = res.labelUrl;
+    } catch {
+      return { ok: false, code: 'UPSTREAM_ERROR', message: "Couldn't generate labels. Please try again." };
+    }
+    if (labelUrl !== null) {
+      await db
+        .update(shipments)
+        .set({ labelUrl, updatedAt: sql`now()` })
+        .where(inArray(shipments.id, rows.map((r) => r.id)));
+    }
+    await db.insert(adminAuditLog).values({
+      adminUserId,
+      action: 'shipment.bulk_label',
+      entityType: 'shipment',
+      entityId: null,
+      before: null,
+      after: { shipmentIds: rows.map((r) => r.id), labelUrl, count: rows.length },
+    });
+    return { ok: true, action, count: rows.length, labelUrl };
+  }
+
+  // action === 'pickup'
+  let pickupDate: string | null;
+  try {
+    const res = await getShippingProvider().requestPickup(srIds);
+    pickupDate = res.pickupScheduledDateIso;
+  } catch {
+    return { ok: false, code: 'UPSTREAM_ERROR', message: "Couldn't request pickup. Please try again." };
+  }
+  // Advance each awb_assigned shipment to pickup_scheduled (machine + event + audit).
+  let advanced = 0;
+  for (const r of rows) {
+    if (r.status === 'awb_assigned') {
+      const res = await advanceShipment(r.id, 'pickup_scheduled', adminUserId);
+      if (res.ok) advanced += 1;
+    }
+  }
+  await db.insert(adminAuditLog).values({
+    adminUserId,
+    action: 'shipment.bulk_pickup',
+    entityType: 'shipment',
+    entityId: null,
+    before: null,
+    after: { shipmentIds: rows.map((r) => r.id), pickupDate, advanced },
+  });
+  return { ok: true, action, count: advanced, pickupScheduledAt: pickupDate };
 }
 
 /** The active shipment id for an order, if any (for the order-detail panel). */

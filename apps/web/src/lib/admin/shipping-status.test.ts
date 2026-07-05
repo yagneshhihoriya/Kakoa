@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canAdvanceShipment,
+  canAdvanceTracking,
   isTerminalShipment,
   nextShipmentStatuses,
   validateAwbInput,
@@ -87,6 +88,43 @@ describe('nextShipmentStatuses', () => {
     expect(nextShipmentStatuses('rto_initiated')).toEqual(['rto_in_transit']);
     expect(nextShipmentStatuses('delivered')).toEqual([]);
     expect(nextShipmentStatuses('cancelled')).toEqual([]);
+  });
+});
+
+describe('canAdvanceTracking (webhook/poller forward-only, skips allowed)', () => {
+  it('allows forward skips (couriers skip scans)', () => {
+    expect(canAdvanceTracking('awb_assigned', 'in_transit')).toBe(true);
+    expect(canAdvanceTracking('picked_up', 'delivered')).toBe(true);
+    expect(canAdvanceTracking('out_for_delivery', 'delivered')).toBe(true);
+  });
+
+  it('never regresses (late out-of-order scan)', () => {
+    expect(canAdvanceTracking('delivered', 'out_for_delivery')).toBe(false);
+    expect(canAdvanceTracking('in_transit', 'picked_up')).toBe(false);
+    expect(canAdvanceTracking('out_for_delivery', 'out_for_delivery')).toBe(false);
+  });
+
+  it('enters RTO from in-flight and ascends it', () => {
+    expect(canAdvanceTracking('in_transit', 'rto_initiated')).toBe(true);
+    expect(canAdvanceTracking('out_for_delivery', 'rto_initiated')).toBe(true);
+    expect(canAdvanceTracking('rto_initiated', 'rto_in_transit')).toBe(true);
+    expect(canAdvanceTracking('rto_in_transit', 'rto_delivered')).toBe(true);
+  });
+
+  it('never returns to the forward track after RTO', () => {
+    expect(canAdvanceTracking('rto_initiated', 'delivered')).toBe(false);
+    expect(canAdvanceTracking('rto_in_transit', 'out_for_delivery')).toBe(false);
+  });
+
+  it('never advances from a terminal state', () => {
+    expect(canAdvanceTracking('delivered', 'rto_initiated')).toBe(false);
+    expect(canAdvanceTracking('rto_delivered', 'in_transit')).toBe(false);
+    expect(canAdvanceTracking('cancelled', 'in_transit')).toBe(false);
+  });
+
+  it('allows cancelled / lost from any non-terminal', () => {
+    expect(canAdvanceTracking('in_transit', 'cancelled')).toBe(true);
+    expect(canAdvanceTracking('picked_up', 'lost')).toBe(true);
   });
 });
 

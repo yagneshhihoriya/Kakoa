@@ -25,7 +25,7 @@ import { assertTransition } from '@kakoa/core';
 import { db, orders, orderStatusHistory, payments } from '@kakoa/db';
 import { and, eq, sql } from 'drizzle-orm';
 
-import { sendOrderConfirmation } from '@/lib/email/send';
+import { sendAdminNewOrderAlert, sendOrderConfirmation } from '@/lib/email/send';
 
 export interface ConfirmPaymentInput {
   providerOrderId: string;
@@ -130,6 +130,8 @@ export async function confirmPayment(
   // customer is mailed at most once whichever confirm trigger arrives first.
   if (!result.duplicate) {
     void sendOrderConfirmation(result.orderId).catch(() => {});
+    // Gap A — alert the ops inbox that a (now-paid) order needs fulfilment.
+    void sendAdminNewOrderAlert(result.orderId).catch(() => {});
   }
 
   return result;

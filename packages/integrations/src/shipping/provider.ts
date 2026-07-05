@@ -32,6 +32,15 @@ export interface ServiceabilityResult {
   options: ServiceabilityOption[];
 }
 
+/** One line for a Shiprocket adhoc order. */
+export interface CreateShipmentItem {
+  name: string;
+  sku: string;
+  units: number;
+  /** Unit selling price in paise (converted to rupees by the provider). */
+  sellingPricePaise: number;
+}
+
 /**
  * The parcel + destination facts a shipment push needs. Built by the caller ONLY
  * from the order's address snapshot + variant physicals — the provider never
@@ -40,11 +49,57 @@ export interface ServiceabilityResult {
 export interface CreateShipmentInput {
   /** KAKOA order number (e.g. `KK-00042`) — the channel reference for idempotency. */
   orderNumber: string;
+  /** Order placement time (ISO) — Shiprocket wants an `order_date`. */
+  orderDateIso: string;
   cod: boolean;
-  /** Destination PIN (validated by the caller). */
-  pincode: string;
+  /** Goods value to declare / collect, in paise (COD collects this). */
+  subTotalPaise: number;
+  /** Registered Shiprocket pickup-location nickname (EXACT match). */
+  pickupLocation: string;
+  /** Destination + recipient (from the order's address snapshot). */
+  billing: {
+    name: string;
+    phone: string;
+    address: string;
+    address2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    email?: string;
+  };
+  items: CreateShipmentItem[];
   /** Total packed weight in grams (> 0, validated by the caller). */
   weightGrams: number;
+  lengthCm?: number;
+  breadthCm?: number;
+  heightCm?: number;
+}
+
+/** A normalized courier scan (from `track` / webhook), pre-mapping. */
+export interface TrackingScan {
+  statusCode: number | null;
+  statusLabel: string | null;
+  activity: string | null;
+  location: string | null;
+  occurredAtIso: string | null;
+}
+
+/** Normalized tracking read — the CALLER maps `statusCode`/`statusLabel` → SHIPMENT_STATUSES. */
+export interface TrackingResult {
+  awb: string;
+  statusCode: number | null;
+  statusLabel: string | null;
+  scans: TrackingScan[];
+}
+
+export interface LabelResult {
+  labelUrl: string | null;
+}
+export interface ManifestResult {
+  manifestUrl: string | null;
+}
+export interface PickupResult {
+  pickupScheduledDateIso: string | null;
 }
 
 /** The gateway handles created for a shipment push. */
@@ -95,6 +150,15 @@ export interface ShippingProvider {
     courierCompanyId?: number;
   }): Promise<AssignAwbResult>;
 
-  // TODO(shipping Phase 2-3): add `track(awb)` for the 30-min reconciliation
-  // poller, plus label/pickup/cancel gateway calls (docs/modules/shipping-fulfillment.md).
+  /** Generate (or fetch) the shipping-label PDF for one or more SR shipment ids. */
+  getLabel(shiprocketShipmentIds: string[]): Promise<LabelResult>;
+
+  /** Generate the manifest PDF for one or more SR shipment ids. */
+  getManifest(shiprocketShipmentIds: string[]): Promise<ManifestResult>;
+
+  /** Request a courier pickup for one or more SR shipment ids. */
+  requestPickup(shiprocketShipmentIds: string[]): Promise<PickupResult>;
+
+  /** Track by AWB — returns the raw SR status code/label + scans (caller maps them). */
+  track(awb: string): Promise<TrackingResult>;
 }

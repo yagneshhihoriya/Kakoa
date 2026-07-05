@@ -14,6 +14,7 @@ import {
   adminConfirmCod,
   type AdminActionResult,
 } from '@/lib/admin/order-actions';
+import { pushToShiprocketByOrderNumber } from '@/lib/admin/shipping';
 import type { Permission } from '@platform/kernel';
 
 const ACTIONS = ['confirm-cod', 'advance', 'cancel'] as const;
@@ -55,6 +56,11 @@ export async function POST(
       return jsonErr('VALIDATION_ERROR', 'Invalid target status.');
     }
     result = await adminAdvanceStatus(orderNumber, toStatus as OrderStatus, adminId);
+    // Gap B — marking `packed` auto-creates the shipment + assigns an AWB
+    // (best-effort, idempotent). The manual "Create shipment" button remains.
+    if (result.ok && toStatus === 'packed') {
+      void pushToShiprocketByOrderNumber(orderNumber, adminId).catch(() => {});
+    }
   } else {
     const reasonRaw = (body as { reason?: unknown }).reason;
     const reason =

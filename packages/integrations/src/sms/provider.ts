@@ -22,4 +22,24 @@ export interface SmsProvider {
     code: string;
     purpose: string;
   }): Promise<{ providerMessageId: string | null }>;
+
+  /**
+   * Deliver a transactional (non-OTP) SMS — order shipped / delivered alerts.
+   *
+   * India DLT requires pre-approved templates; the real provider maps
+   * `template` → its registered DLT template id. Until DLT is wired the real
+   * provider may throw (callers send this best-effort, so a throw degrades to
+   * "SMS not sent" and email remains the guaranteed channel).
+   *
+   * @param a.phoneE164 - Normalized E.164 number.
+   * @param a.message   - Fully-rendered message body (already localized/short).
+   * @param a.template  - Logical template key (e.g. `order_shipped`) for DLT mapping.
+   * @returns The upstream message id when available, else `null`.
+   * @throws On a hard delivery failure (or when no DLT template is configured).
+   */
+  sendText(a: {
+    phoneE164: string;
+    message: string;
+    template: string;
+  }): Promise<{ providerMessageId: string | null }>;
 }

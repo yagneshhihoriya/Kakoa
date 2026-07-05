@@ -59,7 +59,7 @@ import { readCartToken } from '@/lib/cart/cookies';
 import { getCurrentCustomer } from '@/lib/auth/session';
 import { verifyCode } from '@/lib/auth/otp';
 import { saveCheckoutAddress } from '@/lib/account/addresses';
-import { sendOrderConfirmation } from '@/lib/email/send';
+import { sendAdminNewOrderAlert, sendOrderConfirmation } from '@/lib/email/send';
 import { computeQuote, type ComputeQuoteInput } from './quote';
 import { loadCheckoutSettings } from './settings';
 
@@ -474,6 +474,8 @@ export async function placeOrder(
     // any transaction — never blocks or fails the placement (COD is "order
     // placed — we'll confirm by phone").
     void sendOrderConfirmation(committed.orderId).catch(() => {});
+    // Gap A — a COD order is a new order for ops (still pending confirmation).
+    void sendAdminNewOrderAlert(committed.orderId).catch(() => {});
     return {
       paymentMode: 'cod',
       orderId: committed.orderId,

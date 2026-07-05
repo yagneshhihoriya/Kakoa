@@ -40,12 +40,19 @@ export type {
   ServiceabilityResult,
   ServiceabilityOption,
   CreateShipmentInput,
+  CreateShipmentItem,
   CreateShipmentResult,
   AssignAwbResult,
+  TrackingResult,
+  TrackingScan,
+  LabelResult,
+  ManifestResult,
+  PickupResult,
 } from "./shipping/provider";
+export { mapShiprocketStatus, SHIPROCKET_STATUS_CODES } from "./shipping/status-map";
 export {
   getShippingProvider,
   resetShippingProvider,
 } from "./shipping/index";
 export { MockShippingProvider } from "./shipping/mock";
-export { ShiprocketShippingProvider } from "./shipping/shiprocket";
+export { ShiprocketShippingProvider, buildAdhocOrderBody } from "./shipping/shiprocket";

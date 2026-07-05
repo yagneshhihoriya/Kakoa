@@ -336,3 +336,130 @@ export function orderCancelledEmail(m: OrderEmailModel): RenderedEmail {
 
   return { subject, html: shell(inner), text };
 }
+
+/* ------------------------------------------------------------------ */
+/* Fulfilment updates (shipped / out for delivery / delivered)         */
+/* ------------------------------------------------------------------ */
+
+export type FulfilmentStage = 'shipped' | 'out_for_delivery' | 'delivered';
+
+export interface FulfilmentEmailModel {
+  orderNumber: string;
+  customerName: string;
+  stage: FulfilmentStage;
+  /** Courier tracking number, once assigned. */
+  awb: string | null;
+  courierName: string | null;
+  /** Human ETA line, e.g. "Expected by Fri, 10 Jul" (optional). */
+  etaText: string | null;
+  /** Absolute `${SITE_URL}/account/track?order=…&accessToken=…` link. */
+  trackUrl: string;
+}
+
+const FULFILMENT_COPY: Record<
+  FulfilmentStage,
+  { headline: string; lede: string; subject: (n: string) => string }
+> = {
+  shipped: {
+    headline: 'Your order is on its way',
+    lede: 'Good news — your KAKAO box has shipped and is heading to you.',
+    subject: (n) => `Shipped — order ${n} is on its way · KAKAO`,
+  },
+  out_for_delivery: {
+    headline: 'Out for delivery today',
+    lede: "Your box is out for delivery today — keep your phone handy for the courier.",
+    subject: (n) => `Out for delivery — order ${n} · KAKAO`,
+  },
+  delivered: {
+    headline: 'Delivered — enjoy!',
+    lede: 'Your KAKAO order has been delivered. We hope every piece is a delight.',
+    subject: (n) => `Delivered — order ${n} · KAKAO`,
+  },
+};
+
+/**
+ * A fulfilment-stage update email (shipped / out-for-delivery / delivered) with
+ * the AWB + courier + a track button. All dynamic strings are `esc()`-encoded.
+ */
+export function orderFulfilmentEmail(m: FulfilmentEmailModel): RenderedEmail {
+  const copy = FULFILMENT_COPY[m.stage];
+  const subject = copy.subject(m.orderNumber);
+
+  const courierLine =
+    m.awb !== null && m.awb !== ''
+      ? para(
+          `Courier: <strong>${esc(m.courierName ?? 'Assigned')}</strong><br/>Tracking (AWB): <strong>${esc(m.awb)}</strong>${
+            m.etaText !== null && m.etaText !== '' ? `<br/>${esc(m.etaText)}` : ''
+          }`,
+        )
+      : '';
+
+  const inner = `
+    <tr>
+      <td style="padding:8px 32px 24px 32px;">
+        <h1 style="margin:16px 0 4px 0;font-size:24px;font-weight:700;color:${INK};font-family:Georgia,'Times New Roman',serif;text-align:center;">${esc(copy.headline)}</h1>
+        <p style="margin:0 0 20px 0;font-size:13px;color:${MUTED};text-align:center;font-family:Arial,Helvetica,sans-serif;">Order ${esc(m.orderNumber)}</p>
+        ${para(esc(m.customerName) + ',')}
+        ${para(copy.lede)}
+        ${courierLine}
+        <div style="height:20px;"></div>
+        ${trackButton(m.trackUrl)}
+      </td>
+    </tr>`;
+
+  const text = [
+    `${copy.headline} — order ${m.orderNumber}`,
+    '',
+    `${m.customerName},`,
+    copy.lede,
+    m.awb !== null && m.awb !== ''
+      ? `\nCourier: ${m.courierName ?? 'Assigned'}\nTracking (AWB): ${m.awb}${m.etaText ? `\n${m.etaText}` : ''}`
+      : '',
+    '',
+    `Track your order: ${m.trackUrl}`,
+  ].join('\n');
+
+  return { subject, html: shell(inner), text };
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin new-order alert (ops inbox)                                   */
+/* ------------------------------------------------------------------ */
+
+export interface AdminNewOrderModel {
+  orderNumber: string;
+  paymentMode: 'prepaid' | 'cod';
+  totalPaise: number;
+  itemCount: number;
+  city: string;
+  /** Absolute admin order URL. */
+  adminUrl: string;
+}
+
+/** A terse internal "new order" alert for the ops inbox (not customer-facing). */
+export function adminNewOrderAlertEmail(m: AdminNewOrderModel): RenderedEmail {
+  const subject = `New order ${m.orderNumber} — ${formatPaise(m.totalPaise)} (${m.paymentMode.toUpperCase()})`;
+  const inner = `
+    <tr>
+      <td style="padding:8px 32px 24px 32px;">
+        <h1 style="margin:16px 0 4px 0;font-size:22px;font-weight:700;color:${INK};font-family:Georgia,'Times New Roman',serif;text-align:center;">New order ${esc(m.orderNumber)}</h1>
+        ${para(
+          `<strong>${formatPaise(m.totalPaise)}</strong> &middot; ${esc(String(m.itemCount))} item${m.itemCount === 1 ? '' : 's'} &middot; ${esc(m.paymentMode.toUpperCase())}<br/>Ship to: ${esc(m.city)}`,
+        )}
+        <div style="height:12px;"></div>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+          <tr><td align="center" style="border-radius:8px;background:${INK};">
+            <a href="${esc(m.adminUrl)}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:700;color:${CREAM};text-decoration:none;font-family:Arial,Helvetica,sans-serif;">Open in admin</a>
+          </td></tr>
+        </table>
+      </td>
+    </tr>`;
+  const text = [
+    `New order ${m.orderNumber}`,
+    `${formatPaise(m.totalPaise)} · ${String(m.itemCount)} item(s) · ${m.paymentMode.toUpperCase()}`,
+    `Ship to: ${m.city}`,
+    '',
+    `Open in admin: ${m.adminUrl}`,
+  ].join('\n');
+  return { subject, html: shell(inner), text };
+}

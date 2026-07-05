@@ -60,6 +60,26 @@ export class Msg91SmsProvider implements SmsProvider {
     }
   }
 
+  /**
+   * Transactional (non-OTP) SMS. India DLT requires a pre-approved template per
+   * message type; until those template ids are registered + configured this
+   * throws (a config gap), and callers send it best-effort so it degrades to
+   * "SMS not sent" with email as the guaranteed channel.
+   *
+   * TODO(notifications DLT): map `template` → a registered MSG91/DLT template id
+   * (e.g. MSG91_TXN_TEMPLATE_IDS) and POST the flow with the rendered variables.
+   */
+  // eslint-disable-next-line @typescript-eslint/require-await -- async to satisfy the interface
+  async sendText(_a: {
+    phoneE164: string;
+    message: string;
+    template: string;
+  }): Promise<{ providerMessageId: string | null }> {
+    throw new PermanentMsg91Error(
+      "MSG91 transactional SMS not configured — register a DLT template id first",
+    );
+  }
+
   private async postOnce(
     authKey: string,
     body: string,

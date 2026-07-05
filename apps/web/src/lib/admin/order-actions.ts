@@ -26,7 +26,7 @@ import {
 } from '@kakoa/core';
 import { and, eq, sql } from 'drizzle-orm';
 import { executeCancelRefund, type RefundIntent } from '@/lib/orders/cancel';
-import { sendOrderCancellation } from '@/lib/email/send';
+import { sendOrderCancellation, sendOrderShipped } from '@/lib/email/send';
 
 export type AdminActionResult =
   | { ok: true; status: OrderStatus }
@@ -81,7 +81,8 @@ export async function applyOrderTransitionTx(
   order: { id: string; status: OrderStatus },
   toStatus: OrderStatus,
   opts: {
-    adminUserId: string;
+    /** `null` for a system/webhook-driven transition (courier tracking). */
+    adminUserId: string | null;
     action: string;
     note: string;
     actorType?: 'admin' | 'system' | 'webhook';
@@ -169,23 +170,44 @@ export function adminConfirmCod(
   });
 }
 
-export function adminAdvanceStatus(
+export async function adminAdvanceStatus(
   orderNumber: string,
   toStatus: OrderStatus,
   adminUserId: string,
 ): Promise<AdminActionResult> {
   if (!ADMIN_ADVANCE_TARGETS.includes(toStatus)) {
-    return Promise.resolve({
+    return {
       ok: false,
       code: 'VALIDATION_ERROR',
       message: 'Unsupported status transition.',
-    });
+    };
   }
-  return applyStatusTransition(orderNumber, toStatus, {
+  const result = await applyStatusTransition(orderNumber, toStatus, {
     adminUserId,
     action: 'order.transition',
     note: `Admin advanced to ${toStatus.replace(/_/g, ' ')}`,
   });
+
+  // Gap C — the manual "Mark shipped" path fires the customer shipped email
+  // (best-effort, AFTER the transition, idempotent via the send's key).
+  if (result.ok && toStatus === 'shipped') {
+    void notifyShipped(orderNumber);
+  }
+  return result;
+}
+
+/** Best-effort: resolve the order id by number and fire the shipped email. */
+async function notifyShipped(orderNumber: string): Promise<void> {
+  try {
+    const [o] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.orderNumber, orderNumber))
+      .limit(1);
+    if (o) await sendOrderShipped(o.id);
+  } catch {
+    /* best-effort */
+  }
 }
 
 /**
