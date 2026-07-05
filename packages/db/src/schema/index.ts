@@ -17,3 +17,4 @@ export * from './inventory';
 export * from './reviews';
 export * from './returns';
 export * from './admin';
+export * from './notifications';

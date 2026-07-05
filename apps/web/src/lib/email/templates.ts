@@ -119,6 +119,27 @@ function shell(inner: string): string {
 </div>`;
 }
 
+/**
+ * Wrap an admin/override body (already HTML-escaped) in the brand shell. Blank
+ * lines split paragraphs; single newlines become `<br/>`. Used by editable
+ * notification-template overrides + the send-test so overridden copy still
+ * renders in the KAKAO chrome.
+ */
+export function wrapEmailBody(escapedBody: string): string {
+  const paras = escapedBody
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter((block) => block !== '')
+    .map((block) => para(block.replace(/\n/g, '<br/>')));
+  const inner = `
+    <tr>
+      <td style="padding:8px 32px 24px 32px;">
+        ${paras.join('\n')}
+      </td>
+    </tr>`;
+  return shell(inner);
+}
+
 /** A body paragraph in the sans stack (better email rendering than serif). */
 function para(html: string): string {
   return `<p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;color:${INK};font-family:Arial,Helvetica,sans-serif;">${html}</p>`;

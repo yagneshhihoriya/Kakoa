@@ -15,10 +15,13 @@
  * SERVER-ONLY: uses @kakoa/db + @kakoa/integrations.
  */
 import { db, orders, orderItems, shipments, storeSettings } from '@kakoa/db';
+import { formatPaise } from '@kakoa/core';
 import { getEmailProvider, getSmsProvider } from '@kakoa/integrations';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { siteUrl } from '@/lib/seo/site';
+import { recordNotification } from '@/lib/admin/notification-log';
+import { resolveOverrideEmail, resolveOverrideSms } from '@/lib/admin/notification-templates';
 import {
   adminNewOrderAlertEmail,
   orderCancelledEmail,
@@ -27,6 +30,52 @@ import {
   type FulfilmentStage,
   type OrderEmailModel,
 } from './templates';
+
+/**
+ * Deliver a rendered email + record a masked `notification_log` row. Best-effort:
+ * a provider throw is recorded as `failed` and swallowed (email is never a
+ * blocking path). `notification_log`-insert failures are swallowed by
+ * `recordNotification`.
+ */
+async function deliverEmail(
+  templateKey: string,
+  orderId: string | null,
+  to: string,
+  rendered: { subject: string; html: string; text: string },
+  idempotencyKey: string,
+): Promise<void> {
+  let status: 'sent' | 'failed' = 'sent';
+  let providerMessageId: string | null = null;
+  let error: string | null = null;
+  try {
+    const r = await getEmailProvider().send({ to, ...rendered, idempotencyKey });
+    providerMessageId = r.providerMessageId;
+  } catch (cause) {
+    status = 'failed';
+    error = cause instanceof Error ? cause.message : 'send failed';
+  }
+  await recordNotification({ channel: 'email', templateKey, recipient: to, orderId, status, providerMessageId, error });
+}
+
+/** Deliver a transactional SMS + record a masked log row. Best-effort. */
+async function deliverSms(
+  templateKey: string,
+  orderId: string | null,
+  phoneE164: string,
+  message: string,
+): Promise<void> {
+  let status: 'sent' | 'failed' = 'sent';
+  let providerMessageId: string | null = null;
+  let error: string | null = null;
+  try {
+    const r = await getSmsProvider().sendText({ phoneE164, message, template: templateKey });
+    providerMessageId = r.providerMessageId;
+  } catch (cause) {
+    status = 'failed';
+    error = cause instanceof Error ? cause.message : 'send failed';
+  }
+  await recordNotification({ channel: 'sms', templateKey, recipient: phoneE164, orderId, status, providerMessageId, error });
+}
 
 /**
  * Load an order + its items and shape the render model. Returns `null` when the
@@ -119,20 +168,27 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
   try {
     const loaded = await loadOrderEmailModel(orderId);
     if (loaded === null) return;
-    const { subject, html, text } = orderConfirmationEmail(loaded.model);
-    await getEmailProvider().send({
-      to: loaded.to,
-      subject,
-      html,
-      text,
-      idempotencyKey: `order-confirm-${orderId}`,
-    });
+    const vars = orderEmailVars(loaded.model);
+    // DB override (if an admin set one) else the rich code template.
+    const override = await resolveOverrideEmail('order_confirmed', vars);
+    const rendered = override ?? orderConfirmationEmail(loaded.model);
+    await deliverEmail('order_confirmed', orderId, loaded.to, rendered, `order-confirm-${orderId}`);
   } catch (cause) {
     console.error('email.order_confirmation_failed', {
       order_id: orderId,
       cause: cause instanceof Error ? cause.message : 'unknown',
     });
   }
+}
+
+/** The base `{{placeholder}}` values for an order email/SMS. */
+function orderEmailVars(m: OrderEmailModel): Record<string, string> {
+  return {
+    orderNumber: m.orderNumber,
+    customerName: m.shippingAddress.fullName,
+    trackingUrl: m.trackUrl,
+    amount: formatPaise(m.totalPaise),
+  };
 }
 
 /**
@@ -143,14 +199,9 @@ export async function sendOrderCancellation(orderId: string): Promise<void> {
   try {
     const loaded = await loadOrderEmailModel(orderId);
     if (loaded === null) return;
-    const { subject, html, text } = orderCancelledEmail(loaded.model);
-    await getEmailProvider().send({
-      to: loaded.to,
-      subject,
-      html,
-      text,
-      idempotencyKey: `order-cancel-${orderId}`,
-    });
+    const override = await resolveOverrideEmail('order_cancelled', orderEmailVars(loaded.model));
+    const rendered = override ?? orderCancelledEmail(loaded.model);
+    await deliverEmail('order_cancelled', orderId, loaded.to, rendered, `order-cancel-${orderId}`);
   } catch (cause) {
     console.error('email.order_cancellation_failed', {
       order_id: orderId,
@@ -236,34 +287,34 @@ export async function sendFulfilmentUpdate(
         : null;
     const awb = shipment?.awbCode ?? null;
     const courierName = shipment?.courierName ?? null;
+    const key = SMS_TEMPLATE[stage]; // 'order_shipped' | 'order_out_for_delivery' | 'order_delivered'
+    const vars: Record<string, string> = {
+      orderNumber: order.orderNumber,
+      customerName: order.shippingAddress.fullName,
+      trackingUrl: trackUrl,
+      awb: awb ?? '',
+      courierName: courierName ?? '',
+      eta: etaText ?? '',
+    };
 
     if (order.contactEmail !== null && order.contactEmail !== '') {
-      const { subject, html, text } = orderFulfilmentEmail({
-        orderNumber: order.orderNumber,
-        customerName: order.shippingAddress.fullName,
-        stage,
-        awb,
-        courierName,
-        etaText,
-        trackUrl,
-      });
-      await getEmailProvider().send({
-        to: order.contactEmail,
-        subject,
-        html,
-        text,
-        idempotencyKey: `order-${stage}-${orderId}`,
-      });
+      const override = await resolveOverrideEmail(key, vars);
+      const rendered =
+        override ??
+        orderFulfilmentEmail({ orderNumber: order.orderNumber, customerName: order.shippingAddress.fullName, stage, awb, courierName, etaText, trackUrl });
+      await deliverEmail(key, orderId, order.contactEmail, rendered, `order-${stage}-${orderId}`);
     }
 
     // Best-effort SMS to the contact phone (Fake in dev; DLT-gated in prod).
+    const overrideSms = await resolveOverrideSms(key, vars);
     const smsBody =
-      stage === 'delivered'
+      overrideSms ??
+      (stage === 'delivered'
         ? `KAKAO: Order ${order.orderNumber} delivered. Enjoy! ${trackUrl}`
         : stage === 'out_for_delivery'
           ? `KAKAO: Order ${order.orderNumber} is out for delivery today. Track: ${trackUrl}`
-          : `KAKAO: Order ${order.orderNumber} shipped${courierName ? ` via ${courierName}` : ''}${awb ? ` (AWB ${awb})` : ''}. Track: ${trackUrl}`;
-    await sendSmsBestEffort(order.contactPhone, smsBody, SMS_TEMPLATE[stage]);
+          : `KAKAO: Order ${order.orderNumber} shipped${courierName ? ` via ${courierName}` : ''}${awb ? ` (AWB ${awb})` : ''}. Track: ${trackUrl}`);
+    await deliverSms(key, orderId, order.contactPhone, smsBody);
   } catch (cause) {
     console.error('email.order_fulfilment_failed', {
       order_id: orderId,
