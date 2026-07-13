@@ -65,14 +65,16 @@ export default async function AdminShellLayout({
     .toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-[#f7f2ea] text-[#2a1d12]">
+    // h-screen + overflow-hidden pins the shell to the viewport so ONLY the main
+    // column scrolls — the sidebar and top bar stay fixed on long pages.
+    <div className="flex h-screen overflow-hidden bg-[#f7f2ea] text-[#2a1d12]">
       <AdminSidebar
         business={{ name: ctx.profile.name, vertical: ctx.profile.vertical }}
         sections={sections}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-end gap-4 border-b border-[#eadbc6] bg-white/80 px-6 py-3 backdrop-blur">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center justify-end gap-4 border-b border-[#eadbc6] bg-white/80 px-6 py-3 backdrop-blur">
           <button
             type="button"
             aria-label="Notifications"
@@ -94,7 +96,7 @@ export default async function AdminShellLayout({
             </span>
           </div>
         </header>
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

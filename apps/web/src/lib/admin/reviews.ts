@@ -11,7 +11,7 @@
 import { adminAuditLog, customers, db, products, reviews } from '@kakoa/db';
 import type { ReviewStatus } from '@kakoa/core';
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
-import { revalidateTag } from 'next/cache';
+import { revalidateCatalog } from '@/lib/catalog/queries';
 import { withConstraintMapping } from './db-errors';
 import { displayReviewerName, type ModerationValues } from './review-format';
 import { isUuid } from './product-validation';
@@ -190,9 +190,9 @@ export async function moderateReview(
         after: { status: values.decision, decision: values.decision, note: values.note },
       });
 
-      // PDP reads reviews through the product rating, cached under 'products'
-      // (per-slug tags are covered by the blanket tag). 2-arg form required (Next 16).
-      revalidateTag('products', 'max');
+      // PDP shows the review list + rating (cached). Purge catalog caches +
+      // paths so an approved review appears immediately on the storefront.
+      await revalidateCatalog();
       return { ok: true, status: values.decision, productId: review.productId };
     }),
   );

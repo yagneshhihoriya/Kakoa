@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin/customers";
 import { NoAccess } from "@/components/admin/NoAccess";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusPill } from "@/components/admin/StatusPill";
 import { CustomerBlockButton } from "@/components/admin/CustomerBlockButton";
 
 export const dynamic = "force-dynamic";
@@ -45,11 +46,7 @@ export default async function AdminCustomerDetailPage({
         <h1 className="text-[24px] text-[#2a1d12]" style={{ fontFamily: "var(--font-display), serif" }}>
           {displayName}
         </h1>
-        {customer.isBlocked ? (
-          <span className="inline-block rounded-full bg-[#f6e0e0] px-2.5 py-1 text-[11.5px] font-medium text-[#b25b5b]">Blocked</span>
-        ) : (
-          <span className="inline-block rounded-full bg-[#dff0e3] px-2.5 py-1 text-[11.5px] font-medium text-[#3f8a54]">Active</span>
-        )}
+        <StatusPill tone={customer.isBlocked ? "danger" : "success"} label={customer.isBlocked ? "Blocked" : "Active"} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

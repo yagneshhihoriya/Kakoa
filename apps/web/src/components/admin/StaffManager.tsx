@@ -189,7 +189,19 @@ export function StaffManager({
                       <button
                         type="button"
                         disabled={isSelf || busyId === r.id}
-                        onClick={() => save(r, { isActive: !r.isActive })}
+                        onClick={() => {
+                          const next = !r.isActive;
+                          // Deactivating signs the admin out immediately — confirm first.
+                          if (
+                            !next &&
+                            !window.confirm(
+                              `Deactivate ${r.name}? They'll be signed out immediately and can't sign in until reactivated.`,
+                            )
+                          ) {
+                            return;
+                          }
+                          void save(r, { isActive: next });
+                        }}
                         title={isSelf ? "You can't change your own active status" : undefined}
                         className={
                           "inline-block rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors disabled:opacity-60 " +

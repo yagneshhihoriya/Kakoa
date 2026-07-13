@@ -111,6 +111,26 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     hint: '14-digit FSSAI license.',
     default: '11525023000841',
   },
+  {
+    key: 'grievance_officer_name',
+    group: 'Legal',
+    label: 'Grievance officer name',
+    type: 'string',
+    minLen: 2,
+    maxLen: 80,
+    hint: 'Named officer shown on Contact/Legal pages (Consumer Protection E-Commerce Rules, 2020).',
+    default: 'Grievance Officer',
+  },
+  {
+    key: 'country_of_origin',
+    group: 'Legal',
+    label: 'Country of origin',
+    type: 'string',
+    minLen: 2,
+    maxLen: 60,
+    hint: 'Shown on product pages (Legal Metrology / E-Commerce Rules).',
+    default: 'India',
+  },
   // ── Fees & shipping (NOT retroactive — snapshotted at placement) ─────
   {
     key: 'shipping_fee_standard_paise',
@@ -192,6 +212,16 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'Support email',
     type: 'email',
     default: 'support@kakoa.in',
+  },
+  {
+    key: 'support_hours',
+    group: 'Support',
+    label: 'Support hours',
+    type: 'string',
+    minLen: 2,
+    maxLen: 80,
+    hint: 'e.g. Mon–Sat, 10:00–18:00 IST — shown on the Contact page.',
+    default: 'Monday to Saturday, 10:00–18:00 IST',
   },
 ];
 

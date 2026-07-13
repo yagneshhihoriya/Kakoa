@@ -28,7 +28,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_confirmed',
     channel: 'email',
     label: 'Order confirmed',
-    defaultSubject: 'Payment received — order {{orderNumber}} · KAKAO',
+    defaultSubject: 'Payment received — order {{orderNumber}} · Kakao',
     defaultBody:
       'Hi {{customerName}},\n\nThank you — your order {{orderNumber}} is confirmed and we\'re getting it ready with care.\n\nTrack it any time: {{trackingUrl}}',
     placeholders: [...COMMON, 'amount'],
@@ -37,7 +37,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_cancelled',
     channel: 'email',
     label: 'Order cancelled',
-    defaultSubject: 'Order {{orderNumber}} cancelled · KAKAO',
+    defaultSubject: 'Order {{orderNumber}} cancelled · Kakao',
     defaultBody:
       'Hi {{customerName}},\n\nWe\'ve cancelled order {{orderNumber}} as requested. Any amount paid is refunded to the original method.',
     placeholders: [...COMMON, 'amount'],
@@ -46,7 +46,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_shipped',
     channel: 'email',
     label: 'Order shipped',
-    defaultSubject: 'Shipped — order {{orderNumber}} is on its way · KAKAO',
+    defaultSubject: 'Shipped — order {{orderNumber}} is on its way · Kakao',
     defaultBody:
       'Hi {{customerName}},\n\nGood news — order {{orderNumber}} has shipped via {{courierName}} (AWB {{awb}}).\n\nTrack it: {{trackingUrl}}',
     placeholders: [...COMMON, 'awb', 'courierName', 'eta'],
@@ -56,14 +56,14 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     channel: 'sms',
     label: 'Order shipped',
     defaultBody:
-      'KAKAO: Order {{orderNumber}} shipped via {{courierName}} (AWB {{awb}}). Track: {{trackingUrl}}',
+      'Kakao: Order {{orderNumber}} shipped via {{courierName}} (AWB {{awb}}). Track: {{trackingUrl}}',
     placeholders: [...COMMON, 'awb', 'courierName'],
   },
   {
     key: 'order_out_for_delivery',
     channel: 'email',
     label: 'Out for delivery',
-    defaultSubject: 'Out for delivery — order {{orderNumber}} · KAKAO',
+    defaultSubject: 'Out for delivery — order {{orderNumber}} · Kakao',
     defaultBody:
       'Hi {{customerName}},\n\nYour order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}',
     placeholders: [...COMMON],
@@ -72,14 +72,14 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_out_for_delivery',
     channel: 'sms',
     label: 'Out for delivery',
-    defaultBody: 'KAKAO: Order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}',
+    defaultBody: 'Kakao: Order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}',
     placeholders: [...COMMON],
   },
   {
     key: 'order_delivered',
     channel: 'email',
     label: 'Order delivered',
-    defaultSubject: 'Delivered — order {{orderNumber}} · KAKAO',
+    defaultSubject: 'Delivered — order {{orderNumber}} · Kakao',
     defaultBody:
       'Hi {{customerName}},\n\nOrder {{orderNumber}} has been delivered. We hope every piece is a delight!',
     placeholders: [...COMMON],
@@ -88,7 +88,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_delivered',
     channel: 'sms',
     label: 'Order delivered',
-    defaultBody: 'KAKAO: Order {{orderNumber}} delivered. Enjoy! {{trackingUrl}}',
+    defaultBody: 'Kakao: Order {{orderNumber}} delivered. Enjoy! {{trackingUrl}}',
     placeholders: [...COMMON],
   },
 ];

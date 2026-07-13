@@ -5,13 +5,14 @@ import { listNotificationLog } from "@/lib/admin/notification-log";
 import { getProviderStatus } from "@/lib/admin/notification-providers";
 import { NoAccess } from "@/components/admin/NoAccess";
 import { NotificationTemplateEditor } from "@/components/admin/NotificationTemplateEditor";
+import { StatusPill, type Tone } from "@/components/admin/StatusPill";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_CLS: Record<string, string> = {
-  sent: "bg-[#dff0e3] text-[#3f8a54]",
-  failed: "bg-[#f6dede] text-[#b25b5b]",
-  skipped: "bg-[#ece6df] text-[#8a7a68]",
+const STATUS_TONE: Record<string, Tone> = {
+  sent: "success",
+  failed: "danger",
+  skipped: "neutral",
 };
 
 export default async function AdminNotificationsPage(): Promise<ReactNode> {
@@ -69,9 +70,7 @@ export default async function AdminNotificationsPage(): Promise<ReactNode> {
                   <td className="px-4 py-3 font-mono text-[11.5px] text-[#5c4b3a]">{r.templateKey}</td>
                   <td className="px-4 py-3 text-[#5c4b3a]">{r.recipient}</td>
                   <td className="px-4 py-3">
-                    <span className={"inline-block rounded-full px-2.5 py-1 text-[11.5px] font-medium " + (STATUS_CLS[r.status] ?? STATUS_CLS.skipped)}>
-                      {r.status}
-                    </span>
+                    <StatusPill tone={STATUS_TONE[r.status] ?? "neutral"} label={r.status} />
                     {r.error ? <div className="mt-0.5 text-[11px] text-[#b25b5b]">{r.error}</div> : null}
                   </td>
                   <td className="px-4 py-3 font-mono text-[11.5px] text-[#5c4b3a]">{r.orderNumber ?? "—"}</td>
@@ -90,9 +89,7 @@ function ProviderCard({ label, name, live, note }: { label: string; name: string
     <div className="rounded-2xl border border-[#eadbc6] bg-white p-4">
       <div className="flex items-center justify-between">
         <div className="text-[12px] uppercase tracking-wider text-[#8a7a68]">{label}</div>
-        <span className={"rounded-full px-2.5 py-1 text-[11px] font-medium " + (live ? "bg-[#dff0e3] text-[#3f8a54]" : "bg-[#ece6df] text-[#8a7a68]")}>
-          {live ? "Live" : "Dev"}
-        </span>
+        <StatusPill tone={live ? "success" : "neutral"} label={live ? "Live" : "Dev"} size="sm" />
       </div>
       <div className="mt-1 text-[15px] font-semibold text-[#2a1d12]">{name}</div>
       <p className="mt-0.5 text-[11.5px] text-[#b8a88f]">{note}</p>

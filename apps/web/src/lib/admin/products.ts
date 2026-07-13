@@ -10,17 +10,21 @@ import {
   adminAuditLog,
   categories,
   db,
+  inventoryAdjustments,
+  orderItems,
   productImages,
   products,
   productVariants,
 } from '@kakoa/db';
-import { and, asc, eq, ne, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
+import { revalidateCatalog } from '@/lib/catalog/queries';
 import { withConstraintMapping } from './db-errors';
 import {
   isUuid,
   slugify,
   validateAttributes,
   validateVariantInput,
+  type ProductContentInput,
   type VariantInput,
 } from './product-validation';
 
@@ -129,6 +133,17 @@ export interface AdminProductDetail {
   categoryId: string;
   active: boolean;
   attributes: Record<string, unknown>;
+  /** Storefront content columns (drive the PDP). */
+  blurb: string;
+  tastingNotes: string[];
+  ingredients: string;
+  allergens: string;
+  nutritionFacts: Record<string, string> | null;
+  shelfLifeDays: number | null;
+  storageInstructions: string | null;
+  isVeg: boolean;
+  badge: string | null;
+  tone: string;
   updatedAt: string;
   variants: {
     id: string;
@@ -178,6 +193,16 @@ export async function getProductForEdit(
     categoryId: p.categoryId,
     active: p.isActive,
     attributes: (p.attributes as Record<string, unknown>) ?? {},
+    blurb: p.blurb,
+    tastingNotes: p.tastingNotes,
+    ingredients: p.ingredients,
+    allergens: p.allergens,
+    nutritionFacts: (p.nutritionFacts as Record<string, string> | null) ?? null,
+    shelfLifeDays: p.shelfLifeDays,
+    storageInstructions: p.storageInstructions,
+    isVeg: p.isVeg,
+    badge: p.badge,
+    tone: p.tone,
     updatedAt: new Date(p.updatedAt).toISOString(),
     variants,
     images,
@@ -209,6 +234,7 @@ export async function updateProduct(
     description: string;
     categoryId: string;
     attributes: Record<string, unknown>;
+    content: ProductContentInput;
     expectedUpdatedAt: string;
   },
   adminUserId: string,
@@ -221,7 +247,7 @@ export async function updateProduct(
   if (!isUuid(patch.categoryId)) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Select a valid category.' };
   }
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx): Promise<ProductUpdateResult> => {
     const [current] = await tx
       .select({
         id: products.id,
@@ -251,6 +277,7 @@ export async function updateProduct(
         return { ok: false, code: 'VALIDATION_ERROR', message: 'Select an active category.' };
       }
     }
+    const c = patch.content;
     await tx
       .update(products)
       .set({
@@ -258,6 +285,16 @@ export async function updateProduct(
         description: patch.description.slice(0, 5000),
         categoryId: patch.categoryId,
         attributes: patch.attributes,
+        blurb: c.blurb,
+        tastingNotes: c.tastingNotes,
+        ingredients: c.ingredients,
+        allergens: c.allergens,
+        nutritionFacts: c.nutritionFacts,
+        shelfLifeDays: c.shelfLifeDays,
+        storageInstructions: c.storageInstructions,
+        isVeg: c.isVeg,
+        badge: c.badge,
+        tone: c.tone,
         updatedAt: sql`now()`,
       })
       .where(eq(products.id, id));
@@ -271,6 +308,9 @@ export async function updateProduct(
     });
     return { ok: true };
   });
+  // Purge the storefront catalog cache so the edit shows up on shop/PDP/home.
+  if (result.ok) await revalidateCatalog();
+  return result;
 }
 
 /**
@@ -283,7 +323,7 @@ export async function setProductActive(
   active: boolean,
   adminUserId: string,
 ): Promise<ProductUpdateResult> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx): Promise<ProductUpdateResult> => {
     const [current] = await tx
       .select({ id: products.id, isActive: products.isActive })
       .from(products)
@@ -327,6 +367,75 @@ export async function setProductActive(
     });
     return { ok: true };
   });
+  // Publish/unpublish flips storefront visibility — purge the catalog cache.
+  if (result.ok) await revalidateCatalog();
+  return result;
+}
+
+export type ProductDeleteResult =
+  | { ok: true }
+  | { ok: false; code: 'NOT_FOUND' | 'CONFLICT'; message: string };
+
+/**
+ * Permanently delete a product. REFUSED if any variant was ever ordered
+ * (order_items → restrict; order history must stay intact) — the caller should
+ * unpublish instead. When safe, the inventory ledger rows (restrict FK) are
+ * removed first, then the product delete cascades variants, images, cart lines,
+ * reviews and wishlist entries. Audited; purges the catalog cache.
+ */
+export async function deleteProduct(
+  id: string,
+  adminUserId: string,
+): Promise<ProductDeleteResult> {
+  if (!isUuid(id)) return { ok: false, code: 'NOT_FOUND', message: "We couldn't find that product." };
+
+  const result = await db.transaction(async (tx): Promise<ProductDeleteResult> => {
+    const [prod] = await tx
+      .select({ id: products.id, name: products.name })
+      .from(products)
+      .where(eq(products.id, id))
+      .for('update')
+      .limit(1);
+    if (!prod) return { ok: false, code: 'NOT_FOUND', message: "We couldn't find that product." };
+
+    const variants = await tx
+      .select({ id: productVariants.id })
+      .from(productVariants)
+      .where(eq(productVariants.productId, id));
+    const variantIds = variants.map((v) => v.id);
+
+    if (variantIds.length > 0) {
+      const [ordered] = await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orderItems)
+        .where(inArray(orderItems.variantId, variantIds));
+      if (Number(ordered?.n ?? 0) > 0) {
+        return {
+          ok: false,
+          code: 'CONFLICT',
+          message:
+            "This product has order history and can't be deleted. Unpublish it instead to hide it from the store.",
+        };
+      }
+      // Ledger rows use a restrict FK — clear them before the variant cascade.
+      await tx.delete(inventoryAdjustments).where(inArray(inventoryAdjustments.variantId, variantIds));
+    }
+
+    // Cascades: product_variants → cart_items; product_images; reviews; wishlist_items.
+    await tx.delete(products).where(eq(products.id, id));
+    await tx.insert(adminAuditLog).values({
+      adminUserId,
+      action: 'product.delete',
+      entityType: 'product',
+      entityId: id,
+      before: { name: prod.name },
+      after: null,
+    });
+    return { ok: true };
+  });
+
+  if (result.ok) await revalidateCatalog();
+  return result;
 }
 
 export type ProductCreateResult =
@@ -356,8 +465,8 @@ export async function createProduct(
   // withConstraintMapping is the race-safe backstop: if two same-name creates
   // slip past the slug SELECT concurrently, the unique(slug) violation becomes a
   // clean VALIDATION_ERROR instead of a 500.
-  return withConstraintMapping(() =>
-    db.transaction(async (tx) => {
+  const result = await withConstraintMapping<ProductCreateResult>(() =>
+    db.transaction(async (tx): Promise<ProductCreateResult> => {
     const [cat] = await tx
       .select({ id: categories.id })
       .from(categories)
@@ -398,6 +507,8 @@ export async function createProduct(
     return { ok: true, id: row.id };
     }),
   );
+  if (result.ok) await revalidateCatalog();
+  return result;
 }
 
 export type VariantResult =
@@ -421,8 +532,8 @@ export async function createVariant(
   if (!parsed.ok) return { ok: false, code: 'VALIDATION_ERROR', message: parsed.message };
   const v: VariantInput = parsed.value;
 
-  return withConstraintMapping(() =>
-    db.transaction(async (tx) => {
+  const result = await withConstraintMapping<VariantResult>(() =>
+    db.transaction(async (tx): Promise<VariantResult> => {
     const [prod] = await tx
       .select({ id: products.id })
       .from(products)
@@ -476,9 +587,7 @@ export async function createVariant(
         position: Number(agg?.maxPos ?? 0) + 1,
       })
       .returning({ id: productVariants.id });
-    if (!row) return { ok: false, code: 'VALIDATION_ERROR', message: 'Could not create the variant.' };
-    await tx.update(products).set({ updatedAt: sql`now()` }).where(eq(products.id, productId));
-    await tx.insert(adminAuditLog).values({
+    if (!row) return { ok: false, code: 'VALIDATION_ERROR', message: 'Could not create the variant.' };    await tx.insert(adminAuditLog).values({
       adminUserId,
       action: 'variant.create',
       entityType: 'variant',
@@ -489,6 +598,9 @@ export async function createVariant(
     return { ok: true, id: row.id };
     }),
   );
+  // New variant can flip price-from / stock / publish-eligibility — purge catalog.
+  if (result.ok) await revalidateCatalog();
+  return result;
 }
 
 /**
@@ -509,8 +621,8 @@ export async function updateVariant(
   if (!parsed.ok) return { ok: false, code: 'VALIDATION_ERROR', message: parsed.message };
   const v: VariantInput = parsed.value;
 
-  return withConstraintMapping(() =>
-    db.transaction(async (tx) => {
+  const result = await withConstraintMapping<VariantResult>(() =>
+    db.transaction(async (tx): Promise<VariantResult> => {
     const [current] = await tx
       .select({
         id: productVariants.id,
@@ -573,9 +685,7 @@ export async function updateVariant(
         ...(promoteDefault ? { isDefault: true } : {}),
         updatedAt: sql`now()`,
       })
-      .where(eq(productVariants.id, variantId));
-    await tx.update(products).set({ updatedAt: sql`now()` }).where(eq(products.id, productId));
-    await tx.insert(adminAuditLog).values({
+      .where(eq(productVariants.id, variantId));    await tx.insert(adminAuditLog).values({
       adminUserId,
       action: 'variant.update',
       entityType: 'variant',
@@ -586,4 +696,6 @@ export async function updateVariant(
     return { ok: true, id: variantId };
     }),
   );
+  if (result.ok) await revalidateCatalog();
+  return result;
 }

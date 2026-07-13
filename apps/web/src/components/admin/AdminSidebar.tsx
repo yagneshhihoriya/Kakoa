@@ -37,7 +37,7 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="flex w-[248px] flex-col border-r border-black/30 bg-[#1b120b] text-white">
+    <aside className="flex w-[248px] shrink-0 flex-col border-r border-black/30 bg-[#1b120b] text-white">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-5 py-[18px]">
         <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#c69a4c] to-[#8a5a34] text-[15px] font-bold text-[#1b120b]">

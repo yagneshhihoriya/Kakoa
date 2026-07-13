@@ -5,6 +5,7 @@ import { resolveAdminContext } from "@/lib/admin/context";
 import { listCoupons } from "@/lib/admin/coupons";
 import type { CouponStatus } from "@/lib/admin/coupon-validation";
 import { NoAccess } from "@/components/admin/NoAccess";
+import { StatusPill, type Tone } from "@/components/admin/StatusPill";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +16,17 @@ function couponsHref(params: Record<string, string | undefined>): Route {
   return (qs ? `/admin/coupons?${qs}` : "/admin/coupons") as Route;
 }
 
-const STATUS_STYLE: Record<CouponStatus, string> = {
-  active: "bg-[#dff0e3] text-[#3f8a54]",
-  scheduled: "bg-[#dfe8f0] text-[#4a6b8a]",
-  expired: "bg-[#ece6df] text-[#8a7a68]",
-  exhausted: "bg-[#f6ecd6] text-[#a9791f]",
-  inactive: "bg-[#ece6df] text-[#8a7a68]",
+const STATUS_TONE: Record<CouponStatus, Tone> = {
+  active: "success",
+  scheduled: "info",
+  expired: "neutral",
+  exhausted: "warn",
+  inactive: "neutral",
 };
+
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default async function AdminCouponsPage({
   searchParams,
@@ -124,9 +129,7 @@ export default async function AdminCouponsPage({
                     {c.endsAt ? new Date(c.endsAt).toLocaleDateString("en-IN") : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={"inline-block rounded-full px-2.5 py-1 text-[11.5px] font-medium capitalize " + STATUS_STYLE[c.status]}>
-                      {c.status}
-                    </span>
+                    <StatusPill tone={STATUS_TONE[c.status]} label={titleCase(c.status)} />
                   </td>
                 </tr>
               ))

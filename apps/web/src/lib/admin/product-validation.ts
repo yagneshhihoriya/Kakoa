@@ -82,6 +82,79 @@ export function validateVariantInput(
   };
 }
 
+/** Storefront content columns editable in the admin (drive the PDP). */
+export interface ProductContentInput {
+  blurb: string;
+  tastingNotes: string[];
+  ingredients: string;
+  allergens: string;
+  nutritionFacts: Record<string, string> | null;
+  shelfLifeDays: number | null;
+  storageInstructions: string | null;
+  isVeg: boolean;
+  badge: string | null;
+  tone: string;
+}
+
+export const PRODUCT_BADGES = ['Best seller', 'New', 'Limited', 'Vegan', 'Seasonal'] as const;
+const CONTENT_TONES = ['dark', 'milk', 'caramel', 'ruby', 'white', 'matcha'];
+
+/**
+ * Coerce/sanitize the PDP content fields from an untrusted body. Never throws —
+ * every field is clamped to a safe default (empty / null), so a partial payload
+ * is fine. Pure + unit-testable.
+ */
+export function coerceProductContent(input: unknown): ProductContentInput {
+  const b = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>;
+  const str = (v: unknown, max: number): string => (typeof v === 'string' ? v.slice(0, max) : '');
+  const strOrNull = (v: unknown, max: number): string | null => {
+    const s = typeof v === 'string' ? v.trim() : '';
+    return s === '' ? null : s.slice(0, max);
+  };
+
+  const tastingNotes = Array.isArray(b.tastingNotes)
+    ? b.tastingNotes
+        .filter((x): x is string => typeof x === 'string')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .slice(0, 12)
+        .map((s) => s.slice(0, 60))
+    : [];
+
+  let nutritionFacts: Record<string, string> | null = null;
+  if (b.nutritionFacts !== null && typeof b.nutritionFacts === 'object' && !Array.isArray(b.nutritionFacts)) {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(b.nutritionFacts as Record<string, unknown>).slice(0, 20)) {
+      const key = k.trim().slice(0, 60);
+      const val = (typeof v === 'string' ? v : String(v ?? '')).trim().slice(0, 60);
+      if (key !== '' && val !== '') out[key] = val;
+    }
+    if (Object.keys(out).length > 0) nutritionFacts = out;
+  }
+
+  const shelf = Number(b.shelfLifeDays);
+  const shelfLifeDays = Number.isInteger(shelf) && shelf > 0 && shelf <= 3650 ? shelf : null;
+
+  const badgeRaw = typeof b.badge === 'string' ? b.badge.trim() : '';
+  const badge = (PRODUCT_BADGES as readonly string[]).includes(badgeRaw) ? badgeRaw : null;
+
+  const toneRaw = typeof b.tone === 'string' ? b.tone : '';
+  const tone = CONTENT_TONES.includes(toneRaw) ? toneRaw : 'dark';
+
+  return {
+    blurb: str(b.blurb, 300),
+    tastingNotes,
+    ingredients: str(b.ingredients, 2000),
+    allergens: str(b.allergens, 500),
+    nutritionFacts,
+    shelfLifeDays,
+    storageInstructions: strOrNull(b.storageInstructions, 500),
+    isVeg: b.isVeg !== false,
+    badge,
+    tone,
+  };
+}
+
 /**
  * Sanitize/validate an attributes object against the vertical preset's schema.
  * Unknown keys are dropped; attributes gated on a disabled capability are

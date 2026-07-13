@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { REVIEW_STATUS_LABEL } from "@/lib/admin/review-format";
+import { StatusPill, type Tone } from "./StatusPill";
 
 type ReviewStatus = "pending" | "approved" | "rejected";
 
@@ -20,10 +21,10 @@ interface Row {
   moderatedAt: string | null;
 }
 
-const STATUS_STYLE: Record<ReviewStatus, string> = {
-  pending: "bg-[#f6ecd6] text-[#a9791f]",
-  approved: "bg-[#dff0e3] text-[#3f8a54]",
-  rejected: "bg-[#f6e0e0] text-[#b25b5b]",
+const STATUS_TONE: Record<ReviewStatus, Tone> = {
+  pending: "warn",
+  approved: "success",
+  rejected: "danger",
 };
 
 function Stars({ value }: { value: number }): React.ReactNode {
@@ -88,9 +89,7 @@ export function ReviewQueue({ rows: initial }: { rows: Row[] }): React.ReactNode
                 <Stars value={r.rating} />
                 <span className="text-[13px] font-semibold text-[#2a1d12]">{r.productName}</span>
               </div>
-              <span className={"inline-block rounded-full px-2.5 py-1 text-[11px] font-medium " + STATUS_STYLE[r.status]}>
-                {REVIEW_STATUS_LABEL[r.status]}
-              </span>
+              <StatusPill tone={STATUS_TONE[r.status]} label={REVIEW_STATUS_LABEL[r.status]} size="sm" />
             </div>
 
             {r.title ? <div className="text-[13.5px] font-semibold text-[#2a1d12]">{r.title}</div> : null}

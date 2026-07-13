@@ -5,6 +5,7 @@ import { formatPaise } from "@kakoa/core";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { listProducts } from "@/lib/admin/products";
 import { NoAccess } from "@/components/admin/NoAccess";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const dynamic = "force-dynamic";
 
@@ -139,16 +140,7 @@ export default async function AdminProductsPage({
                   </td>
                   <td className="px-4 py-3 text-[#5c4b3a]">{p.totalStock}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={
-                        "inline-block rounded-full px-2.5 py-1 text-[11.5px] font-medium " +
-                        (p.active
-                          ? "bg-[#dff0e3] text-[#3f8a54]"
-                          : "bg-[#ece6df] text-[#8a7a68]")
-                      }
-                    >
-                      {p.active ? "Active" : "Inactive"}
-                    </span>
+                    <StatusPill tone={p.active ? "success" : "neutral"} label={p.active ? "Active" : "Inactive"} />
                   </td>
                 </tr>
               ))

@@ -7,6 +7,7 @@ import { resolveAdminContext } from "@/lib/admin/context";
 import { getShipmentDetail } from "@/lib/admin/shipping";
 import { NoAccess } from "@/components/admin/NoAccess";
 import { ShipmentStatusBadge } from "@/components/admin/ShipmentStatusBadge";
+import { StatusPill } from "@/components/admin/StatusPill";
 import { ShipmentActions } from "@/components/admin/ShipmentActions";
 
 export const dynamic = "force-dynamic";
@@ -56,9 +57,7 @@ export default async function AdminShipmentDetailPage({
         <span className="rounded-full bg-[#f3e7d5] px-2.5 py-1 text-[11.5px] font-medium text-[#5c4b3a]">
           {shipment.cod ? "COD" : "Prepaid"}
         </span>
-        {shipment.superseded ? (
-          <span className="rounded-full bg-[#ece6df] px-2.5 py-1 text-[11.5px] font-medium text-[#8a7a68]">Superseded</span>
-        ) : null}
+        {shipment.superseded ? <StatusPill tone="neutral" label="Superseded" /> : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

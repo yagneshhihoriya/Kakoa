@@ -13,8 +13,8 @@ import {
 } from './settings-schema';
 
 describe('catalog', () => {
-  it('has all 15 keys with defaults', () => {
-    expect(SETTINGS_KEYS).toHaveLength(15);
+  it('has all 18 keys with defaults', () => {
+    expect(SETTINGS_KEYS).toHaveLength(18);
     for (const key of SETTINGS_KEYS) {
       expect(SETTINGS_DEFAULTS[key]).toBeDefined();
     }

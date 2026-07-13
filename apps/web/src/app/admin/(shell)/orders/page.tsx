@@ -86,6 +86,8 @@ export default async function AdminOrdersPage({
         </div>
         <form action="/admin/orders" className="flex gap-2">
           {status ? <input type="hidden" name="status" value={status} /> : null}
+          {/* Preserve the payment-mode filter across a search (was silently dropped). */}
+          {paymentMode ? <input type="hidden" name="paymentMode" value={paymentMode} /> : null}
           <input
             name="search"
             defaultValue={search}
@@ -116,6 +118,26 @@ export default async function AdminOrdersPage({
             active={status === s}
           >
             {STATUS_SHORT[s]}
+          </FilterChip>
+        ))}
+      </div>
+
+      {/* Payment-mode filter chips (COD confirmation is a core recurring workflow) */}
+      <div className="mb-4 flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-[11px] uppercase tracking-wider text-[#b8a88f]">Payment</span>
+        <FilterChip
+          href={ordersHref({ status, search: search || undefined })}
+          active={paymentMode === undefined}
+        >
+          All
+        </FilterChip>
+        {PAYMENT_MODES.map((m) => (
+          <FilterChip
+            key={m}
+            href={ordersHref({ status, search: search || undefined, paymentMode: m })}
+            active={paymentMode === m}
+          >
+            {m === "cod" ? "COD" : "Prepaid"}
           </FilterChip>
         ))}
       </div>

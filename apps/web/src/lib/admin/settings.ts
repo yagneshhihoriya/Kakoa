@@ -13,6 +13,7 @@
  */
 import { adminAuditLog, adminUsers, db, storeSettings } from '@kakoa/db';
 import { eq, inArray, sql } from 'drizzle-orm';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { withConstraintMapping } from './db-errors';
 import {
   SETTINGS_DEFAULTS,
@@ -80,7 +81,7 @@ export async function updateSettings(
   const keys = Object.keys(validated);
   if (keys.length === 0) return { ok: true, changed: [] };
 
-  return withConstraintMapping(() =>
+  const result = await withConstraintMapping<UpdateSettingsResult>(() =>
     db.transaction(async (tx): Promise<UpdateSettingsResult> => {
       const current = await tx
         .select({ key: storeSettings.key, value: storeSettings.value })
@@ -124,4 +125,15 @@ export async function updateSettings(
       return { ok: true, changed };
     }),
   );
+  // Settings feed the cached storefront catalog (PDP COD/shipping notes, footer
+  // FSSAI). Checkout/cart read live, but purge the 'settings' tag so cached
+  // storefront surfaces reflect the change. Only when something actually changed.
+  if (result.ok && result.changed.length > 0) {
+    revalidateTag('settings', 'max');
+    // Settings drive footer (root layout) + cached PDP notes — purge paths too.
+    revalidatePath('/', 'layout');
+    revalidatePath('/shop');
+    revalidatePath('/product/[slug]', 'page');
+  }
+  return result;
 }

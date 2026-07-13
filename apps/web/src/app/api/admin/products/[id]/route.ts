@@ -7,10 +7,12 @@
 import { jsonErr, jsonOk, NO_STORE } from '@/lib/api/http';
 import { requireAdmin } from '@/lib/admin/guard';
 import {
+  deleteProduct,
   getProductForEdit,
   updateProduct,
   validateAttributes,
 } from '@/lib/admin/products';
+import { coerceProductContent } from '@/lib/admin/product-validation';
 
 export async function GET(
   _req: Request,
@@ -67,10 +69,24 @@ export async function PATCH(
       description: typeof b.description === 'string' ? b.description : '',
       categoryId: b.categoryId,
       attributes,
+      content: coerceProductContent(body),
       expectedUpdatedAt: b.expectedUpdatedAt,
     },
     auth.value.admin.id,
   );
   if (!result.ok) return jsonErr(result.code, result.message);
   return jsonOk({ ok: true }, { cacheControl: NO_STORE });
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
+  const auth = await requireAdmin('products:write');
+  if (!auth.ok) return auth.response;
+  const { id } = await params;
+
+  const result = await deleteProduct(id, auth.value.admin.id);
+  if (!result.ok) return jsonErr(result.code, result.message);
+  return jsonOk({ deleted: true }, { cacheControl: NO_STORE });
 }

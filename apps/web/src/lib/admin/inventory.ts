@@ -17,6 +17,7 @@ import {
   products,
 } from '@kakoa/db';
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
+import { revalidateCatalog } from '@/lib/catalog/queries';
 import { withConstraintMapping } from './db-errors';
 import { isUuid } from './product-validation';
 
@@ -151,8 +152,8 @@ export async function adjustStock(
   }
   const note = input.note?.trim().slice(0, 500) || null;
 
-  return withConstraintMapping(() =>
-    db.transaction(async (tx) => {
+  const result = await withConstraintMapping<AdjustResult>(() =>
+    db.transaction(async (tx): Promise<AdjustResult> => {
       const [current] = await tx
         .select({ id: productVariants.id, stock: productVariants.stockQuantity })
         .from(productVariants)
@@ -190,6 +191,9 @@ export async function adjustStock(
       return { ok: true, stockAfter: newQuantity, delta };
     }),
   );
+  // Stock change flips PLP "sold out" badges + cached PDP availability metadata.
+  if (result.ok) await revalidateCatalog();
+  return result;
 }
 
 export interface LedgerRow {

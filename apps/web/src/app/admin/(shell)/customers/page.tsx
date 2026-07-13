@@ -5,6 +5,7 @@ import { formatPaise } from "@kakoa/core";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { listCustomers } from "@/lib/admin/customers";
 import { NoAccess } from "@/components/admin/NoAccess";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const dynamic = "force-dynamic";
 
@@ -114,11 +115,7 @@ export default async function AdminCustomersPage({
                   <td className="px-4 py-3 text-right tabular-nums text-[#2a1d12]">{formatPaise(c.lifetimeSpendPaise)}</td>
                   <td className="px-4 py-3 text-[#5c4b3a]">{new Date(c.createdAt).toLocaleDateString("en-IN")}</td>
                   <td className="px-4 py-3">
-                    {c.isBlocked ? (
-                      <span className="inline-block rounded-full bg-[#f6e0e0] px-2.5 py-1 text-[11.5px] font-medium text-[#b25b5b]">Blocked</span>
-                    ) : (
-                      <span className="inline-block rounded-full bg-[#dff0e3] px-2.5 py-1 text-[11.5px] font-medium text-[#3f8a54]">Active</span>
-                    )}
+                    <StatusPill tone={c.isBlocked ? "danger" : "success"} label={c.isBlocked ? "Blocked" : "Active"} />
                   </td>
                 </tr>
               ))

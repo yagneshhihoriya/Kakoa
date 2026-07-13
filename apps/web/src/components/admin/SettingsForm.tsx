@@ -19,7 +19,8 @@ interface Meta {
 const LABEL = "mb-1 block text-[12.5px] font-medium text-[#5c4b3a]";
 const INPUT =
   "w-full rounded-lg border border-[#eadbc6] bg-white px-3 py-2 text-[13.5px] outline-none focus:border-[#c69a4c] disabled:bg-[#f7f1e8] disabled:text-[#8a7a68]";
-const HINT = "mt-1 text-[11.5px] text-[#b8a88f]";
+const HINT = "mt-1 text-[11.5px] text-[#6f5d48]";
+const META = "mt-1 text-[11px] text-[#9a8973]";
 
 /** Stored jsonb value → the string/boolean the widget edits. */
 function toDraft(field: SettingField, value: JsonValue | undefined): DraftValue {
@@ -234,7 +235,7 @@ function Field({
       />
       {field.hint ? <p className={HINT}>{field.hint}</p> : null}
       {meta?.updatedByEmail ? (
-        <p className={HINT}>
+        <p className={META}>
           Last changed by {meta.updatedByEmail}
           {meta.updatedAt
             ? ` · ${new Date(meta.updatedAt).toLocaleDateString("en-IN")}`

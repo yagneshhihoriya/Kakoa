@@ -4,6 +4,7 @@ import Link from "next/link";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { listRoles } from "@/lib/admin/roles";
 import { NoAccess } from "@/components/admin/NoAccess";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const dynamic = "force-dynamic";
 
@@ -54,11 +55,7 @@ export default async function AdminRolesPage(): Promise<ReactNode> {
                   {r.permissionCount === "all" ? "All" : r.permissionCount}
                 </td>
                 <td className="px-4 py-3">
-                  {r.isSystem ? (
-                    <span className="inline-block rounded-full bg-[#e6e2f6] px-2.5 py-1 text-[11px] font-medium text-[#5b4fa3]">System</span>
-                  ) : (
-                    <span className="inline-block rounded-full bg-[#ece6df] px-2.5 py-1 text-[11px] font-medium text-[#8a7a68]">Custom</span>
-                  )}
+                  <StatusPill tone={r.isSystem ? "purple" : "neutral"} label={r.isSystem ? "System" : "Custom"} size="sm" />
                 </td>
               </tr>
             ))}

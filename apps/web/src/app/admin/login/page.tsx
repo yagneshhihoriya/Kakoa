@@ -71,7 +71,7 @@ export default function AdminLoginPage(): React.ReactNode {
           className="mb-1 text-2xl"
           style={{ fontFamily: "var(--font-display), serif" }}
         >
-          KAKAO
+          Kakao
         </div>
         <p className="mb-8 text-sm text-white/50">Admin sign-in</p>
 
