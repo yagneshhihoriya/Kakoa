@@ -18,3 +18,5 @@ export * from './reviews';
 export * from './returns';
 export * from './admin';
 export * from './notifications';
+export * from './media';
+export * from './newsletter';

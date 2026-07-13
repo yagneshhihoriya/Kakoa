@@ -70,6 +70,8 @@ export const productCardSchema = z.object({
   fromPricePaise: paiseSchema,
   compareAtPricePaise: paiseSchema.nullable(),
   inStock: z.boolean(),
+  /** Primary (lowest-position) product image URL, or null to use a placeholder. */
+  imageUrl: z.string().nullable(),
 });
 export type ProductCardView = z.infer<typeof productCardSchema>;
 
@@ -107,8 +109,23 @@ export const productDetailSchema = productCardSchema.extend({
   shelfLifeDays: z.number().int().positive().nullable(),
   storageInstructions: z.string().nullable(),
   isVeg: z.boolean(),
+  /** Vertical-preset attributes flagged showOnPdp, resolved to label/value/unit. */
+  pdpAttributes: z.array(
+    z.object({ label: z.string(), value: z.string(), unit: z.string().nullable() }),
+  ),
   /** From `store_settings` — Legal Metrology / FSSAI display. */
   fssaiLicense: z.string(),
+  /** Approved customer reviews (newest first), reviewer name display-safe. */
+  reviews: z.array(
+    z.object({
+      id: z.string(),
+      author: z.string(),
+      rating: z.number().int().min(1).max(5),
+      title: z.string().nullable(),
+      body: z.string(),
+      dateIso: z.string(),
+    }),
+  ),
   images: z.array(productImageViewSchema),
   variants: z.array(productVariantViewSchema),
   /** Same category, top-rated, excl. self. Degrades to `[]`. */

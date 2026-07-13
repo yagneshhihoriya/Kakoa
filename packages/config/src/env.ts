@@ -51,6 +51,22 @@ export const serverEnvSchema = z.object({
 
   // ── Observability (optional) ───────────────────────────────────────
   SENTRY_DSN: z.string().url().optional(),
+
+  // ── Media storage / S3 (optional; LocalMediaProvider used until set) ─
+  // When S3_BUCKET + S3 creds are present the S3MediaProvider is selected;
+  // otherwise the Media Library writes to apps/web/public/uploads for local dev.
+  S3_BUCKET: nonEmpty.optional(),
+  S3_REGION: nonEmpty.optional(),
+  S3_ACCESS_KEY_ID: nonEmpty.optional(),
+  S3_SECRET_ACCESS_KEY: nonEmpty.optional(),
+  // Optional CDN / custom domain in front of the bucket (e.g. CloudFront). When
+  // absent the public URL is derived from bucket + region (+ S3_ENDPOINT).
+  S3_PUBLIC_BASE_URL: z.string().url().optional(),
+  // Optional custom endpoint for S3-compatible stores (R2, MinIO, etc.).
+  S3_ENDPOINT: z.string().url().optional(),
+
+  // ── Razorpay client key (public; also passed via checkout response) ──
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: nonEmpty.optional(),
 });
 
 export const clientEnvSchema = z.object({

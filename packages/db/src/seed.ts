@@ -13,7 +13,6 @@ import {
   categories,
   coupons,
   inventoryAdjustments,
-  productImages,
   productVariants,
   products,
   storeSettings,
@@ -424,11 +423,6 @@ const PRODUCTS: ProductSeed[] = [
   },
 ];
 
-function placeholderImage(name: string, index: number): string {
-  const text = encodeURIComponent(`${name} ${index + 1}`);
-  return `https://placehold.co/1200x1200/4A2E1C/FBF6EF?text=${text}`;
-}
-
 async function main(): Promise<void> {
   const alreadySeeded = await db
     .select({ key: storeSettings.key })
@@ -476,7 +470,7 @@ async function main(): Promise<void> {
     }),
   );
 
-  // 4. Products + variants + images + initial_stock ledger rows.
+  // 4. Products + variants + initial_stock ledger rows (no seeded photos).
   let productCount = 0;
   let variantCount = 0;
   for (const p of PRODUCTS) {
@@ -537,15 +531,9 @@ async function main(): Promise<void> {
         stockAfter: v.stock,
       });
     }
-
-    await db.insert(productImages).values(
-      [0, 1].map((i) => ({
-        productId,
-        url: placeholderImage(p.name, i),
-        alt: `${p.name} — photo ${i + 1}`,
-        position: i,
-      })),
-    );
+    // Products ship without seeded photos — the storefront falls back to the
+    // tone-study placeholder until real images are uploaded via the Media
+    // Library (admin → Products → Images).
   }
 
   // 5. Coupons: WELCOME10 (10% first order), FREESHIP (flat ₹49 off),
