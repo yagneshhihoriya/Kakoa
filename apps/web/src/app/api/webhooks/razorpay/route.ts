@@ -20,7 +20,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { parseServerEnv } from '@kakoa/config';
 import { db, webhookEvents } from '@kakoa/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 
 import { jsonErr, jsonOk, NO_STORE } from '@/lib/api/http';
 import { confirmPayment } from '@/lib/checkout/confirm';
@@ -100,11 +100,32 @@ export async function POST(req: Request): Promise<Response> {
     })
     .returning({ id: webhookEvents.id });
 
+  let ledgerId: string;
   if (inserted.length === 0) {
-    // Already ledgered — a duplicate delivery. Ack without reprocessing.
-    return jsonOk({ duplicate: true }, { cacheControl: NO_STORE });
+    // Duplicate delivery. If the FIRST attempt already succeeded ('processed'),
+    // ack and stop. But if it FAILED or is still 'received', a PAID order may be
+    // stranded pending_payment — so reprocess (confirmPayment is idempotent) and
+    // let this retried webhook converge it. Without this, one transient DB blip
+    // during capture confirmation permanently strands a paid order.
+    const [existing] = await db
+      .select({ id: webhookEvents.id, status: webhookEvents.status })
+      .from(webhookEvents)
+      .where(
+        and(eq(webhookEvents.provider, 'razorpay'), eq(webhookEvents.eventId, eventId)),
+      )
+      .limit(1);
+    if (!existing || existing.status === 'processed') {
+      return jsonOk({ duplicate: true }, { cacheControl: NO_STORE });
+    }
+    ledgerId = existing.id;
+    console.info('webhook.reprocess_unprocessed', {
+      provider: 'razorpay',
+      event_id: eventId,
+      prior_status: existing.status,
+    });
+  } else {
+    ledgerId = inserted[0]!.id;
   }
-  const ledgerId = inserted[0]!.id;
 
   // 4 + 5. Process best-effort (still within this request, but a failure here
   // never turns the ack into a non-200 — Razorpay retries + the sweep converge).
@@ -150,7 +171,8 @@ async function markProcessed(id: string): Promise<void> {
   await db
     .update(webhookEvents)
     .set({ status: 'processed', processedAt: sql`now()` })
-    .where(and(eq(webhookEvents.id, id), eq(webhookEvents.status, 'received')));
+    // `!= processed` (not `= received`) so a REPROCESSED 'failed' row also promotes.
+    .where(and(eq(webhookEvents.id, id), ne(webhookEvents.status, 'processed')));
 }
 
 /** Mark a ledger row failed with the cause (the sweep will reconcile). */

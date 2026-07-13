@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Help center · Kakao" };
+export const metadata = { title: "Help center" };
 
 /** Placeholder — replaced by the Content module (PROJECT_PLAN §3.7). */
 export default function SupportPage() {

@@ -87,7 +87,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
-          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: 4, color: INK }}>KAKAO</div>
+          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: 4, color: INK }}>Kakao</div>
           <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600 }}>{m.seller.legalName}</div>
           <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, maxWidth: 280 }}>{m.seller.address}</div>
           <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
@@ -225,7 +225,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
 
       {/* Footer */}
       <div style={{ marginTop: 26, paddingTop: 14, borderTop: `1px solid ${LINE}`, fontSize: 10, color: MUTED, lineHeight: 1.6 }}>
-        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with KAKAO 🍫</div>
+        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with Kakao 🍫</div>
         <div>
           This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds are governed by our
           published policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.

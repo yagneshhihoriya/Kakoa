@@ -123,7 +123,7 @@ export async function generateMetadata({
     const category = categories.find((c) => c.slug === categorySlug);
     if (category !== undefined) {
       return {
-        title: `${category.name} · Kakao`,
+        title: category.name,
         description:
           category.description ??
           `Shop ${category.name} — small-batch bean-to-bar chocolate, crafted in India.`,
@@ -136,7 +136,7 @@ export async function generateMetadata({
     }
   }
   return {
-    title: "Shop · Kakao",
+    title: "Shop",
     description:
       "Shop small-batch bean-to-bar chocolate — bars, pralines, signature collections, and gifts.",
     alternates: { canonical: "/shop" },

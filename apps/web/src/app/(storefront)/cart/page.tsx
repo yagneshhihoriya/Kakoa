@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CartPageClient } from "@/components/cart/CartPageClient";
 
 export const metadata: Metadata = {
-  title: "Your bag · Kakao",
+  title: "Your bag",
   description:
     "Review your Kakao bag — small-batch chocolate, gift wrap, and coupons.",
   robots: { index: false },

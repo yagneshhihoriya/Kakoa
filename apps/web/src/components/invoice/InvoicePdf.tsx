@@ -55,12 +55,12 @@ function addressLines(a: AddressSnapshot): string[] {
 export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
   const showCgstSgst = m.summary.cgstPaise > 0 || m.summary.sgstPaise > 0;
   return (
-    <Document title={`Invoice ${m.invoiceNumber}`} author="KAKAO">
+    <Document title={`Invoice ${m.invoiceNumber}`} author="Kakao">
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.headerRow}>
           <View style={{ maxWidth: 300 }}>
-            <Text style={s.brand}>KAKAO</Text>
+            <Text style={s.brand}>Kakao</Text>
             <Text style={s.sellerName}>{m.seller.legalName}</Text>
             <Text style={[s.muted, { lineHeight: 1.4 }]}>{m.seller.address}</Text>
             <Text style={[s.muted, { marginTop: 3 }]}>
@@ -177,7 +177,7 @@ export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
 
         {/* Footer */}
         <View style={s.footer}>
-          <Text style={{ color: INK, fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 }}>Thank you for shopping with KAKAO</Text>
+          <Text style={{ color: INK, fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 }}>Thank you for shopping with Kakao</Text>
           <Text>
             This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds follow our published
             policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.

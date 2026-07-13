@@ -12,7 +12,7 @@
  * All `is_active` filters live in-query on BOTH product and variant so
  * drafts/archived SKUs can never leak through list/detail/search (spec §6).
  */
-import { revalidateTag, unstable_cache } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 
 import {
   productToneSchema,
@@ -27,15 +27,45 @@ import {
 } from '@kakoa/core';
 import {
   categories,
+  customers,
   db,
   orderItems,
   productImages,
   products,
   productVariants,
+  reviews,
   storeSettings,
 } from '@kakoa/db';
 import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { getPreset } from '@platform/kernel';
+import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
+import { displayReviewerName } from '@/lib/admin/review-format';
+
+/**
+ * Active business vertical (mirrors admin `lib/admin/context.ts` VERTICAL —
+ * config-driven later). Drives which product attributes surface on the PDP.
+ */
+const VERTICAL = 'chocolate' as const;
+
+/** Present a stored attribute value (array/number/string) as display text. */
+function formatAttrValue(v: unknown): string {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string').join(', ');
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'string') return v;
+  return '';
+}
+
+/** Resolve preset attributes flagged showOnPdp into label/value/unit rows. */
+function buildPdpAttributes(
+  attributes: unknown,
+): { label: string; value: string; unit: string | null }[] {
+  const attrs = (attributes !== null && typeof attributes === 'object' ? attributes : {}) as Record<string, unknown>;
+  return getPreset(VERTICAL)
+    .attributeSchema.filter((d) => d.showOnPdp === true)
+    .map((d) => ({ label: d.label, value: formatAttrValue(attrs[d.key]), unit: d.unit ?? null }))
+    .filter((a) => a.value !== '');
+}
 
 /* ------------------------------------------------------------------ */
 /* Shared building blocks                                              */
@@ -89,6 +119,7 @@ interface CardRow {
   fromPricePaise: number;
   compareAtPricePaise: number | null;
   inStock: boolean;
+  imageUrl: string | null;
 }
 
 const cardColumns = {
@@ -104,6 +135,14 @@ const cardColumns = {
   fromPricePaise: variantAgg.fromPricePaise,
   compareAtPricePaise: variantAgg.compareAtPricePaise,
   inStock: variantAgg.inStock,
+  // Primary image = lowest-position product_images row (null → placeholder card).
+  imageUrl: sql<string | null>`(
+    select ${productImages.url}
+    from ${productImages}
+    where ${productImages.productId} = ${products.id}
+    order by ${productImages.position} asc, ${productImages.createdAt} asc
+    limit 1
+  )`,
 };
 
 /** `products.tone` is a text column — coerce defensively to the enum. */
@@ -126,6 +165,7 @@ function toCard(row: CardRow): ProductCardView {
     fromPricePaise: row.fromPricePaise,
     compareAtPricePaise: row.compareAtPricePaise ?? null,
     inStock: row.inStock,
+    imageUrl: row.imageUrl ?? null,
   };
 }
 
@@ -425,6 +465,7 @@ async function fetchProductDetail(
       shelfLifeDays: products.shelfLifeDays,
       storageInstructions: products.storageInstructions,
       isVeg: products.isVeg,
+      attributes: products.attributes,
       fromPricePaise: variantAgg.fromPricePaise,
       compareAtPricePaise: variantAgg.compareAtPricePaise,
       inStock: variantAgg.inStock,
@@ -437,7 +478,7 @@ async function fetchProductDetail(
 
   if (!row) return null;
 
-  const [variantRows, imageRows, fssaiLicense] = await Promise.all([
+  const [variantRows, imageRows, fssaiLicense, reviewRows] = await Promise.all([
     db
       .select({
         id: productVariants.id,
@@ -469,7 +510,30 @@ async function fetchProductDetail(
       .where(eq(productImages.productId, row.id))
       .orderBy(asc(productImages.position), asc(productImages.createdAt)),
     fetchFssaiLicense().catch(() => ''),
+    db
+      .select({
+        id: reviews.id,
+        name: customers.name,
+        rating: reviews.rating,
+        title: reviews.title,
+        body: reviews.body,
+        createdAt: reviews.createdAt,
+      })
+      .from(reviews)
+      .leftJoin(customers, eq(customers.id, reviews.customerId))
+      .where(and(eq(reviews.productId, row.id), eq(reviews.status, 'approved')))
+      .orderBy(desc(reviews.createdAt))
+      .limit(24),
   ]);
+
+  const reviewList = reviewRows.map((r) => ({
+    id: r.id,
+    author: displayReviewerName(r.name),
+    rating: Number(r.rating),
+    title: r.title,
+    body: r.body,
+    dateIso: new Date(r.createdAt).toISOString(),
+  }));
 
   // related / FBT degrade to [] — never fail the whole response (spec §5.3).
   const [related, frequentlyBoughtTogether] = await Promise.all([
@@ -516,6 +580,7 @@ async function fetchProductDetail(
     fromPricePaise: row.fromPricePaise,
     compareAtPricePaise: row.compareAtPricePaise ?? null,
     inStock: row.inStock,
+    imageUrl: images[0]?.url ?? null,
     description: row.description,
     tastingNotes: row.tastingNotes,
     ingredients: row.ingredients,
@@ -524,6 +589,8 @@ async function fetchProductDetail(
     shelfLifeDays: row.shelfLifeDays,
     storageInstructions: row.storageInstructions,
     isVeg: row.isVeg,
+    pdpAttributes: buildPdpAttributes(row.attributes),
+    reviews: reviewList,
     fssaiLicense,
     images,
     variants,
@@ -736,6 +803,85 @@ export async function getFssaiLicense(): Promise<string | null> {
 }
 
 /* ------------------------------------------------------------------ */
+/* getCompanyInfo — legal identity + contact for policy/contact pages  */
+/* ------------------------------------------------------------------ */
+
+export interface CompanyInfo {
+  legalName: string;
+  address: string;
+  gstin: string;
+  fssai: string;
+  supportEmail: string;
+  supportPhone: string;
+  supportHours: string;
+  grievanceName: string;
+  countryOfOrigin: string;
+  freeShippingThresholdPaise: number | null;
+  standardShippingPaise: number | null;
+  expressShippingPaise: number | null;
+  codEnabled: boolean;
+  codFeePaise: number | null;
+}
+
+const COMPANY_KEYS = [
+  'seller_legal_name',
+  'seller_address',
+  'seller_gstin',
+  'fssai_license_number',
+  'support_email',
+  'support_phone',
+  'support_hours',
+  'grievance_officer_name',
+  'country_of_origin',
+  'free_shipping_threshold_paise',
+  'shipping_fee_standard_paise',
+  'shipping_fee_express_paise',
+  'cod_enabled',
+  'cod_fee_paise',
+];
+
+const getCompanyInfoCached = unstable_cache(
+  async (): Promise<CompanyInfo> => {
+    const rows = await db
+      .select({ key: storeSettings.key, value: storeSettings.value })
+      .from(storeSettings)
+      .where(inArray(storeSettings.key, COMPANY_KEYS));
+    const byKey = new Map(rows.map((r) => [r.key, r.value]));
+    const str = (key: string): string => {
+      const v = byKey.has(key) ? byKey.get(key) : SETTINGS_DEFAULTS[key];
+      return typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v);
+    };
+    return {
+      legalName: str('seller_legal_name'),
+      address: str('seller_address'),
+      gstin: str('seller_gstin'),
+      fssai: str('fssai_license_number'),
+      supportEmail: str('support_email'),
+      supportPhone: str('support_phone'),
+      supportHours: str('support_hours'),
+      grievanceName: str('grievance_officer_name'),
+      countryOfOrigin: str('country_of_origin'),
+      freeShippingThresholdPaise: toPaiseSetting(byKey.get('free_shipping_threshold_paise')),
+      standardShippingPaise: toPaiseSetting(byKey.get('shipping_fee_standard_paise')),
+      expressShippingPaise: toPaiseSetting(byKey.get('shipping_fee_express_paise')),
+      codEnabled: toBoolSetting(byKey.get('cod_enabled')) ?? false,
+      codFeePaise: toPaiseSetting(byKey.get('cod_fee_paise')),
+    };
+  },
+  ['company-info'],
+  { tags: ['settings'], revalidate: REVALIDATE_SECONDS },
+);
+
+/**
+ * The business's legal identity + contact block for the Contact and policy
+ * pages (and PDP country-of-origin). Cached + `settings`-tagged so admin edits
+ * propagate. Defaults from the settings catalog when a key is unset.
+ */
+export async function getCompanyInfo(): Promise<CompanyInfo> {
+  return getCompanyInfoCached();
+}
+
+/* ------------------------------------------------------------------ */
 /* revalidateCatalog                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -745,6 +891,13 @@ export async function getFssaiLicense(): Promise<string | null> {
  * the blanket 'products' tag on every product entry.
  */
 export async function revalidateCatalog(): Promise<void> {
+  // Tag purge (data cache) …
   revalidateTag('products', 'max');
   revalidateTag('categories', 'max');
+  // … plus explicit path revalidation, which is the reliable purge on this
+  // Next setup (tag purge alone was observed to miss the built data cache).
+  // 'page' invalidates every /product/[slug] instance without needing a slug.
+  revalidatePath('/');
+  revalidatePath('/shop');
+  revalidatePath('/product/[slug]', 'page');
 }

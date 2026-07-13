@@ -8,7 +8,7 @@ import {
   type AccountWishlistItem,
 } from "@/components/auth/AccountDashboard";
 
-export const metadata = { title: "Your account · Kakao" };
+export const metadata = { title: "Your account" };
 
 // Session cookie read + per-customer queries — never statically rendered.
 export const dynamic = "force-dynamic";

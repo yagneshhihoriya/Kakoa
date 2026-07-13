@@ -1,5 +1,5 @@
 /**
- * Transactional email templates — KAKAO brand voice (storefront launch-gate).
+ * Transactional email templates — Kakao brand voice (storefront launch-gate).
  *
  * Pure render functions: `(model) → { subject, html, text }`. No DB, no env, no
  * I/O — so they are trivially unit-testable and `send.ts` owns all data loading.
@@ -92,7 +92,7 @@ const CARD = '#ffffff';
 
 /** Outer wrapper: cream page → centered 600px card. */
 function shell(inner: string): string {
-  return `<!-- KAKAO transactional email -->
+  return `<!-- Kakao transactional email -->
 <div style="margin:0;padding:0;background:${CREAM};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};">
     <tr>
@@ -100,15 +100,20 @@ function shell(inner: string): string {
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${CARD};border:1px solid ${LINE};border-radius:12px;overflow:hidden;font-family:Georgia,'Times New Roman',serif;color:${INK};">
           <tr>
             <td style="padding:28px 32px 8px 32px;text-align:center;">
-              <span style="font-size:22px;letter-spacing:6px;font-weight:700;color:${INK};">KAKAO</span>
+              <span style="font-size:22px;letter-spacing:6px;font-weight:700;color:${INK};">Kakao</span>
             </td>
           </tr>
           ${inner}
           <tr>
             <td style="padding:24px 32px 32px 32px;border-top:1px solid ${LINE};text-align:center;">
-              <p style="margin:0;font-size:12px;line-height:1.6;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">
-                KAKAO &middot; Handcrafted in India<br/>
-                This is an automated message about your order. No reply is needed.
+              <p style="margin:0 0 8px 0;font-size:12.5px;line-height:1.6;color:${INK};font-family:Arial,Helvetica,sans-serif;">
+                Questions about your order? Email
+                <a href="mailto:support@kakoa.in" style="color:${INK};font-weight:bold;text-decoration:underline;">support@kakoa.in</a>
+              </p>
+              <p style="margin:0;font-size:11px;line-height:1.6;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">
+                Kakao Chocolates Private Limited &middot; Mumbai, Maharashtra, India<br/>
+                FSSAI Lic. 11525023000841 &middot; Handcrafted in small batches<br/>
+                This is an automated message about your order.
               </p>
             </td>
           </tr>
@@ -123,7 +128,7 @@ function shell(inner: string): string {
  * Wrap an admin/override body (already HTML-escaped) in the brand shell. Blank
  * lines split paragraphs; single newlines become `<br/>`. Used by editable
  * notification-template overrides + the send-test so overridden copy still
- * renders in the KAKAO chrome.
+ * renders in the Kakao chrome.
  */
 export function wrapEmailBody(escapedBody: string): string {
   const paras = escapedBody
@@ -262,7 +267,7 @@ export function orderConfirmationEmail(m: OrderEmailModel): RenderedEmail {
   const lede = paid
     ? `Thank you — your payment is in and your order is confirmed. We're getting it ready with care.`
     : `Thank you — your order is placed. We'll confirm the details by phone shortly, then get it ready with care.`;
-  const subject = `${headline} — order ${m.orderNumber} · KAKAO`;
+  const subject = `${headline} — order ${m.orderNumber} · Kakao`;
 
   const inner = `
     <tr>
@@ -321,7 +326,7 @@ export function orderConfirmationEmail(m: OrderEmailModel): RenderedEmail {
  * refund note is added by copy only (the refund itself is the payments module).
  */
 export function orderCancelledEmail(m: OrderEmailModel): RenderedEmail {
-  const subject = `Order ${m.orderNumber} cancelled · KAKAO`;
+  const subject = `Order ${m.orderNumber} cancelled · Kakao`;
   const refundLine =
     m.paymentMode === 'prepaid'
       ? `Any amount paid will be refunded to your original payment method — this usually takes 5–7 business days.`
@@ -338,7 +343,7 @@ export function orderCancelledEmail(m: OrderEmailModel): RenderedEmail {
         <div style="height:20px;"></div>
         ${totalsBlock(m)}
         <div style="height:24px;"></div>
-        ${para(`Changed your mind? You're always welcome back at KAKAO.`)}
+        ${para(`Changed your mind? You're always welcome back at Kakao.`)}
       </td>
     </tr>`;
 
@@ -383,18 +388,18 @@ const FULFILMENT_COPY: Record<
 > = {
   shipped: {
     headline: 'Your order is on its way',
-    lede: 'Good news — your KAKAO box has shipped and is heading to you.',
-    subject: (n) => `Shipped — order ${n} is on its way · KAKAO`,
+    lede: 'Good news — your Kakao box has shipped and is heading to you.',
+    subject: (n) => `Shipped — order ${n} is on its way · Kakao`,
   },
   out_for_delivery: {
     headline: 'Out for delivery today',
     lede: "Your box is out for delivery today — keep your phone handy for the courier.",
-    subject: (n) => `Out for delivery — order ${n} · KAKAO`,
+    subject: (n) => `Out for delivery — order ${n} · Kakao`,
   },
   delivered: {
     headline: 'Delivered — enjoy!',
-    lede: 'Your KAKAO order has been delivered. We hope every piece is a delight.',
-    subject: (n) => `Delivered — order ${n} · KAKAO`,
+    lede: 'Your Kakao order has been delivered. We hope every piece is a delight.',
+    subject: (n) => `Delivered — order ${n} · Kakao`,
   },
 };
 

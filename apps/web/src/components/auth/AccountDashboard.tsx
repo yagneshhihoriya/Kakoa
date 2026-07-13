@@ -674,10 +674,31 @@ function WishlistSection({
 }: {
   wishlist: AccountWishlistItem[];
 }): ReactNode {
+  const { toast } = useToast();
+  const [items, setItems] = useState<AccountWishlistItem[]>(wishlist);
+  useEffect(() => setItems(wishlist), [wishlist]);
+
+  async function remove(productId: string): Promise<void> {
+    const prev = items;
+    setItems((cur) => cur.filter((i) => i.productId !== productId));
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error();
+    } catch {
+      setItems(prev);
+      toast({ kind: "error", message: "Couldn't remove that item." });
+    }
+  }
+
   return (
     <>
       <SectionHeading>Your wishlist</SectionHeading>
-      {wishlist.length === 0 ? (
+      {items.length === 0 ? (
         <EmptyState
           title="Nothing saved yet"
           body="Tap the heart on any chocolate to save it here."
@@ -686,9 +707,9 @@ function WishlistSection({
         />
       ) : (
         <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
-          {wishlist.map((item) => (
-            <div key={item.productId} className={cx(CARD, "overflow-hidden")}>
-              <div className="p-4">
+          {items.map((item) => (
+            <div key={item.productId} className={cx(CARD, "flex flex-col overflow-hidden")}>
+              <div className="flex flex-1 flex-col p-4">
                 <Link
                   href={`/product/${item.slug}`}
                   className="font-display text-[15.5px] text-ink no-underline"
@@ -698,6 +719,13 @@ function WishlistSection({
                 <div className="mt-2 font-body text-[15px] font-bold text-[#8a5a34]">
                   {formatPaise(item.fromPricePaise)}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void remove(item.productId)}
+                  className="mt-3 self-start font-body text-[12.5px] font-semibold text-raspberry underline"
+                >
+                  Remove
+                </button>
               </div>
             </div>
           ))}
@@ -712,22 +740,133 @@ function ProfileSection({
 }: {
   customer: CustomerView;
 }): ReactNode {
+  const { toast } = useToast();
+  const [name, setName] = useState(customer.name ?? "");
+  const [email, setEmail] = useState(customer.email ?? "");
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const dirty = name !== (customer.name ?? "") || email !== (customer.email ?? "");
+
+  async function save(): Promise<void> {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+      const data = await res.json();
+      if (data.ok) toast({ kind: "success", message: "Profile updated." });
+      else toast({ kind: "error", message: data.error?.message ?? "Couldn't save changes." });
+    } catch {
+      toast({ kind: "error", message: "Network error." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteAccount(): Promise<void> {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" });
+      const data = await res.json();
+      if (data.ok) {
+        window.location.assign("/");
+        return;
+      }
+      toast({ kind: "error", message: data.error?.message ?? "Couldn't delete your account." });
+      setDeleting(false);
+    } catch {
+      toast({ kind: "error", message: "Network error." });
+      setDeleting(false);
+    }
+  }
+
   return (
     <>
       <SectionHeading>Profile</SectionHeading>
       <div className={cx(CARD, "max-w-[520px] p-[26px]")}>
-        <dl className="flex flex-col gap-5">
-          <Field label="Name" value={customer.name ?? "Not set yet"} />
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a5a34]" htmlFor="pf-name">
+              Name
+            </label>
+            <input
+              id="pf-name"
+              value={name}
+              maxLength={80}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-lg border border-[#eadbc6] bg-white px-3 py-2.5 font-body text-[15px] text-ink outline-none focus:border-[#c69a4c]"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a5a34]" htmlFor="pf-email">
+              Email
+            </label>
+            <input
+              id="pf-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              className="w-full rounded-lg border border-[#eadbc6] bg-white px-3 py-2.5 font-body text-[15px] text-ink outline-none focus:border-[#c69a4c]"
+            />
+          </div>
           <Field label="Mobile" value={customer.phone ?? "—"} />
-          <Field label="Email" value={customer.email ?? "Not set yet"} />
-          <Field
-            label="Member since"
-            value={formatIST(new Date(customer.createdAt))}
-          />
-        </dl>
-        <div className="mt-7 border-t border-[#EADBC6] pt-6">
-          <LogoutButton className="rounded-pill bg-ink px-6 py-3 font-body text-[14px] font-semibold text-card transition-colors hover:bg-[#3f2c1b]" />
+          <Field label="Member since" value={formatIST(new Date(customer.createdAt))} />
         </div>
+
+        <div className="mt-6 flex items-center gap-3">
+          <button
+            type="button"
+            disabled={saving || !dirty}
+            onClick={() => void save()}
+            className="rounded-pill bg-ink px-6 py-3 font-body text-[14px] font-semibold text-card transition-colors hover:bg-[#3f2c1b] disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+          <LogoutButton className="font-body text-[14px] font-semibold text-espresso underline" />
+        </div>
+      </div>
+
+      {/* Danger zone — DPDP right to erasure. */}
+      <div className={cx(CARD, "mt-5 max-w-[520px] border-danger/30 p-[26px]")}>
+        <div className="mb-1 font-body text-[15px] font-semibold text-ink">Delete account</div>
+        <p className="mb-4 font-body text-[13.5px] leading-relaxed text-[#8a7a68]">
+          Permanently delete your account and personal data (addresses, wishlist, reviews).
+          Your past orders and invoices are kept as required by law but are de-linked from you.
+          This cannot be undone.
+        </p>
+        {!confirmDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-pill border-[1.5px] border-[#e2c4c4] px-5 py-2.5 font-body text-[13.5px] font-bold text-raspberry transition-colors hover:bg-[#f6dede]"
+          >
+            Delete my account
+          </button>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="font-body text-[13.5px] font-semibold text-ink">Are you sure?</span>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => void deleteAccount()}
+              className="rounded-pill bg-raspberry px-5 py-2.5 font-body text-[13.5px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {deleting ? "Deleting…" : "Yes, delete everything"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(false)}
+              className="font-body text-[13.5px] font-semibold text-espresso underline"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -736,10 +875,10 @@ function ProfileSection({
 function Field({ label, value }: { label: string; value: string }): ReactNode {
   return (
     <div>
-      <dt className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a5a34]">
+      <div className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a5a34]">
         {label}
-      </dt>
-      <dd className="font-body text-[15.5px] text-ink">{value}</dd>
+      </div>
+      <div className="font-body text-[15.5px] text-ink">{value}</div>
     </div>
   );
 }

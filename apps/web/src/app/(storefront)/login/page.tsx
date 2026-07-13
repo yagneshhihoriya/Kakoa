@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Sign in · Kakao" };
+export const metadata = { title: "Sign in" };
 
 /** Placeholder — replaced by the Auth/OTP module (PROJECT_PLAN §3.5). */
 export default function LoginPage() {

@@ -24,7 +24,7 @@ import {
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
 
 export const metadata: Metadata = {
-  title: "Order confirmed · Kakoa",
+  title: "Order confirmed",
   robots: { index: false, follow: false },
 };
 

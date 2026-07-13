@@ -9,6 +9,7 @@ import { absoluteUrl } from "@/lib/seo/site";
 import {
   getCatalogSettings,
   getCategories,
+  getCompanyInfo,
   getProductBySlug,
 } from "@/lib/catalog/queries";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
@@ -49,10 +50,16 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (product === null) {
-    return { title: "Product not found · Kakao" };
+    return { title: "Product not found" };
   }
+  const ogImage =
+    product.imageUrl !== null
+      ? product.imageUrl.startsWith("http")
+        ? product.imageUrl
+        : absoluteUrl(product.imageUrl)
+      : null;
   return {
-    title: `${product.name} · Kakao`,
+    title: product.name,
     description: product.blurb,
     alternates: { canonical: `/product/${slug}` },
     openGraph: {
@@ -61,7 +68,11 @@ export async function generateMetadata({
       type: "website",
       siteName: "Kakao",
       url: `/product/${slug}`,
+      ...(ogImage !== null ? { images: [{ url: ogImage, alt: product.name }] } : {}),
     },
+    ...(ogImage !== null
+      ? { twitter: { card: "summary_large_image", images: [ogImage] } }
+      : {}),
   };
 }
 
@@ -97,7 +108,7 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
         name: product.name,
         description: product.blurb,
         ...(defaultVariant !== undefined ? { sku: defaultVariant.sku } : {}),
-        brand: { "@type": "Brand", name: "KAKAO" },
+        brand: { "@type": "Brand", name: "Kakao" },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",
@@ -109,8 +120,17 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
             : "https://schema.org/OutOfStock",
           itemCondition: "https://schema.org/NewCondition",
         },
-        // NO aggregateRating: emitted only once rating_count >= 1 approved
-        // reviews exist (content-blog-seo.md edge case #3) — currently zero.
+        // aggregateRating is emitted only once ≥1 approved review exists
+        // (content-blog-seo.md edge case #3).
+        ...(product.ratingCount > 0
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: product.ratingAvg.toFixed(1),
+                reviewCount: product.ratingCount,
+              },
+            }
+          : {}),
       },
       {
         "@type": "BreadcrumbList",
@@ -302,6 +322,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   ]);
   if (product === null) notFound();
 
+  const company = await getCompanyInfo().catch(() => null);
+  const countryOfOrigin = company?.countryOfOrigin ?? "India";
+
   const categoryName =
     categories.find((c) => c.slug === product.categorySlug)?.name ??
     product.categorySlug;
@@ -365,7 +388,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
       {/* Gallery + info two-col grid (reference 1.05fr/.95fr, 56px gap) */}
       <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-14">
         <div className="lg:sticky lg:top-[98px]">
-          <PdpGallery tone={product.tone} name={product.name} />
+          <PdpGallery
+            tone={product.tone}
+            name={product.name}
+            images={product.images.map((i) => ({ url: i.url, alt: i.alt }))}
+          />
         </div>
 
         <div>
@@ -411,6 +438,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           ) : null}
 
+          {/* Product details from the vertical attribute schema (cocoa %, origin…) */}
+          {product.pdpAttributes.length > 0 ? (
+            <dl className="mb-[26px] grid grid-cols-2 gap-x-6 gap-y-2 max-[420px]:grid-cols-1">
+              {product.pdpAttributes.map((attr) => (
+                <div key={attr.label} className="flex items-baseline justify-between gap-3 border-b border-[#EEE1CE] pb-1.5">
+                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a7a68]">
+                    {attr.label}
+                  </dt>
+                  <dd className="font-body text-[13.5px] text-ink">
+                    {attr.value}{attr.unit !== null ? attr.unit : ""}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+
           {/* Price row + variant chips + live stock + qty/add/wishlist + buy now */}
           <PdpPurchasePanel
             productId={product.id}
@@ -438,10 +481,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
           nutritionFacts={product.nutritionFacts}
           categoryName={categoryName}
           netQuantities={netQuantities}
+          countryOfOrigin={countryOfOrigin}
           shelfLifeDays={product.shelfLifeDays}
           storageInstructions={product.storageInstructions}
           ratingAvg={product.ratingAvg}
           ratingCount={product.ratingCount}
+          productId={product.id}
+          reviews={product.reviews}
         />
       </Reveal>
 

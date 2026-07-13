@@ -13,7 +13,7 @@ import { getInvoiceData } from "@/lib/invoice/invoice-data";
 import { InvoiceView } from "@/components/invoice/InvoiceView";
 
 export const metadata: Metadata = {
-  title: "Invoice · Kakoa",
+  title: "Invoice",
   robots: { index: false, follow: false },
 };
 

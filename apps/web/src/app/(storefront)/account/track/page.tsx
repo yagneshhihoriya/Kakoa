@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 import { TrackOrderFlow } from "@/components/orders/TrackOrderFlow";
 
 export const metadata: Metadata = {
-  title: "Track your order · Kakoa",
+  title: "Track your order",
   robots: { index: false, follow: false },
 };
 

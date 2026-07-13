@@ -19,7 +19,7 @@ import type { CheckoutInitial } from "@/components/checkout/useCheckout";
 import type { CheckoutSummarySettings } from "@/components/checkout/types";
 
 export const metadata: Metadata = {
-  title: "Checkout · Kakoa",
+  title: "Checkout",
   robots: { index: false, follow: false },
 };
 

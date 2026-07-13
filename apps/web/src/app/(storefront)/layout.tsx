@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { ToastProvider } from "@kakoa/ui/client";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { WishlistProvider } from "@/components/auth/WishlistProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { CartDrawer } from "@/components/chrome/CartDrawer";
 import { Footer } from "@/components/chrome/Footer";
@@ -22,7 +23,15 @@ export default function StorefrontLayout({
         {/* AuthProvider reads `?login=1` via useSearchParams — needs Suspense. */}
         <Suspense fallback={null}>
           <AuthProvider>
+            <WishlistProvider>
             <div className="flex min-h-screen flex-col bg-cream text-ink">
+              {/* WCAG 2.4.1 — bypass the header nav; visible only on keyboard focus. */}
+              <a
+                href="#main-content"
+                className="sr-only rounded-lg bg-ink px-4 py-2 font-body text-sm font-semibold text-card focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[200] focus:shadow-lg"
+              >
+                Skip to content
+              </a>
               <RevealInit />
 
               {/* ANNOUNCEMENT (prototype ribbon; free-ship copy kept price-free —
@@ -34,12 +43,13 @@ export default function StorefrontLayout({
 
               <Header />
 
-              <div className="flex-1">{children}</div>
+              <div id="main-content" className="flex-1">{children}</div>
 
               <Footer />
 
               <CartDrawer />
             </div>
+            </WishlistProvider>
           </AuthProvider>
         </Suspense>
       </CartProvider>

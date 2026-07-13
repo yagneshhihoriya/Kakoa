@@ -116,12 +116,10 @@ export default async function HomePage() {
           </div>
           <div className="flex flex-wrap items-center gap-[22px] text-[13.5px] text-[#6B5A49]">
             <div className="flex items-center gap-[7px]">
-              <span aria-hidden="true" className="tracking-[1px] text-gold">
-                ★★★★★
-              </span>
+              <span aria-hidden="true" className="text-gold">✦</span>
               <span>
-                <strong className="font-bold text-ink">4.9</strong> · 2,400+
-                reviews
+                <strong className="font-bold text-ink">Small-batch</strong> ·
+                bean-to-bar
               </span>
             </div>
             <span aria-hidden="true" className="h-4 w-px bg-[#DCC9AE]" />

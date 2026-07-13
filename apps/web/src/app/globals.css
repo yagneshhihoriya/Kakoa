@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "@kakoa/ui/tokens.css";
 
+/* Scan the shared UI package so utilities used ONLY inside @kakoa/ui components
+ * (e.g. text-line / text-gold in StarRating) are generated, not purged. */
+@source "../../../../packages/ui/src";
+
 html {
   scroll-behavior: smooth;
 }

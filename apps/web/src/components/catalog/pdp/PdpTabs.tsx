@@ -2,6 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { StarRating, cx } from "@kakoa/ui";
+import { ReviewComposer } from "./ReviewComposer";
 
 type TabId = "description" | "ingredients" | "reviews";
 
@@ -16,10 +17,24 @@ export interface PdpTabsProps {
   /** "At a glance" card data. */
   categoryName: string;
   netQuantities: string;
+  countryOfOrigin: string;
   shelfLifeDays: number | null;
   storageInstructions: string | null;
   ratingAvg: number;
   ratingCount: number;
+  productId: string;
+  reviews: {
+    id: string;
+    author: string;
+    rating: number;
+    title: string | null;
+    body: string;
+    dateIso: string;
+  }[];
+}
+
+function formatReviewDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
 }
 
 /** Prototype key/value row — 14px, hairline #E6D6BE divider. */
@@ -59,10 +74,13 @@ export function PdpTabs({
   nutritionFacts,
   categoryName,
   netQuantities,
+  countryOfOrigin,
   shelfLifeDays,
   storageInstructions,
   ratingAvg,
   ratingCount,
+  productId,
+  reviews,
 }: PdpTabsProps): ReactNode {
   const TABS = [
     { id: "description", label: "Description" },
@@ -94,7 +112,7 @@ export function PdpTabs({
         role="tablist"
         aria-label="Product information"
         onKeyDown={handleKeyDown}
-        className="mb-8 flex gap-8 overflow-x-auto border-b border-line"
+        className="mb-8 flex gap-6 overflow-x-auto border-b border-line [scrollbar-width:none] sm:gap-8 [&::-webkit-scrollbar]:hidden"
       >
         {TABS.map((tab) => (
           <button
@@ -142,6 +160,11 @@ export function PdpTabs({
             <div className="flex flex-col gap-3">
               <GlanceRow label="Collection" value={categoryName} />
               <GlanceRow label="Net quantity" value={netQuantities} />
+              <GlanceRow
+                label="Country of origin"
+                value={countryOfOrigin}
+                last={shelfLifeDays === null && storageInstructions === null}
+              />
               {shelfLifeDays !== null ? (
                 <GlanceRow
                   label="Shelf life"
@@ -228,19 +251,37 @@ export function PdpTabs({
                 ? `Based on ${ratingCount} review${ratingCount === 1 ? "" : "s"}`
                 : "No reviews yet"}
             </p>
-            <button
-              type="button"
-              disabled
-              title="Reviews open after the first deliveries"
-              className="mt-5 rounded-pill bg-ink px-[22px] py-3 font-body text-sm font-bold text-card disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Write a review
-            </button>
+            <ReviewComposer productId={productId} />
           </div>
-          <p className="max-w-prose font-body text-[15px] leading-[1.7] text-[#4C3B2A]">
-            Reviews open after the first deliveries — verified buyers only, so
-            every word comes from someone who has actually tasted the batch.
-          </p>
+          <div>
+            {reviews.length === 0 ? (
+              <p className="max-w-prose font-body text-[15px] leading-[1.7] text-[#4C3B2A]">
+                No reviews yet — verified buyers can be the first to share their thoughts.
+                Every review comes from someone who actually ordered and tasted the batch.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-6">
+                {reviews.map((r) => (
+                  <li key={r.id} className="border-b border-[#EEE1CE] pb-6 last:border-b-0 last:pb-0">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <StarRating value={r.rating} size="sm" />
+                      <span className="font-body text-[13.5px] font-semibold text-ink">{r.author}</span>
+                      <span className="rounded-pill bg-[#E1EAD0] px-2 py-0.5 font-body text-[10.5px] font-semibold text-[#5C6B34]">
+                        Verified buyer
+                      </span>
+                      <span className="font-body text-[12px] text-[#8a7a68]">· {formatReviewDate(r.dateIso)}</span>
+                    </div>
+                    {r.title !== null ? (
+                      <p className="font-body text-[14.5px] font-semibold text-ink">{r.title}</p>
+                    ) : null}
+                    <p className="whitespace-pre-line font-body text-[14.5px] leading-[1.7] text-[#4C3B2A]">
+                      {r.body}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </section>

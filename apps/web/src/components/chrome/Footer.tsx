@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import { getFssaiLicense } from "@/lib/catalog/queries";
 import { BrandLockup } from "./BrandMark";
@@ -28,10 +29,10 @@ const COLUMNS = [
   {
     heading: "Support",
     links: [
+      { href: "/contact", label: "Contact us" },
       { href: "/support", label: "Help center" },
       { href: "/support", label: "FAQ" },
-      { href: "/support", label: "Contact us" },
-      { href: "/login", label: "Sign in" },
+      { href: "/account", label: "My account" },
     ],
   },
 ] as const;
@@ -72,7 +73,7 @@ export async function Footer(): Promise<ReactNode> {
               {column.links.map((link) => (
                 <Link
                   key={link.label}
-                  href={link.href}
+                  href={link.href as Route}
                   className="text-[#B8A88F] no-underline transition-colors hover:text-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                 >
                   {link.label}

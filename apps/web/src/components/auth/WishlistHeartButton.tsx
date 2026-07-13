@@ -3,6 +3,7 @@
 import { type ReactNode } from "react";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional } from "./AuthProvider";
+import { useWishlist } from "./WishlistProvider";
 
 export interface WishlistHeartButtonProps {
   /** Product this heart would save (used by the future toggle). */
@@ -16,12 +17,9 @@ export interface WishlistHeartButtonProps {
 }
 
 /**
- * Auth-gated wishlist heart (docs/modules/auth-otp.md §2). This module only
- * gates on auth: anonymous taps open the login sheet; signed-in taps are a
- * no-op placeholder until the wishlist toggle module lands.
- *
- * TODO(accounts module): call `POST /api/wishlist` to toggle the heart and
- * reflect `wishlist_items` membership (filled vs outline) here.
+ * Auth-gated wishlist heart. Anonymous taps open the login sheet; signed-in
+ * taps toggle `wishlist_items` via the WishlistProvider (POST/DELETE
+ * /api/wishlist) and the heart fills/outlines to reflect membership.
  */
 export function WishlistHeartButton({
   productId,
@@ -30,6 +28,8 @@ export function WishlistHeartButton({
   className,
 }: WishlistHeartButtonProps): ReactNode {
   const auth = useAuthOptional();
+  const wishlist = useWishlist();
+  const saved = wishlist?.isSaved(productId) ?? false;
 
   const handleClick = (): void => {
     if (auth === null) return;
@@ -37,18 +37,18 @@ export function WishlistHeartButton({
       auth.open("wishlist");
       return;
     }
-    // Signed in — wishlist mutation is a follow-up module (read-only here).
-    // Intentionally a no-op; the /account wishlist tab renders saved items.
-    void productId;
+    void wishlist?.toggle(productId);
   };
 
   return (
     <button
       type="button"
-      aria-label={`Add ${productName} to wishlist`}
+      aria-label={saved ? `Remove ${productName} from wishlist` : `Add ${productName} to wishlist`}
+      aria-pressed={saved}
       onClick={handleClick}
       className={cx(
         "transition-colors hover:text-raspberry focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none",
+        saved && "text-raspberry",
         className,
       )}
     >
@@ -57,7 +57,7 @@ export function WishlistHeartButton({
         width={iconSize}
         height={iconSize}
         viewBox="0 0 24 24"
-        fill="none"
+        fill={saved ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth="1.8"
       >

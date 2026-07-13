@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { DM_Serif_Display, Hanken_Grotesk, DM_Mono } from "next/font/google";
 import {
@@ -8,6 +8,7 @@ import {
   serializeJsonLd,
   siteUrl,
 } from "@/lib/seo/site";
+import { Analytics } from "@/components/analytics/Analytics";
 import "./globals.css";
 
 const fontDisplay = DM_Serif_Display({
@@ -63,6 +64,11 @@ export const metadata: Metadata = {
   },
 };
 
+/** Emits <meta name="theme-color"> so the mobile browser address bar takes the cocoa tint. */
+export const viewport: Viewport = {
+  themeColor: BRAND.themeColor,
+};
+
 /**
  * Site-wide Organization JSON-LD (content-blog-seo.md §5). Emitted once from
  * the root so every crawl of any page carries the brand's identity graph.
@@ -75,6 +81,18 @@ const ORGANIZATION_JSON_LD = {
   url: siteUrl(),
   logo: absoluteUrl("/icon"),
   description: SITE_DESCRIPTION,
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: "support@kakoa.in",
+    areaServed: "IN",
+    availableLanguage: ["en", "hi"],
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: "IN",
+    addressRegion: "Maharashtra",
+  },
 } as const;
 
 export default function RootLayout({
@@ -94,6 +112,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <Analytics />
       </body>
     </html>
   );

@@ -542,7 +542,7 @@ export function CheckoutClient({
         order_id: razorpay.orderId,
         amount: razorpay.amountPaise,
         currency: razorpay.currency,
-        name: "Kakoa",
+        name: "Kakao",
         description: `Order ${orderNumber}`,
         prefill: {
           contact: razorpay.prefill.contact,

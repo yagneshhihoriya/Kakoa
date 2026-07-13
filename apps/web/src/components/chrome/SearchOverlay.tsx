@@ -7,6 +7,8 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import {
   formatPaise,
   type ProductCardView,
@@ -59,6 +61,15 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   useOverlay(open, onClose, panelRef, inputRef);
+  const router = useRouter();
+
+  /** Enter / "view all" → funnel the query into the full /shop?q= results. */
+  function goToShop(): void {
+    const q = query.trim();
+    if (q.length < MIN_QUERY_LENGTH) return;
+    onClose();
+    router.push(`/shop?q=${encodeURIComponent(q)}` as Route);
+  }
 
   // Trending strip — fetched once, on first open (top catalog products).
   useEffect(() => {
@@ -165,6 +176,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
               onChange={(event) => {
                 setQuery(event.target.value);
               }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  goToShop();
+                }
+              }}
+              enterKeyHint="search"
               placeholder="Search chocolates, gifts, collections…"
               aria-label="Search chocolates, gifts, collections"
               className="min-w-0 flex-1 border-none bg-transparent font-display text-[clamp(20px,3.4vw,28px)] text-ink outline-none placeholder:text-ink/40"
@@ -277,6 +295,16 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                   </Link>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={goToShop}
+                className={cx(
+                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-[14px] border border-[#EEE1CE] bg-card px-4 py-3 font-body text-[14px] font-semibold text-ink transition-colors hover:bg-[#eaddc7]",
+                  FOCUS_RING,
+                )}
+              >
+                View all results for “{trimmed}” <span aria-hidden="true">→</span>
+              </button>
             </>
           ) : null}
 

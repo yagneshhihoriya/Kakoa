@@ -15,7 +15,7 @@ import { loadOwnedOrderDetail } from "@/lib/orders/order-detail-data";
 import { OrderDetailClient } from "@/components/orders/OrderDetailClient";
 
 export const metadata: Metadata = {
-  title: "Order detail · Kakoa",
+  title: "Order detail",
   robots: { index: false, follow: false },
 };
 

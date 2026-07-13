@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Our stores · Kakao" };
+export const metadata = { title: "Our stores" };
 
 /** Placeholder — replaced by the Content module (PROJECT_PLAN §3.7). */
 export default function LocatorPage() {

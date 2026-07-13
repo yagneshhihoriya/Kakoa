@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { ProductCardView } from "@kakoa/core";
 import { Price, StarRating, cx } from "@kakoa/ui";
 import { AddToBagButton } from "@/components/cart/AddToBagButton";
@@ -39,13 +40,25 @@ export function ProductCard({
         className,
       )}
     >
-      {/* Image area — flush 4/5 gradient with badge chip + wishlist heart. */}
+      {/* Image area — real product image when present, else 4/5 gradient. */}
       <div className="relative">
-        <ChocoPlaceholder
-          tone={product.tone}
-          ratio="4 / 5"
-          className="rounded-none!"
-        />
+        {product.imageUrl !== null ? (
+          <div className="relative aspect-[4/5] overflow-hidden bg-[#f4ece1]">
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover"
+            />
+          </div>
+        ) : (
+          <ChocoPlaceholder
+            tone={product.tone}
+            ratio="4 / 5"
+            className="rounded-none!"
+          />
+        )}
         {product.badge !== null ? (
           <span className="absolute top-3 left-3 rounded-pill bg-cream/[0.92] px-[9px] py-[5px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink uppercase">
             {product.badge}
