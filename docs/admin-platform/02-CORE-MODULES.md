@@ -39,11 +39,15 @@ Each module ships as a manifest (see [03](03-STRUCTURE-AND-CONVENTIONS.md)):
 - **Reuses:** `store_settings` → `business_settings` (namespaced). Owner-only for legal/identity keys; audited.
 - **Permissions:** `settings:read`, `settings:write`.
 
-### 5. Media Library  · Universal
-- **Purpose:** upload, browse, and reuse images/files (product photos, banners, brand assets) with alt text; served via signed URLs; EXIF-stripped.
-- **Generic:** storage behind a `MediaProvider` interface (Supabase Storage today; S3/others later), mirroring the existing provider-interface pattern.
-- **New:** `media_assets` table + `MediaProvider`. Reuses the return-photos signed-upload + magic-byte validation pattern from `returns-refunds.md`.
+### 5. Media Library  · Universal  · ✅ BUILT
+- **Purpose:** upload, browse, and reuse images (product photos, banners, brand assets) with alt text.
+- **Generic:** storage behind a `MediaProvider` interface (`packages/integrations/src/media`), mirroring the existing provider pattern. Implementations: **`S3MediaProvider`** (Amazon S3 / any S3-compatible store via `S3_ENDPOINT`) and **`LocalMediaProvider`** (dev fallback → writes `apps/web/public/uploads`, served at `/uploads/...`). `getMediaProvider()` selects S3 when `S3_BUCKET` + `S3_REGION` + `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` are set, else Local.
+- **New:** `media_assets` table (migration `0004`) + `MediaProvider`. Uploads are **server-proxied** (`POST /api/admin/media`, multipart) and validated by magic-byte sniff + size cap (8 MB) + MIME allowlist (JPG/PNG/WebP/GIF/AVIF) in the pure `media-validation` module — the stored MIME/extension come from the sniffed type, never the client's declared type.
+- **API:** `GET/POST /api/admin/media`, `DELETE/PATCH /api/admin/media/[id]`. Product gallery: `GET/POST /api/admin/products/[id]/images`, `DELETE .../[imageId]` (writes `product_images`, purges the catalog cache via `revalidateCatalog`).
+- **UI:** `/admin/media` (grid: upload, copy URL, delete) + a `MediaPicker` modal wired into the Products editor's Images card.
 - **Permissions:** `media:read`, `media:write`.
+- **Config:** `S3_BUCKET`, `S3_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, optional `S3_PUBLIC_BASE_URL` (CDN) and `S3_ENDPOINT` (R2/MinIO).
+- **Follow-ups (not yet built):** server-side EXIF strip / resize (needs `sharp`); presigned direct-to-S3 upload (current path is server-proxied); folders/tagging; reorder of a product's gallery.
 - **Extension point:** any module (Products, Content) picks assets from here.
 
 ### 6. Notifications  · Universal

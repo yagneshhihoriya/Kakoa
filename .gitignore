@@ -10,3 +10,5 @@ dist/
 coverage/
 playwright-report/
 test-results/
+# Local Media Library uploads (dev fallback; production uses S3)
+apps/web/public/uploads/
