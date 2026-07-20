@@ -22,9 +22,16 @@ export interface PdpGalleryProps {
 }
 
 const THUMB =
-  "relative aspect-square overflow-hidden rounded-[18px] border-2 p-0 shadow-[0_4px_12px_rgba(42,29,18,.10)] transition-colors focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none";
+  "relative aspect-square w-16 shrink-0 overflow-hidden rounded-[16px] border-2 p-0 shadow-soft transition-[colors,transform] duration-[var(--duration-fast)] ease-brand hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none md:w-auto md:rounded-[18px]";
 const MAIN =
-  "relative aspect-square overflow-hidden rounded-[18px] shadow-[0_24px_60px_rgba(42,29,18,.18)]";
+  "relative aspect-square overflow-hidden rounded-[22px] shadow-float";
+
+/** Container: main-on-top + horizontal thumb strip on mobile; 78px side rail on desktop. */
+const GALLERY_WRAP =
+  "flex flex-col gap-3 md:grid md:grid-cols-[78px_1fr] md:items-start md:gap-4";
+/** Thumb rail: horizontal scroll under the image on mobile, vertical column on desktop. */
+const THUMB_RAIL =
+  "order-2 flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:order-none md:flex-col md:overflow-visible md:pb-0";
 
 /**
  * Derive 4 gallery tones deterministically for the no-photo fallback: the
@@ -52,10 +59,11 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
 
   if (images.length > 0) {
     const active = images[Math.min(selected, images.length - 1)] ?? images[0]!;
+    const single = images.length <= 1;
     return (
-      <div className="grid grid-cols-[78px_1fr] items-start gap-4">
-        {images.length > 1 ? (
-          <div role="group" aria-label={`${name} gallery`} className="flex flex-col gap-3">
+      <div className={single ? MAIN : GALLERY_WRAP}>
+        {!single ? (
+          <div role="group" aria-label={`${name} gallery`} className={THUMB_RAIL}>
             {images.map((img, index) => (
               <button
                 key={`${img.url}-${index}`}
@@ -72,10 +80,8 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
               </button>
             ))}
           </div>
-        ) : (
-          <div aria-hidden="true" />
-        )}
-        <div className={MAIN}>
+        ) : null}
+        <div className={cx(MAIN, single ? "" : "order-1 md:order-none")}>
           <Image
             src={active.url}
             alt={active.alt || name}
@@ -93,8 +99,8 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
   const tones = galleryTones(tone);
   const active = tones[selected] ?? tone;
   return (
-    <div className="grid grid-cols-[78px_1fr] items-start gap-4">
-      <div role="group" aria-label={`${name} gallery`} className="flex flex-col gap-3">
+    <div className={GALLERY_WRAP}>
+      <div role="group" aria-label={`${name} gallery`} className={THUMB_RAIL}>
         {tones.map((thumbTone, index) => (
           <button
             key={`${thumbTone}-${index}`}
@@ -111,7 +117,7 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
           </button>
         ))}
       </div>
-      <div className={MAIN}>
+      <div className={cx(MAIN, "order-1 md:order-none")}>
         <ChocoPlaceholder tone={active} />
       </div>
     </div>

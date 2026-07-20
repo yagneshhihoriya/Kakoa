@@ -86,11 +86,11 @@ export function SortDropdown({ value }: { value: ProductSort }): ReactNode {
           setOpen((current) => !current);
         }}
         className={cx(
-          "relative z-[41] flex min-h-11 min-w-[150px] cursor-pointer items-center gap-[9px] rounded-pill border border-[#E0CFB6] bg-white py-[11px] pr-[15px] pl-[17px] font-body text-[13.5px] font-semibold text-ink transition-colors hover:border-[#C9B48F]",
+          "relative z-[41] flex min-h-11 min-w-[150px] cursor-pointer items-center gap-[9px] rounded-pill border border-line-soft bg-surface py-[11px] pr-[15px] pl-[17px] font-body text-[13.5px] font-semibold text-ink shadow-soft transition-colors hover:border-espresso/40",
           "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
         )}
       >
-        <span className="text-[12.5px] font-medium text-[#8a7a68]">Sort</span>
+        <span className="text-[12.5px] font-medium text-ink-muted">Sort</span>
         <span className="flex-1 text-left">{SORT_LABELS[value]}</span>
         <svg
           aria-hidden="true"
@@ -114,7 +114,7 @@ export function SortDropdown({ value }: { value: ProductSort }): ReactNode {
           id={listboxId}
           role="listbox"
           aria-label="Sort products"
-          className="absolute top-[calc(100%+8px)] right-0 z-40 min-w-[238px] rounded-[16px] border border-line bg-white p-[6px] shadow-[0_22px_54px_rgba(42,29,18,0.2)]"
+          className="absolute top-[calc(100%+8px)] right-0 z-40 min-w-[238px] rounded-[16px] border border-line-soft bg-surface p-[6px] shadow-lift"
         >
           {PRODUCT_SORTS.map((sort) => {
             const active = sort === value;

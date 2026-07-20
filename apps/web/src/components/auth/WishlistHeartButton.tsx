@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional } from "./AuthProvider";
 import { useWishlist } from "./WishlistProvider";
@@ -30,6 +30,7 @@ export function WishlistHeartButton({
   const auth = useAuthOptional();
   const wishlist = useWishlist();
   const saved = wishlist?.isSaved(productId) ?? false;
+  const [beat, setBeat] = useState(false);
 
   const handleClick = (): void => {
     if (auth === null) return;
@@ -37,6 +38,8 @@ export function WishlistHeartButton({
       auth.open("wishlist");
       return;
     }
+    // Beat only on the delightful "adding" moment (not on remove).
+    if (!saved) setBeat(true);
     void wishlist?.toggle(productId);
   };
 
@@ -60,6 +63,11 @@ export function WishlistHeartButton({
         fill={saved ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth="1.8"
+        onAnimationEnd={() => setBeat(false)}
+        className={cx(
+          "origin-center",
+          beat && "animate-[kk-heart_0.5s_ease-out] motion-reduce:animate-none",
+        )}
       >
         <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z" />
       </svg>

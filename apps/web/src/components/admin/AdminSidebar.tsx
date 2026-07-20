@@ -72,10 +72,10 @@ export function AdminSidebar({
                     href={item.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={
-                      "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors " +
+                      "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] transition-all duration-200 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 " +
                       (active
                         ? "bg-[#f3e7d5] font-semibold text-[#2a1d12] shadow-sm"
-                        : "text-white/65 hover:bg-white/[0.07] hover:text-white")
+                        : "text-white/65 hover:translate-x-0.5 hover:bg-white/[0.07] hover:text-white motion-reduce:hover:translate-x-0")
                     }
                   >
                     <AdminIcon

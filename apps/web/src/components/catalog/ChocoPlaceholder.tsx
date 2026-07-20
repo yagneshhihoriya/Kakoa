@@ -4,9 +4,9 @@ import { cx } from "@kakoa/ui";
 
 /**
  * Tone → gradient map, verbatim from the prototype (design-system placeholder
- * tones — `products.tone`). Products ship without real photography in Phase 1,
- * so every image slot renders this gradient block instead. These hexes are
- * prototype art direction, not palette tokens — they exist only here.
+ * tones — `products.tone`). Products may ship without real photography, so
+ * every empty image slot renders this gradient block instead. These hexes are
+ * art direction, not palette tokens — they exist only here.
  */
 export const TONE_GRADIENTS: Record<ProductTone, string> = {
   dark: "linear-gradient(140deg, #4a2e1c 0%, #2c150a 100%)",
@@ -17,9 +17,16 @@ export const TONE_GRADIENTS: Record<ProductTone, string> = {
   matcha: "linear-gradient(140deg, #9aa863 0%, #5f6e39 100%)",
 };
 
-/** Soft radial sheen layered on top of every tone gradient (prototype). */
-const HIGHLIGHT =
-  "radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 55%)";
+/**
+ * Layered lighting stacked over each tone gradient for a tactile,
+ * molded-chocolate read: a broad top-left specular, a tight glossy hotspot,
+ * and a bottom-right vignette for depth. Composited front-to-back.
+ */
+const SHEEN = [
+  "radial-gradient(60% 45% at 28% 20%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0) 60%)",
+  "radial-gradient(18% 14% at 24% 18%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 70%)",
+  "radial-gradient(90% 80% at 84% 108%, rgba(30,16,8,0.42) 0%, rgba(30,16,8,0) 55%)",
+].join(", ");
 
 export interface ChocoPlaceholderProps {
   tone: ProductTone;
@@ -46,11 +53,11 @@ export function ChocoPlaceholder({
       className={cx("relative w-full overflow-hidden rounded-lg", className)}
       style={{
         aspectRatio: ratio,
-        backgroundImage: `${HIGHLIGHT}, ${TONE_GRADIENTS[tone]}`,
+        backgroundImage: `${SHEEN}, ${TONE_GRADIENTS[tone]}`,
       }}
     >
       {label !== undefined ? (
-        <span className="absolute bottom-3 left-3 rounded-pill bg-cream/90 px-3 py-1 font-body text-xs font-semibold text-ink">
+        <span className="absolute bottom-3 left-3 rounded-pill bg-cream/90 px-3 py-1 font-body text-xs font-semibold text-ink shadow-soft">
           {label}
         </span>
       ) : null}

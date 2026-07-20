@@ -73,7 +73,13 @@ export function AddToBagButton({
       aria-label={`Add ${productName} to bag`}
       className={cx(ADD_TO_BAG_CLASSES, className)}
     >
-      {added ? "Added ✓" : "Add"}
+      {added ? (
+        <span className="inline-block animate-[kk-pop_0.4s_ease-out] motion-reduce:animate-none">
+          Added ✓
+        </span>
+      ) : (
+        "Add"
+      )}
     </button>
   );
 }

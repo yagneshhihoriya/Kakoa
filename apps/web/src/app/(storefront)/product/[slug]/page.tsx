@@ -216,9 +216,9 @@ function PdpMetaList({
   return (
     <ul
       aria-label="Shipping and payment notes"
-      className="mt-6 grid grid-cols-1 gap-x-5 gap-y-3.5 rounded-[18px] bg-[#F6EEE1] px-5 py-4 sm:grid-cols-2"
+      className="mt-6 grid grid-cols-1 gap-x-5 gap-y-3.5 rounded-[18px] border border-line-soft bg-cream-2 px-5 py-4 shadow-soft sm:grid-cols-2"
     >
-      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-[#5C4B3A]">
+      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
         <MetaIcon>
           <line x1="2" y1="12" x2="22" y2="12" />
           <line x1="12" y1="2" x2="12" y2="22" />
@@ -229,7 +229,7 @@ function PdpMetaList({
         </MetaIcon>
         Ships cold &amp; insulated
       </li>
-      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-[#5C4B3A]">
+      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
         <MetaIcon>
           <rect x="1" y="4" width="14" height="12" rx="1" />
           <path d="M15 8h4l3 3v5h-7z" />
@@ -240,7 +240,7 @@ function PdpMetaList({
           ? `Free shipping over ${formatPaise(freeShippingThresholdPaise)}`
           : "Pan-India insulated delivery"}
       </li>
-      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-[#5C4B3A]">
+      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
         <MetaIcon>
           <polyline points="20 12 20 22 4 22 4 12" />
           <rect x="2" y="7" width="20" height="5" />
@@ -253,7 +253,7 @@ function PdpMetaList({
           : "Gift wrap available"}
       </li>
       {codEnabled ? (
-        <li className="flex items-center gap-2.5 font-body text-[13.5px] text-[#5C4B3A]">
+        <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
           <MetaIcon>
             <rect x="2" y="6" width="20" height="12" rx="2" />
             <circle cx="12" cy="12" r="2.5" />
@@ -278,7 +278,7 @@ function LegalMetrologyBlock({
   return (
     <section
       aria-label="Legal Metrology and food safety information"
-      className="mt-4 rounded-[18px] border border-line px-5 py-4"
+      className="mt-4 rounded-[18px] border border-line-soft px-5 py-4"
     >
       <div className="flex items-center gap-2.5">
         <VegMark isVeg={product.isVeg} />
@@ -287,7 +287,7 @@ function LegalMetrologyBlock({
           all taxes
         </p>
       </div>
-      <dl className="mt-3 flex flex-col gap-1.5 font-body text-[13px] text-[#6B5A49]">
+      <dl className="mt-3 flex flex-col gap-1.5 font-body text-[13px] text-ink-soft">
         <div className="flex flex-wrap gap-x-2">
           <dt className="font-semibold text-ink">Net quantity:</dt>
           <dd>{netQuantities}</dd>
@@ -354,7 +354,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       {/* Breadcrumb — reference `Home / Collection / {name}` */}
       <nav
         aria-label="Breadcrumb"
-        className="mb-[26px] font-body text-[13px] font-medium text-[#8a7a68]"
+        className="mb-[26px] font-body text-[13px] font-medium text-ink-muted"
       >
         <ol className="flex flex-wrap items-center">
           <li>
@@ -397,25 +397,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div>
           {/* Eyebrow — category (+ badge tag when present) */}
-          <p className="mb-3 font-mono text-xs font-medium tracking-[0.18em] text-espresso uppercase">
+          <div className="mb-3 flex items-center gap-3 font-mono text-eyebrow font-medium text-espresso uppercase">
+            <span aria-hidden="true" className="inline-block h-px w-[26px] bg-espresso" />
             {categoryName}
             {product.badge !== null ? ` · ${product.badge}` : ""}
-          </p>
+          </div>
 
-          <h1 className="mb-3.5 font-display text-4xl leading-[1.02] font-normal text-ink md:text-[46px]">
+          <h1 className="mb-3.5 font-display text-h1 font-normal text-ink">
             {product.name}
           </h1>
 
           <div className="mb-5 flex items-center gap-3">
             <StarRating value={product.ratingAvg} />
-            <span className="font-body text-sm text-[#6B5A49]">
+            <span className="font-body text-sm text-ink-soft">
               {product.ratingCount === 0
                 ? "No reviews yet"
                 : `${product.ratingAvg.toFixed(1)} · ${product.ratingCount} review${product.ratingCount === 1 ? "" : "s"}`}
             </span>
           </div>
 
-          <p className="mb-6 max-w-[480px] font-body text-base leading-[1.65] text-[#5C4B3A]">
+          <p className="mb-6 max-w-[480px] font-body text-lead text-ink-soft">
             {product.blurb}
           </p>
 
@@ -429,7 +430,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.tastingNotes.map((note) => (
                   <li
                     key={note}
-                    className="rounded-pill bg-card px-3.5 py-2 font-body text-[13px] font-medium text-[#6B4A2E]"
+                    className="rounded-pill border border-line-soft bg-card px-3.5 py-2 font-body text-[13px] font-medium text-ink-soft shadow-soft"
                   >
                     {note}
                   </li>
@@ -442,8 +443,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {product.pdpAttributes.length > 0 ? (
             <dl className="mb-[26px] grid grid-cols-2 gap-x-6 gap-y-2 max-[420px]:grid-cols-1">
               {product.pdpAttributes.map((attr) => (
-                <div key={attr.label} className="flex items-baseline justify-between gap-3 border-b border-[#EEE1CE] pb-1.5">
-                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a7a68]">
+                <div key={attr.label} className="flex items-baseline justify-between gap-3 border-b border-line-soft pb-1.5">
+                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-muted">
                     {attr.label}
                   </dt>
                   <dd className="font-body text-[13.5px] text-ink">
@@ -497,11 +498,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <Reveal index={2} className="mt-16">
           <section
             aria-labelledby="pdp-fbt"
-            className="rounded-[24px] bg-[#F6EEE1] p-6 sm:p-9"
+            className="rounded-[24px] border border-line-soft bg-cream-2 p-6 shadow-card sm:p-9"
           >
             <h2
               id="pdp-fbt"
-              className="mb-6 font-display text-[30px] leading-none font-normal text-ink"
+              className="mb-6 font-display text-h2 font-normal text-ink"
             >
               Frequently bought together
             </h2>
@@ -523,7 +524,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <Fragment key={item.id}>
                   <span
                     aria-hidden="true"
-                    className="font-body text-2xl text-[#8a7a68]"
+                    className="font-body text-2xl text-ink-muted"
                   >
                     +
                   </span>
@@ -545,7 +546,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               ))}
 
               <div className="ml-auto text-right">
-                <p className="mb-0.5 font-body text-[13px] text-[#6B5A49]">
+                <p className="mb-0.5 font-body text-[13px] text-ink-soft">
                   Bundle total
                 </p>
                 <p className="font-body text-2xl font-bold text-ink">
@@ -563,7 +564,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <section aria-labelledby="pdp-related">
             <h2
               id="pdp-related"
-              className="mb-6 font-display text-[32px] leading-none font-normal text-ink"
+              className="mb-6 font-display text-h2 font-normal text-ink"
             >
               You may also like
             </h2>

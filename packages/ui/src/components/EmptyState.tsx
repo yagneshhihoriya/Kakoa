@@ -31,11 +31,15 @@ export function EmptyState({
     <div
       className={cx(
         'flex flex-col items-center gap-4 rounded-lg border border-line bg-card px-6 py-10 text-center',
+        'animate-[kk-rise_0.5s_ease_both] motion-reduce:animate-none',
         className,
       )}
     >
       {icon !== undefined ? (
-        <div aria-hidden="true" className="text-espresso">
+        <div
+          aria-hidden="true"
+          className="text-espresso motion-safe:animate-[kk-float_5s_ease-in-out_infinite]"
+        >
           {icon}
         </div>
       ) : null}

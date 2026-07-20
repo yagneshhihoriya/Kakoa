@@ -14,8 +14,53 @@ const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
 const LINE = "#e2ddd4";
 const HEAD_BG = "#faf7f2";
+const COCOA = "#8a5a34";
 
 const money = (paise: number): string => formatPaise(paise);
+
+/** Chip palette [background, text] per tone — bordered so it still reads in
+ * B/W print even if the browser drops background colours. */
+const CHIP_TONE: Record<string, [string, string]> = {
+  success: ["#e7f4ea", "#1f7a3d"],
+  warn: ["#fbf1df", "#98680f"],
+  danger: ["#fbeaea", "#b23b3b"],
+  refund: ["#eaf0fb", "#2f5fa8"],
+  neutral: ["#f1efe9", "#6b6b6b"],
+};
+
+/** Infer a chip tone from a human status label (keyword match). */
+function toneFor(label: string): keyof typeof CHIP_TONE {
+  const l = label.toLowerCase();
+  if (/(captured|collected|confirmed|delivered|paid|remitted)/.test(l)) return "success";
+  if (/(fail|cancel)/.test(l)) return "danger";
+  if (/refund/.test(l)) return "refund";
+  if (/(pending|authorized|processing|packed|shipped)/.test(l)) return "warn";
+  return "neutral";
+}
+
+function StatusChip({ label }: { label: string }): ReactNode {
+  const [bg, fg]: [string, string] =
+    CHIP_TONE[toneFor(label)] ?? ["#f1efe9", "#6b6b6b"];
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "2px 9px",
+        borderRadius: 999,
+        fontSize: 10.5,
+        fontWeight: 700,
+        background: bg,
+        color: fg,
+        border: `1px solid ${fg}33`,
+        textTransform: "capitalize",
+        WebkitPrintColorAdjust: "exact",
+        printColorAdjust: "exact",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 function addressLines(a: AddressSnapshot): string[] {
   return [
@@ -84,11 +129,25 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
         boxSizing: "border-box",
       }}
     >
+      {/* Slim brand accent bar, pulled to the physical page edges */}
+      <div
+        style={{
+          height: 8,
+          margin: "-16mm -14mm 22px",
+          background: `linear-gradient(90deg, #d9ac5e 0%, ${COCOA} 100%)`,
+          WebkitPrintColorAdjust: "exact",
+          printColorAdjust: "exact",
+        }}
+      />
+
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
-          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: 4, color: INK }}>Kakao</div>
-          <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600 }}>{m.seller.legalName}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: COCOA }}>KAKOA</div>
+          <div style={{ fontSize: 10, letterSpacing: 2, color: MUTED, textTransform: "uppercase", marginTop: 1 }}>
+            Fine chocolate
+          </div>
+          <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600 }}>{m.seller.legalName}</div>
           <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, maxWidth: 280 }}>{m.seller.address}</div>
           <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
             GSTIN: {m.seller.gstin}
@@ -132,10 +191,14 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
       </div>
 
       {/* Payment / status */}
-      <div style={{ display: "flex", gap: 24, marginTop: 16, flexWrap: "wrap", fontSize: 11, color: MUTED }}>
+      <div style={{ display: "flex", gap: 18, marginTop: 16, flexWrap: "wrap", alignItems: "center", fontSize: 11, color: MUTED }}>
         <span>Payment: <strong style={{ color: INK }}>{m.paymentMethodLabel}</strong></span>
-        <span>Payment status: <strong style={{ color: INK }}>{m.paymentStatusLabel}</strong></span>
-        <span>Order status: <strong style={{ color: INK, textTransform: "capitalize" }}>{m.orderStatusLabel}</strong></span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          Payment status: <StatusChip label={m.paymentStatusLabel} />
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          Order status: <StatusChip label={m.orderStatusLabel} />
+        </span>
         {m.shipment ? <span>AWB: <strong style={{ color: INK }}>{m.shipment.awb}</strong>{m.shipment.courierName ? ` (${m.shipment.courierName})` : ""}</span> : null}
       </div>
 
@@ -191,7 +254,25 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
           ) : m.summary.igstPaise > 0 ? (
             <SummaryRow label="IGST (incl.)" value={money(m.summary.igstPaise)} />
           ) : null}
-          <SummaryRow label="Grand total" value={money(m.summary.grandTotalPaise)} strong />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 10,
+              padding: "11px 13px",
+              background: HEAD_BG,
+              border: `1px solid ${LINE}`,
+              borderRadius: 8,
+              WebkitPrintColorAdjust: "exact",
+              printColorAdjust: "exact",
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3 }}>Grand total</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: COCOA, fontVariantNumeric: "tabular-nums" }}>
+              {money(m.summary.grandTotalPaise)}
+            </span>
+          </div>
           {m.refund ? (
             <SummaryRow label={m.refund.fullyRefunded ? "Refunded (full)" : "Refunded"} value={`- ${money(m.refund.totalRefundedPaise)}`} negative />
           ) : null}
@@ -225,7 +306,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
 
       {/* Footer */}
       <div style={{ marginTop: 26, paddingTop: 14, borderTop: `1px solid ${LINE}`, fontSize: 10, color: MUTED, lineHeight: 1.6 }}>
-        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with Kakao 🍫</div>
+        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with KAKOA 🍫</div>
         <div>
           This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds are governed by our
           published policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.

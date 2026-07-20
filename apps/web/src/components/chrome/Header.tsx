@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
+import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
 import { BrandLockup } from "./BrandMark";
 import { SearchOverlay } from "./SearchOverlay";
 import { useCartChrome } from "./useCartChrome";
@@ -71,6 +72,19 @@ export function Header(): ReactNode {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Condense the header (shorter + stronger shadow) once the page scrolls.
+  useEffect(() => {
+    const onScroll = (): void => {
+      setScrolled(window.scrollY > 8);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   // The cart count is per-user client state fetched after mount; the server
   // renders 0. Gate the displayed count on `mounted` so SSR and the first
@@ -92,7 +106,7 @@ export function Header(): ReactNode {
     setPop(true);
     const timer = window.setTimeout(() => {
       setPop(false);
-    }, 450);
+    }, 600);
     return () => {
       window.clearTimeout(timer);
     };
@@ -118,8 +132,18 @@ export function Header(): ReactNode {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-line bg-[rgba(251,246,239,.86)] backdrop-blur-[12px]">
-        <div className="mx-auto flex h-[74px] max-w-[1240px] items-center justify-between gap-6 px-8 max-[1000px]:gap-2.5 max-[1000px]:px-[22px] max-[680px]:gap-1 max-[680px]:px-4">
+      <header
+        className={cx(
+          "sticky top-0 z-40 border-b border-line bg-cream/80 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-300 supports-[backdrop-filter]:bg-cream/70",
+          scrolled ? "shadow-[0_6px_24px_rgba(42,29,18,0.13)]" : "shadow-soft",
+        )}
+      >
+        <div
+          className={cx(
+            "mx-auto flex max-w-[1240px] items-center justify-between gap-6 px-8 transition-[height] duration-300 ease-brand max-[1000px]:gap-2.5 max-[1000px]:px-[22px] max-[680px]:gap-1 max-[680px]:px-4",
+            scrolled ? "h-[60px]" : "h-[74px]",
+          )}
+        >
           <Link href="/" aria-label="Kakao home" className={cx("no-underline", FOCUS_RING)}>
             <BrandLockup size="header" />
           </Link>
@@ -181,24 +205,38 @@ export function Header(): ReactNode {
               aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
               onClick={openCart}
               className={cx(
-                "relative flex h-10 items-center gap-2 rounded-pill bg-ink pl-3.5 pr-4 font-body text-sm font-semibold text-card transition-colors hover:bg-[#3f2c1b]",
+                "relative flex h-10 items-center gap-1.5 rounded-pill px-3 font-body text-sm font-semibold text-ink transition-colors hover:bg-[#F0E4D2]",
                 FOCUS_RING,
               )}
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M6 8h12l-1 12H7L6 8z" />
-                <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-              </svg>
+              <span className="inline-flex [perspective:360px]">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="origin-center animate-[kk-flip-y_2.6s_linear_infinite] [transform-style:preserve-3d] drop-shadow-[0_1.5px_1.5px_rgba(42,29,18,0.35)] motion-reduce:animate-none"
+                >
+                  <defs>
+                    <linearGradient id="kk-bag-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#d9ac5e" />
+                      <stop offset="100%" stopColor="#8a5a34" />
+                    </linearGradient>
+                  </defs>
+                  {/* Filled bag body (chocolate sheen) + darker handle for depth. */}
+                  <path
+                    d="M5 7.5h14l-1.05 11.6a2.2 2.2 0 0 1-2.19 2H8.24a2.2 2.2 0 0 1-2.19-2L5 7.5Z"
+                    fill="url(#kk-bag-grad)"
+                  />
+                  <path
+                    d="M8.7 7.5V6.6a3.3 3.3 0 0 1 6.6 0v.9"
+                    fill="none"
+                    stroke="#6b4423"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
               <span className={pop ? "animate-[kk-pop_.45s_ease]" : undefined}>
                 {count}
               </span>
@@ -282,19 +320,6 @@ function PersonIcon(): ReactNode {
   );
 }
 
-/** 1–2 letter avatar initials from a name/phone (logged-in affordance). */
-function initialsFor(name: string | null, phone: string | null): string {
-  if (name !== null && name.trim() !== "") {
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0]?.[0] ?? "";
-    const second = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-    return (first + second).toUpperCase() || "•";
-  }
-  // Fall back to the last two national digits of the phone.
-  if (phone !== null && phone.length >= 2) return phone.slice(-2);
-  return "•";
-}
-
 /**
  * Header account affordance (auth-otp.md §2): anonymous → open the login
  * sheet; signed-in → link to `/account` with an initials avatar. Falls back
@@ -319,18 +344,22 @@ function AccountControl({
   }
 
   if (auth.customer !== null) {
-    const initials = initialsFor(auth.customer.name, auth.customer.phone);
     return (
       <Link
         href="/account"
         title="Your account"
         aria-label="Your account"
         className={cx(
-          "grid h-10 w-10 place-items-center rounded-pill bg-ink font-body text-[13px] font-bold text-card no-underline transition-colors hover:bg-[#3f2c1b] max-[680px]:hidden",
+          "grid h-10 w-10 place-items-center rounded-pill no-underline transition-transform hover:scale-105 max-[680px]:hidden",
           FOCUS_RING,
         )}
       >
-        <span aria-hidden="true">{initials}</span>
+        <CustomerAvatar
+          name={auth.customer.name}
+          phone={auth.customer.phone}
+          email={auth.customer.email}
+          size={38}
+        />
       </Link>
     );
   }

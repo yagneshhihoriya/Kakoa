@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { adminRegistry } from "@/lib/admin/modules";
@@ -8,6 +8,8 @@ import {
   type SidebarSection,
 } from "@/components/admin/AdminSidebar";
 import { AdminIcon } from "@/components/admin/icons";
+import { AdminPageTransition } from "@/components/admin/AdminPageTransition";
+import { RouteProgress } from "@/components/chrome/RouteProgress";
 
 // Reads the admin cookie/session — never statically cached.
 export const dynamic = "force-dynamic";
@@ -68,6 +70,9 @@ export default async function AdminShellLayout({
     // h-screen + overflow-hidden pins the shell to the viewport so ONLY the main
     // column scrolls — the sidebar and top bar stay fixed on long pages.
     <div className="flex h-screen overflow-hidden bg-[#f7f2ea] text-[#2a1d12]">
+      <Suspense fallback={null}>
+        <RouteProgress />
+      </Suspense>
       <AdminSidebar
         business={{ name: ctx.profile.name, vertical: ctx.profile.vertical }}
         sections={sections}
@@ -96,7 +101,9 @@ export default async function AdminShellLayout({
             </span>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <AdminPageTransition>{children}</AdminPageTransition>
+        </main>
       </div>
     </div>
   );

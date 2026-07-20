@@ -56,10 +56,13 @@ export async function POST(
       return jsonErr('VALIDATION_ERROR', 'Invalid target status.');
     }
     result = await adminAdvanceStatus(orderNumber, toStatus as OrderStatus, adminId);
-    // Gap B — marking `packed` auto-creates the shipment + assigns an AWB
-    // (best-effort, idempotent). The manual "Create shipment" button remains.
+    // Gap B — marking `packed` auto-creates the shipment + assigns an AWB. It's
+    // internally error-swallowing (never throws), so awaiting it can't fail the
+    // already-committed `packed` transition — but awaiting means the shipment
+    // row exists before we respond, so the admin's page refresh shows it
+    // immediately (no phantom "No shipment yet" until a second refresh).
     if (result.ok && toStatus === 'packed') {
-      void pushToShiprocketByOrderNumber(orderNumber, adminId).catch(() => {});
+      await pushToShiprocketByOrderNumber(orderNumber, adminId);
     }
   } else {
     const reasonRaw = (body as { reason?: unknown }).reason;

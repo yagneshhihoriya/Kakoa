@@ -20,6 +20,7 @@ import {
   type AddressFormValues,
 } from "@/components/account/AddressForm";
 import { LogoutButton } from "./LogoutButton";
+import { CustomerAvatar } from "./CustomerAvatar";
 
 /* ------------------------------------------------------------------ */
 /* Serialized props (dates as ISO strings — server → client boundary)  */
@@ -88,12 +89,74 @@ export interface AccountDashboardProps {
 
 type Tab = "orders" | "addresses" | "wishlist" | "profile";
 
-const TABS: ReadonlyArray<{ key: Tab; label: string; icon: string }> = [
-  { key: "orders", label: "Orders", icon: "▤" },
-  { key: "addresses", label: "Addresses", icon: "⌂" },
-  { key: "wishlist", label: "Wishlist", icon: "♡" },
-  { key: "profile", label: "Profile", icon: "◔" },
+const TABS: ReadonlyArray<{ key: Tab; label: string }> = [
+  { key: "orders", label: "Orders" },
+  { key: "addresses", label: "Addresses" },
+  { key: "wishlist", label: "Wishlist" },
+  { key: "profile", label: "Profile" },
 ];
+
+/** Crisp stroke icons for the account nav (replaces the old glyph chars). */
+function TabIcon({ tab }: { tab: Tab }): ReactNode {
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  switch (tab) {
+    case "orders":
+      return (
+        <svg {...common}>
+          <path d="M6 2h9l3 3v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" />
+          <path d="M9 8h6M9 12h6M9 16h4" />
+        </svg>
+      );
+    case "addresses":
+      return (
+        <svg {...common}>
+          <path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11Z" />
+          <circle cx="12" cy="10" r="2.5" />
+        </svg>
+      );
+    case "wishlist":
+      return (
+        <svg {...common}>
+          <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z" />
+        </svg>
+      );
+    case "profile":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" />
+        </svg>
+      );
+  }
+}
+
+function LogoutIcon(): ReactNode {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15 17l5-5-5-5M20 12H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3" />
+    </svg>
+  );
+}
 
 /** Human-readable order status + prototype badge palette. */
 const STATUS_META: Record<OrderStatus, { label: string; bg: string; fg: string }> = {
@@ -109,17 +172,6 @@ const STATUS_META: Record<OrderStatus, { label: string; bg: string; fg: string }
   rto_initiated: { label: "Return in transit", bg: "#F6D9D9", fg: "#B2453F" },
   rto_delivered: { label: "Returned", bg: "#EDE6DD", fg: "#7A6A58" },
 };
-
-function initialsFor(name: string | null, phone: string | null): string {
-  if (name !== null && name.trim() !== "") {
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0]?.[0] ?? "";
-    const second = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-    return (first + second).toUpperCase() || "•";
-  }
-  if (phone !== null && phone.length >= 2) return phone.slice(-2);
-  return "•";
-}
 
 const CARD = "rounded-[18px] border border-[#EEE1CE] bg-white";
 const SERIF = { fontFamily: "var(--font-display), serif" } as const;
@@ -139,7 +191,6 @@ export function AccountDashboard({
   loadError = false,
 }: AccountDashboardProps): ReactNode {
   const [tab, setTab] = useState<Tab>("orders");
-  const initials = initialsFor(customer.name, customer.phone);
   const displayName = customer.name ?? "there";
 
   return (
@@ -149,24 +200,32 @@ export function AccountDashboard({
         <aside
           className={cx(
             CARD,
-            "sticky top-[98px] p-[22px] max-[900px]:static",
+            "sticky top-[98px] p-[22px] max-[900px]:static max-[900px]:p-4",
           )}
         >
-          <div className="mb-4 flex items-center gap-3 border-b border-[#EADBC6] pb-5">
-            <span className="grid h-[46px] w-[46px] place-items-center rounded-pill bg-gradient-to-br from-[#8a5a34] to-[#4a2e1c] font-body text-[17px] font-semibold text-[#e8c9a0]">
-              {initials}
-            </span>
-            <div className="min-w-0">
+          <div className="mb-4 flex items-center gap-3 border-b border-[#EADBC6] pb-5 max-[900px]:mb-3 max-[900px]:pb-4">
+            <CustomerAvatar
+              name={customer.name}
+              phone={customer.phone}
+              email={customer.email}
+              size={48}
+            />
+            <div className="min-w-0 flex-1">
               <div className="truncate font-body text-[15.5px] font-semibold text-ink">
-                {customer.name ?? "Kakao member"}
+                {customer.name ?? "KAKOA member"}
               </div>
               <div className="truncate font-body text-[12.5px] text-[#8a7a68]">
                 {customer.phone ?? customer.email ?? ""}
               </div>
             </div>
+            {/* Mobile-only logout — desktop keeps the bottom row. */}
+            <LogoutButton className="hidden shrink-0 rounded-pill border border-[#EADBC6] px-3.5 py-1.5 font-body text-[12.5px] font-semibold text-[#a08a72] transition-colors hover:text-raspberry max-[900px]:inline-block">
+              Log out
+            </LogoutButton>
           </div>
 
-          <div className="flex flex-col gap-1">
+          {/* Nav — vertical rail on desktop; horizontal scroll pill-tabs on mobile. */}
+          <div className="flex flex-col gap-1 max-[900px]:-mx-1 max-[900px]:flex-row max-[900px]:gap-2 max-[900px]:overflow-x-auto max-[900px]:px-1 max-[900px]:pb-1 max-[900px]:[scrollbar-width:none] max-[900px]:[&::-webkit-scrollbar]:hidden">
             {TABS.map((t) => (
               <button
                 key={t.key}
@@ -176,22 +235,23 @@ export function AccountDashboard({
                 className={cx(
                   "flex items-center gap-3 rounded-[12px] px-[14px] py-3 text-left font-body text-[14.5px] font-semibold transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold",
+                  "max-[900px]:shrink-0 max-[900px]:gap-2 max-[900px]:whitespace-nowrap max-[900px]:rounded-pill max-[900px]:border max-[900px]:px-3.5 max-[900px]:py-2.5",
                   tab === t.key
-                    ? "bg-ink text-card"
-                    : "text-espresso hover:bg-[#F3E7D5]",
+                    ? "bg-ink text-card max-[900px]:border-ink"
+                    : "text-espresso hover:bg-[#F3E7D5] max-[900px]:border-[#EADBC6]",
                 )}
               >
-                <span aria-hidden="true" className="w-[18px] text-center text-[15px]">
-                  {t.icon}
+                <span className="grid w-[18px] place-items-center max-[900px]:w-auto">
+                  <TabIcon tab={t.key} />
                 </span>
                 {t.label}
               </button>
             ))}
           </div>
 
-          <LogoutButton className="mt-[14px] flex w-full items-center gap-3 rounded-none border-t border-[#EADBC6] px-[14px] pt-[18px] pb-3 text-left font-body text-[14.5px] font-semibold text-[#a08a72] transition-colors hover:text-raspberry">
-            <span aria-hidden="true" className="w-[18px] text-center text-[15px]">
-              →
+          <LogoutButton className="mt-[14px] flex w-full items-center gap-3 rounded-none border-t border-[#EADBC6] px-[14px] pt-[18px] pb-3 text-left font-body text-[14.5px] font-semibold text-[#a08a72] transition-colors hover:text-raspberry max-[900px]:hidden">
+            <span className="grid w-[18px] place-items-center">
+              <LogoutIcon />
             </span>
             Log out
           </LogoutButton>
@@ -273,12 +333,18 @@ function OrdersSection({
     <>
       <SectionHeading>My orders</SectionHeading>
       <div className="flex flex-col gap-[14px]">
-        {orders.map((order) => {
+        {orders.map((order, index) => {
           const meta = STATUS_META[order.status];
           return (
             <div
               key={order.id}
-              className={cx(CARD, "flex flex-wrap items-center gap-4 p-5")}
+              style={{ animationDelay: `${index * 55}ms` }}
+              className={cx(
+                CARD,
+                "flex flex-wrap items-center gap-4 p-5 transition-all duration-200 ease-out",
+                "animate-[kk-rise_0.45s_ease_both] hover:-translate-y-0.5 hover:border-[#e0cfb6] hover:shadow-[0_12px_28px_-14px_rgba(42,29,18,0.35)]",
+                "motion-reduce:animate-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+              )}
             >
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-[10px]">
@@ -314,26 +380,12 @@ function OrdersSection({
                 </Link>
               </div>
 
-              {/* Actions row: details + (once confirmed) invoice view / download */}
+              {/* Actions row: order details only — invoice actions live on the
+                  order detail page (single entry point). */}
               <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#EEE1CE] pt-3 font-body text-[13px]">
                 <Link href={`/account/orders/${order.orderNumber}` as Route} className="font-semibold text-espresso underline">
                   View details
                 </Link>
-                {order.invoiceAvailable ? (
-                  <>
-                    <Link href={`/account/orders/${order.orderNumber}/invoice` as Route} className="font-semibold text-espresso underline">
-                      View invoice
-                    </Link>
-                    <a href={`/api/orders/${order.orderNumber}/invoice.pdf`} className="font-semibold text-espresso underline">
-                      Download invoice
-                    </a>
-                    <Link href={`/account/orders/${order.orderNumber}/invoice?print=1` as Route} className="font-semibold text-espresso underline">
-                      Print
-                    </Link>
-                  </>
-                ) : (
-                  <span className="text-[#a08a72]">Invoice available after confirmation</span>
-                )}
               </div>
             </div>
           );
@@ -818,16 +870,16 @@ function ProfileSection({
           <Field label="Member since" value={formatIST(new Date(customer.createdAt))} />
         </div>
 
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex items-center gap-3 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
           <button
             type="button"
             disabled={saving || !dirty}
             onClick={() => void save()}
-            className="rounded-pill bg-ink px-6 py-3 font-body text-[14px] font-semibold text-card transition-colors hover:bg-[#3f2c1b] disabled:opacity-50"
+            className="rounded-pill bg-ink px-6 py-3 font-body text-[14px] font-semibold text-card transition-colors hover:bg-[#3f2c1b] disabled:opacity-50 max-sm:w-full"
           >
             {saving ? "Saving…" : "Save changes"}
           </button>
-          <LogoutButton className="font-body text-[14px] font-semibold text-espresso underline" />
+          <LogoutButton className="font-body text-[14px] font-semibold text-espresso underline max-sm:py-1 max-sm:text-center" />
         </div>
       </div>
 

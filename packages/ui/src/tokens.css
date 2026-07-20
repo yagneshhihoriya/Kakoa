@@ -56,4 +56,60 @@
   --breakpoint-sm: 640px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
+
+  /* ================================================================== */
+  /* Redesign layer (2026 premium refresh) — ADDITIVE. Every token above */
+  /* is unchanged; the following extend the system with the fluid type   */
+  /* scale, warm elevation, motion, and semantic neutrals the storefront  */
+  /* reskin needs. Utilities: text-hero / shadow-lift / ease-brand / etc. */
+  /* ================================================================== */
+
+  /* ---- Fluid display type scale (headings only — body keeps defaults).
+   * clamp(min, preferred, max): fluid between 360px and ~1280px. Companion
+   * --*--line-height / --*--letter-spacing ride along per Tailwind v4. ---- */
+  --text-eyebrow: 0.72rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.22em;
+  --text-lead: clamp(1.0625rem, 1rem + 0.35vw, 1.1875rem);
+  --text-lead--line-height: 1.6;
+  --text-h3: clamp(1.3rem, 1.06rem + 1.05vw, 1.75rem);
+  --text-h3--line-height: 1.15;
+  --text-h3--letter-spacing: -0.008em;
+  --text-h2: clamp(1.75rem, 1.25rem + 2.2vw, 2.75rem);
+  --text-h2--line-height: 1.05;
+  --text-h2--letter-spacing: -0.012em;
+  --text-h1: clamp(2.25rem, 1.55rem + 3.1vw, 3.5rem);
+  --text-h1--line-height: 1.02;
+  --text-h1--letter-spacing: -0.016em;
+  --text-hero: clamp(2.9rem, 1.4rem + 6.4vw, 5.75rem);
+  --text-hero--line-height: 0.96;
+  --text-hero--letter-spacing: -0.022em;
+
+  /* ---- Warm cocoa-tinted elevation (all shadows share the ink hue so
+   * cards feel like they sit on paper, never a cold grey UI). ---- */
+  --shadow-soft: 0 1px 2px rgba(42, 29, 18, 0.05), 0 2px 8px rgba(42, 29, 18, 0.05);
+  --shadow-card: 0 2px 6px rgba(42, 29, 18, 0.06), 0 14px 30px rgba(42, 29, 18, 0.09);
+  --shadow-lift: 0 8px 18px rgba(42, 29, 18, 0.10), 0 24px 50px rgba(42, 29, 18, 0.14);
+  --shadow-float: 0 22px 60px rgba(42, 29, 18, 0.22);
+  --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+
+  /* ---- Motion. House easing is the prototype curve; -entrance is a softer
+   * decelerate for reveals/hovers. Durations are plain vars for arbitraries. ---- */
+  --ease-brand: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 180ms;
+  --duration-base: 320ms;
+  --duration-slow: 640ms;
+
+  /* ---- Extended semantic neutrals — promoted from the ~40 off-token browns
+   * that leaked across pages (redesign map §1.4). New code references these;
+   * existing literals get swept to them page-by-page during rollout. ---- */
+  --color-ink-soft: #5c4b3a; /* body copy on cream */
+  --color-ink-muted: #8a7a68; /* meta, captions, disabled */
+  --color-ink-hover: #3f2c1b; /* dark-button / dark-surface hover */
+  --color-cocoa-deep: #2c150a; /* gradient floor, deepest cocoa */
+  --color-surface: #ffffff; /* raised card surface on cream */
+  --color-cream-2: #f6eee1; /* alternate warm band */
+  --color-line-soft: #eee1ce; /* hairline on white cards */
+  --color-gold-soft: #e8c9a0; /* seal / on-ink caramel accent */
 }

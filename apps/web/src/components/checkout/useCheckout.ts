@@ -33,7 +33,7 @@ import type {
   SoldOutLine,
   VerifiedCodOtp,
 } from "./types";
-import { savedAddressToState, toAddressInput } from "./types";
+import { savedAddressToState, toAddressInput, toTenDigitPhone } from "./types";
 
 /** Prefill shape handed down from the RSC shell (logged-in customer). */
 export interface CheckoutInitial {
@@ -420,7 +420,7 @@ export function useCheckout(initial: CheckoutInitial): UseCheckout {
       const body: Record<string, unknown> = {
         idempotencyKey,
         contact: {
-          phone: contact.phone.trim(),
+          phone: toTenDigitPhone(contact.phone),
           ...(contact.email.trim() !== ""
             ? { email: contact.email.trim() }
             : {}),

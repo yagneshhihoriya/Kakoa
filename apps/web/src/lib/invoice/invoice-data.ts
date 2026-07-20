@@ -214,7 +214,11 @@ export async function getInvoiceData(orderId: string): Promise<InvoiceResult | n
     orderNumber: order.orderNumber,
     orderDateIso: new Date(order.placedAt).toISOString(),
     invoiceDateIso: new Date(order.confirmedAt).toISOString(),
-    paymentMethodLabel: isCod ? 'Cash on Delivery' : methodLabel(payment?.method ?? 'unknown'),
+    paymentMethodLabel: isCod
+      ? 'Cash on Delivery'
+      : payment && payment.method !== 'unknown'
+        ? methodLabel(payment.method)
+        : 'Online (Razorpay)',
     paymentStatusLabel: payment ? paymentStatusLabel(payment.status) : '—',
     orderStatusLabel: order.status.replace(/_/g, ' '),
     isCod,

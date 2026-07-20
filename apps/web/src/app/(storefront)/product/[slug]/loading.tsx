@@ -15,18 +15,18 @@ export default function ProductLoading() {
       <Skeleton variant="text" width={240} className="mb-[26px]" />
 
       <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-14">
-        {/* Gallery: 78px thumbnail rail + square main image */}
-        <div className="grid grid-cols-[78px_1fr] items-start gap-4">
-          <div className="flex flex-col gap-3">
+        {/* Gallery: main image with a thumb strip (below on mobile, rail on desktop) */}
+        <div className="flex flex-col gap-3 md:grid md:grid-cols-[78px_1fr] md:items-start md:gap-4">
+          <div className="order-2 flex gap-2.5 md:order-none md:flex-col md:gap-3">
             {THUMB_SLOTS.map((slot) => (
               <Skeleton
                 key={slot}
                 variant="card"
-                className="aspect-square w-full"
+                className="aspect-square w-16 shrink-0 md:w-full"
               />
             ))}
           </div>
-          <Skeleton variant="card" className="aspect-square w-full" />
+          <Skeleton variant="card" className="order-1 aspect-square w-full md:order-none" />
         </div>
 
         {/* Right column: eyebrow, serif name, stars, blurb, notes, panel */}

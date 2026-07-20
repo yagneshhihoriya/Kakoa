@@ -82,11 +82,11 @@ function ChipLink({
       href={href}
       aria-current={selected ? "page" : undefined}
       className={cx(
-        "inline-flex min-h-11 items-center justify-center rounded-pill border px-4 font-body text-[13px] font-semibold whitespace-nowrap transition-colors",
+        "inline-flex min-h-11 items-center justify-center rounded-pill border px-[18px] font-body text-[13px] font-semibold whitespace-nowrap transition-[colors,transform] duration-[var(--duration-fast)] ease-brand",
         "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
         selected
-          ? "border-ink bg-ink text-cream"
-          : "border-[#E0CFB6] bg-white text-ink hover:border-[#C9B48F]",
+          ? "border-ink bg-ink text-cream shadow-soft"
+          : "border-line-soft bg-surface text-ink hover:-translate-y-px hover:border-espresso/40 hover:bg-card",
       )}
     >
       {children}
@@ -109,7 +109,7 @@ const PAGE_CELL_BASE =
   "grid h-10 w-10 place-items-center rounded-pill font-body text-sm";
 const PAGE_CELL_LINK = cx(
   PAGE_CELL_BASE,
-  "border border-[#E0CFB6] text-ink transition-colors hover:bg-card",
+  "border border-line-soft bg-surface text-ink shadow-soft transition-colors hover:border-espresso/40 hover:bg-card",
   "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
 );
 
@@ -187,7 +187,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
-        className="mb-[22px] font-body text-[13px] font-medium text-[#8a7a68]"
+        className="mb-6 font-body text-[13px] font-medium text-ink-muted"
       >
         <Link
           href="/"
@@ -201,13 +201,17 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </span>
       </nav>
 
-      {/* Page header — serif title + sub, sort dropdown right-aligned */}
+      {/* Page header — eyebrow + serif title + sub, sort dropdown right-aligned */}
       <div className="mb-2 flex flex-wrap items-end justify-between gap-5">
         <div>
-          <h1 className="mb-[10px] font-display text-4xl font-normal text-ink md:text-[46px] md:leading-none">
+          <div className="mb-3 flex items-center gap-3 font-mono text-eyebrow font-medium text-espresso uppercase">
+            <span aria-hidden="true" className="inline-block h-px w-[30px] bg-espresso" />
+            {activeCategory !== undefined ? "Collection" : "Shop all"}
+          </div>
+          <h1 className="mb-3 font-display text-h1 font-normal text-ink">
             {activeCategory?.name ?? "The Collection"}
           </h1>
-          <p className="font-body text-[15px] text-[#5C4B3A]">
+          <p className="max-w-[52ch] font-body text-lead text-ink-soft">
             {activeCategory?.description ??
               `${total} chocolate${total === 1 ? "" : "s"}, all made by hand this week.`}
           </p>
@@ -248,7 +252,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
       {/* Result count */}
       <p
-        className="mt-5 mb-4 font-body text-[13px] text-[#8a7a68]"
+        className="mt-6 mb-4 font-body text-[13px] text-ink-muted"
         aria-live="polite"
       >
         {total === 0
@@ -307,7 +311,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               aria-hidden="true"
               className={cx(
                 PAGE_CELL_BASE,
-                "border border-[#E0CFB6] text-[#8a7a68]",
+                "border border-line-soft text-ink-muted",
               )}
             >
               ‹
@@ -319,7 +323,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <span
                 key={page}
                 aria-current="page"
-                className={cx(PAGE_CELL_BASE, "bg-ink font-bold text-[#F3E7D5]")}
+                className={cx(PAGE_CELL_BASE, "bg-ink font-bold text-card shadow-soft")}
               >
                 {page}
               </span>
@@ -359,7 +363,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               aria-hidden="true"
               className={cx(
                 PAGE_CELL_BASE,
-                "border border-[#E0CFB6] text-[#8a7a68]",
+                "border border-line-soft text-ink-muted",
               )}
             >
               ›

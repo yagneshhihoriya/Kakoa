@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { OrderStatus } from "@kakoa/core";
 
@@ -40,11 +40,18 @@ export function OrderActions({
   const [error, setError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  // A single flag for "an action is in flight OR the server is re-rendering",
+  // so every button stays disabled until the refreshed page has actually
+  // rendered — no fragile setTimeout, no double-click window.
+  const locked = busy !== null || isPending;
 
   async function run(
     key: string,
     body: Record<string, unknown>,
   ): Promise<void> {
+    if (locked) return;
     setBusy(key);
     setError(null);
     try {
@@ -59,15 +66,15 @@ export function OrderActions({
       const data = await res.json();
       if (!data.ok) {
         setError(data.error?.message ?? "Action failed.");
-        setBusy(null);
         return;
       }
       setCancelOpen(false);
-      router.refresh();
-      // keep the button disabled briefly while the server re-renders
-      setTimeout(() => setBusy(null), 600);
+      // Re-fetch the server component; `isPending` keeps the buttons disabled
+      // until the new markup is committed, so the label flips exactly once.
+      startTransition(() => router.refresh());
     } catch {
       setError("Network error. Please try again.");
+    } finally {
       setBusy(null);
     }
   }
@@ -94,7 +101,7 @@ export function OrderActions({
         {showConfirmCod ? (
           <button
             type="button"
-            disabled={busy !== null}
+            disabled={locked}
             onClick={() => run("confirm-cod", { action: "confirm-cod" })}
             className="w-full rounded-lg bg-[#2a1d12] px-4 py-2.5 text-[13.5px] font-semibold text-[#f3e7d5] transition-opacity hover:opacity-90 disabled:opacity-50"
           >
@@ -105,13 +112,13 @@ export function OrderActions({
         {showAdvance ? (
           <button
             type="button"
-            disabled={busy !== null}
+            disabled={locked}
             onClick={() =>
               run("advance", { action: "advance", toStatus: advance.toStatus })
             }
             className="w-full rounded-lg bg-[#2a1d12] px-4 py-2.5 text-[13.5px] font-semibold text-[#f3e7d5] transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {busy === "advance" ? "Updating…" : advance.label}
+            {busy === "advance" || isPending ? "Updating…" : advance.label}
           </button>
         ) : null}
 
@@ -132,7 +139,7 @@ export function OrderActions({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  disabled={busy !== null}
+                  disabled={locked}
                   onClick={() => run("cancel", { action: "cancel", reason })}
                   className="flex-1 rounded-lg bg-[#b25b5b] px-3 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
@@ -140,7 +147,7 @@ export function OrderActions({
                 </button>
                 <button
                   type="button"
-                  disabled={busy !== null}
+                  disabled={locked}
                   onClick={() => setCancelOpen(false)}
                   className="rounded-lg border border-[#eadbc6] px-3 py-2 text-[13px] text-[#5c4b3a] hover:bg-[#f3e7d5]"
                 >
@@ -151,7 +158,7 @@ export function OrderActions({
           ) : (
             <button
               type="button"
-              disabled={busy !== null}
+              disabled={locked}
               onClick={() => setCancelOpen(true)}
               className="w-full rounded-lg border border-[#e2c4c4] px-4 py-2.5 text-[13.5px] font-semibold text-[#b25b5b] transition-colors hover:bg-[#f6dede] disabled:opacity-50"
             >

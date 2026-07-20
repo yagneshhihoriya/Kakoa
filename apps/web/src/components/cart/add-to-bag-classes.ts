@@ -7,6 +7,6 @@ import { cx } from "@kakoa/ui";
  * link) can import it and render pixel-identical.
  */
 export const ADD_TO_BAG_CLASSES = cx(
-  "relative z-10 inline-flex min-h-11 items-center justify-center rounded-pill bg-ink px-[18px] font-body text-[13.5px] font-bold text-[#F3E7D5] transition-colors hover:bg-[#3f2c1b]",
+  "relative z-10 inline-flex min-h-11 items-center justify-center rounded-pill bg-ink px-[18px] font-body text-[13.5px] font-bold text-[#F3E7D5] transition-[transform,background-color] hover:bg-[#3f2c1b] active:scale-[0.96] motion-reduce:active:scale-100",
   "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none",
 );

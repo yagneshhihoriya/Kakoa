@@ -100,11 +100,24 @@ export interface PlacedOrder {
   razorpay: RazorpayHandoff | null;
 }
 
+/**
+ * Strip a leading `+91` / `91` / `0` from an Indian mobile down to the bare
+ * 10-digit form the checkout schema (`^[6-9][0-9]{9}$`) and the form expect.
+ * Saved addresses (and the session contact) store phones E.164 (`+91…`), so a
+ * saved-address checkout would otherwise send `+91XXXXXXXXXX` and 400.
+ */
+export function toTenDigitPhone(raw: string): string {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 /** Convert an `AddressState` to the wire `AddressInput` (drops empty optionals). */
 export function toAddressInput(address: AddressState): AddressInput {
   const input: AddressInput = {
     fullName: address.fullName.trim(),
-    phone: address.phone.trim(),
+    phone: toTenDigitPhone(address.phone),
     line1: address.line1.trim(),
     city: address.city.trim(),
     state: address.state,
@@ -123,7 +136,7 @@ export function toAddressInput(address: AddressState): AddressInput {
 export function savedAddressToState(saved: SavedAddress): AddressState {
   return {
     fullName: saved.fullName,
-    phone: saved.phone,
+    phone: toTenDigitPhone(saved.phone),
     line1: saved.line1,
     line2: saved.line2 ?? "",
     landmark: saved.landmark ?? "",

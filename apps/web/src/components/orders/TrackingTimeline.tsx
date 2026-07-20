@@ -78,7 +78,11 @@ export function TrackingTimeline({
         const expected = safeIST(step.expected);
 
         return (
-          <li key={step.key} className="flex gap-4">
+          <li
+            key={step.key}
+            style={{ animationDelay: `${index * 70}ms` }}
+            className="flex gap-4 animate-[kk-rise_0.5s_ease_both] motion-reduce:animate-none"
+          >
             {/* Rail: dot + connector */}
             <div className="flex flex-none flex-col items-center">
               <Dot state={step.state} isBranch={isBranch} />

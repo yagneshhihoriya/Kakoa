@@ -151,13 +151,13 @@ export function PdpPurchasePanel({
           selected.compareAtPricePaise > selected.pricePaise ? (
             <s
               aria-label={`Original price ${formatPaise(selected.compareAtPricePaise)}`}
-              className="font-body text-[17px] text-[#8a7a68]"
+              className="font-body text-[17px] text-ink-muted"
             >
               {formatPaise(selected.compareAtPricePaise)}
             </s>
           ) : null}
         </p>
-        <p className="font-body text-[13px] text-[#8a7a68]">
+        <p className="font-body text-[13px] text-ink-muted">
           {formatPaise(perGramPaise)} per gram · Net quantity{" "}
           {selected.weightGrams} g · MRP inclusive of all taxes
         </p>
@@ -218,7 +218,7 @@ export function PdpPurchasePanel({
           onChange={(nextQty) => {
             setQty(Math.min(MAX_QTY, Math.max(1, nextQty)));
           }}
-          className="h-[54px] shrink-0 border-[#E0CFB6] bg-white px-1"
+          className="h-[54px] shrink-0 border-line-soft bg-surface px-1"
         />
         <button
           type="button"
@@ -228,9 +228,9 @@ export function PdpPurchasePanel({
           className={cx(
             "flex h-[54px] flex-1 items-center justify-center rounded-pill bg-ink px-6",
             "font-body text-[15.5px] font-bold whitespace-nowrap text-card",
-            "shadow-[0_10px_26px_rgba(42,29,18,.2)] transition-colors hover:bg-cocoa",
+            "shadow-lift transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-cocoa motion-reduce:transform-none",
             "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
-            "disabled:cursor-not-allowed disabled:opacity-60",
+            "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
           )}
         >
           {isPending
@@ -244,7 +244,7 @@ export function PdpPurchasePanel({
           productName={productName}
           iconSize={20}
           className={cx(
-            "grid h-[54px] w-[54px] shrink-0 place-items-center rounded-pill border border-[#E0CFB6] bg-white text-espresso hover:bg-card",
+            "grid h-[54px] w-[54px] shrink-0 place-items-center rounded-pill border border-line-soft bg-surface text-espresso shadow-soft transition-colors hover:bg-card",
             "focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
           )}
         />
@@ -256,7 +256,7 @@ export function PdpPurchasePanel({
         disabled={soldOut || isPending}
         onClick={handleBuyNow}
         className={cx(
-          "-mt-2 h-[54px] w-full rounded-pill bg-[#e8c9a0] px-6 font-body text-[15.5px] font-bold text-ink transition-colors hover:bg-[#f0d6ac]",
+          "-mt-2 h-[54px] w-full rounded-pill bg-gold-soft px-6 font-body text-[15.5px] font-bold text-ink shadow-soft transition-colors hover:bg-[#f0d6ac]",
           "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
           "disabled:cursor-not-allowed disabled:opacity-60",
         )}

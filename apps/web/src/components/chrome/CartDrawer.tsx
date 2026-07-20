@@ -146,10 +146,11 @@ export function CartDrawer(): ReactNode {
         ) : (
           <>
             <div className="flex-1 overflow-auto px-6 py-2">
-              {cart.lines.map((line) => (
+              {cart.lines.map((line, index) => (
                 <div
                   key={line.itemId}
-                  className="flex gap-3.5 border-b border-line py-4"
+                  style={{ animationDelay: `${index * 45}ms` }}
+                  className="flex gap-3.5 border-b border-line py-4 animate-[kk-rise_0.4s_ease_both] motion-reduce:animate-none"
                 >
                   <div className="relative w-[70px] flex-none overflow-hidden rounded-[12px]">
                     <ChocoPlaceholder tone={line.tone} ratio="7 / 8" />
@@ -199,7 +200,7 @@ export function CartDrawer(): ReactNode {
                             setQty(line.itemId, line.qty - 1);
                           }}
                           className={cx(
-                            "h-7 w-7 text-base text-ink transition-colors hover:bg-card disabled:opacity-40",
+                            "h-7 w-7 text-base text-ink transition-[background-color,transform] hover:bg-card active:scale-90 disabled:opacity-40 motion-reduce:active:scale-100",
                             FOCUS_RING,
                           )}
                         >
@@ -223,7 +224,7 @@ export function CartDrawer(): ReactNode {
                             setQty(line.itemId, line.qty + 1);
                           }}
                           className={cx(
-                            "h-7 w-7 text-base text-ink transition-colors hover:bg-card disabled:opacity-40",
+                            "h-7 w-7 text-base text-ink transition-[background-color,transform] hover:bg-card active:scale-90 disabled:opacity-40 motion-reduce:active:scale-100",
                             FOCUS_RING,
                           )}
                         >

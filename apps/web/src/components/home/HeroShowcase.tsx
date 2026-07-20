@@ -43,7 +43,7 @@ export interface HeroShowcaseProps {
 
 export function HeroShowcase({ product }: HeroShowcaseProps): ReactNode {
   return (
-    <div className="relative">
+    <div className="relative mx-auto w-full max-w-[380px] lg:max-w-none">
       {/* ambient studio glow (behind) */}
       <div
         aria-hidden="true"
@@ -112,7 +112,7 @@ export function HeroShowcase({ product }: HeroShowcaseProps): ReactNode {
       {/* gold wax seal */}
       <div
         aria-hidden="true"
-        className="absolute -top-4 -right-2 z-[3] grid h-[84px] w-[84px] -rotate-[8deg] place-items-center rounded-pill"
+        className="absolute -top-3 -right-1 z-[3] grid h-[68px] w-[68px] -rotate-[8deg] place-items-center rounded-pill sm:-top-4 sm:-right-2 sm:h-[84px] sm:w-[84px]"
         style={{
           background:
             "radial-gradient(circle at 34% 28%, #EFD59A, #BE9346 74%)",
@@ -129,7 +129,7 @@ export function HeroShowcase({ product }: HeroShowcaseProps): ReactNode {
 
       {/* floating product chip — live catalog data */}
       {product !== null ? (
-        <div className="absolute bottom-11 -left-[22px] z-[3] flex items-center gap-3 rounded-lg bg-cream px-[17px] py-[13px] shadow-[0_18px_44px_rgba(42,29,18,.22)] motion-safe:animate-[kk-float_6s_ease-in-out_infinite]">
+        <div className="absolute bottom-6 -left-1 z-[3] flex items-center gap-3 rounded-lg bg-cream px-[15px] py-3 shadow-[0_18px_44px_rgba(42,29,18,.22)] motion-safe:animate-[kk-float_6s_ease-in-out_infinite] sm:bottom-11 sm:-left-[22px] sm:px-[17px] sm:py-[13px]">
           <div
             aria-hidden="true"
             className="relative h-[52px] w-11 overflow-hidden rounded-[10px]"

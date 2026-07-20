@@ -119,6 +119,48 @@ a {
     transform: scale(1);
   }
 }
+/* Wishlist heart "saved" reaction: a satisfying double-beat pop. */
+@keyframes kk-heart {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.35);
+  }
+  45% {
+    transform: scale(0.92);
+  }
+  70% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* Continuous 3D coin-flip around the vertical axis (left↔right). */
+@keyframes kk-flip-y {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+/* Bag icon "add to bag" reaction: a quick rotate swing + slight pop. */
+@keyframes kk-bag {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  25% {
+    transform: rotate(-16deg) scale(1.15);
+  }
+  55% {
+    transform: rotate(12deg) scale(1.12);
+  }
+  80% {
+    transform: rotate(-5deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
 @keyframes kk-float {
   0%,
   100% {
@@ -135,6 +177,135 @@ a {
   }
   50% {
     transform: scale(1.028);
+  }
+}
+
+/* ---- Redesign motion (2026 refresh) ---- */
+/* Slow cinematic zoom for full-bleed hero / story imagery. */
+@keyframes kk-kenburns {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1.14);
+  }
+}
+/* Loading shine that sweeps across skeleton surfaces. */
+@keyframes kk-shimmer {
+  from {
+    background-position: -160% 0;
+  }
+  to {
+    background-position: 260% 0;
+  }
+}
+/* Seamless right-to-left trust ticker (announcement / marquee). */
+@keyframes kk-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+/* Order-success celebration: badge pops in, checkmark draws, confetti falls. */
+@keyframes kk-badgepop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes kk-checkdraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes kk-confetti {
+  0% {
+    transform: translateY(-12px) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(240px) rotate(600deg);
+    opacity: 0;
+  }
+}
+/* Avatar gloss — a soft highlight sweeps across once, then rests (luxe sheen). */
+@keyframes kk-sheen {
+  0% {
+    transform: translateX(-160%) skewX(-16deg);
+  }
+  16% {
+    transform: translateX(180%) skewX(-16deg);
+  }
+  100% {
+    transform: translateX(180%) skewX(-16deg);
+  }
+}
+/* 404 "melting chocolate" drip — a drop swells then falls and fades. */
+@keyframes kk-drip {
+  0% {
+    transform: translateY(0) scaleY(0.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(26px) scaleY(1.15);
+    opacity: 0;
+  }
+}
+/* Gentle reveal used by premium cards that opt out of the IO reveal. */
+@keyframes kk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Redesign utilities ---- */
+/* Fine paper grain: layered on dark cocoa bands for tactile, printed depth.
+ * Pure CSS (no asset request); sits under content via a low-opacity overlay. */
+.kk-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Cheap normal-composite grain (no blend-mode): a single faint light-dot
+   * layer reads as tactile paper on the dark cocoa bands without the
+   * per-repaint cost of mix-blend-mode — safe to scroll on mid-range mobiles. */
+  opacity: 0.1;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.8) 0.5px,
+    transparent 0.7px
+  );
+  background-size: 3px 3px;
+}
+/* Marquee track: duplicate the children once so -50% translate loops seamlessly. */
+.kk-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: kk-marquee 32s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kk-marquee {
+    animation: none;
   }
 }
 

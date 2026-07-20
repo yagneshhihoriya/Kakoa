@@ -67,7 +67,7 @@ export function BrandLockup({
             : "text-[25px] text-card",
         )}
       >
-        Kakao
+        KAKOA
       </span>
     </span>
   );
