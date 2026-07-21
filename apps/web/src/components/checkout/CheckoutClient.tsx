@@ -145,6 +145,69 @@ function FieldError({ id, message }: { id: string; message: string }): ReactNode
 }
 
 /* ------------------------------------------------------------------ */
+/* Trust / reassurance row (presentational only)                       */
+/* ------------------------------------------------------------------ */
+
+const TRUST_ROW = [
+  {
+    key: "secure",
+    label: "Secure payment",
+    sub: "Encrypted via Razorpay",
+    path: "M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z M9 12l2 2 4-4",
+  },
+  {
+    key: "promise",
+    label: "Satisfaction promise",
+    sub: "Love it or we make it right",
+    path: "M20.8 7.6a4.6 4.6 0 0 0-7.8-2.5L12 6l-1-.9a4.6 4.6 0 1 0-6.6 6.4L12 20l7.6-8.5a4.6 4.6 0 0 0 1.2-3.9z",
+  },
+  {
+    key: "returns",
+    label: "Easy returns",
+    sub: "Simple, no-fuss resolution",
+    path: "M3 9a9 9 0 1 1 1.6 5.1 M3 4v5h5",
+  },
+] as const;
+
+/** Slim three-up reassurance strip shown by the place-order CTA. Text/icons
+ * only — no data, no logic, purely presentational. */
+function CheckoutTrustRow(): ReactNode {
+  return (
+    <ul className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-[14px] border border-[#EADBC6] bg-[#EADBC6] sm:grid-cols-3">
+      {TRUST_ROW.map((item) => (
+        <li
+          key={item.key}
+          className="flex items-center gap-2.5 bg-[#F6EEE1] px-4 py-3"
+        >
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="flex-none text-espresso"
+          >
+            <path d={item.path} />
+          </svg>
+          <span className="min-w-0">
+            <span className="block font-body text-[12.5px] font-semibold leading-tight text-ink">
+              {item.label}
+            </span>
+            <span className="block font-body text-[11.5px] leading-tight text-[#8a7a68]">
+              {item.sub}
+            </span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Step indicator                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -159,53 +222,67 @@ function StepIndicator({
 }): ReactNode {
   const steps: CheckoutStep[] = [1, 2, 3, 4];
   return (
-    <ol className="mb-9 flex items-center justify-center gap-1 sm:gap-2">
-      {steps.map((n, i) => {
-        const active = n === current;
-        const done = n < current;
-        const reachable = n <= maxReached;
-        return (
-          <li key={n} className="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              disabled={!reachable}
-              onClick={() => reachable && onGo(n)}
-              aria-current={active ? "step" : undefined}
-              className={cx(
-                "flex items-center gap-2.5 rounded-pill px-1.5 py-1",
-                reachable ? "cursor-pointer" : "cursor-not-allowed",
-                FOCUS_RING,
-              )}
-            >
-              <span
+    <div className="mb-10 sm:mb-12">
+      <p className="mb-3.5 text-center font-mono text-[11px] font-medium tracking-[0.2em] text-espresso uppercase">
+        Secure checkout
+      </p>
+      <ol className="flex items-center justify-center gap-1.5 sm:gap-3">
+        {steps.map((n, i) => {
+          const active = n === current;
+          const done = n < current;
+          const reachable = n <= maxReached;
+          return (
+            <li key={n} className="flex items-center gap-1.5 sm:gap-3">
+              <button
+                type="button"
+                disabled={!reachable}
+                onClick={() => reachable && onGo(n)}
+                aria-current={active ? "step" : undefined}
                 className={cx(
-                  "grid h-[30px] w-[30px] place-items-center rounded-pill font-body text-[13px] font-bold transition-colors",
-                  active || done
-                    ? "bg-ink text-card"
-                    : "bg-[#EFE3CE] text-[#a08a72]",
+                  "flex items-center gap-2.5 rounded-pill px-1.5 py-1",
+                  reachable ? "cursor-pointer" : "cursor-not-allowed",
+                  FOCUS_RING,
                 )}
               >
-                {done ? <CheckIcon className="text-card" /> : n}
-              </span>
-              <span
-                className={cx(
-                  "hidden font-body text-[14px] font-semibold sm:inline",
-                  active ? "text-ink" : "text-[#8a7a68]",
-                )}
-              >
-                {STEP_LABELS[n]}
-              </span>
-            </button>
-            {i < steps.length - 1 ? (
-              <span
-                aria-hidden="true"
-                className="h-px w-5 bg-[#DCC9AE] sm:w-9"
-              />
-            ) : null}
-          </li>
-        );
-      })}
-    </ol>
+                <span
+                  className={cx(
+                    "grid h-8 w-8 place-items-center rounded-pill font-body text-[13px] font-bold transition-colors duration-[var(--duration-base)]",
+                    done
+                      ? "bg-ink text-card"
+                      : active
+                        ? "bg-ink text-card ring-2 ring-gold/60 ring-offset-2 ring-offset-cream"
+                        : "bg-[#EFE3CE] text-[#a08a72]",
+                  )}
+                >
+                  {done ? <CheckIcon className="text-card" /> : n}
+                </span>
+                <span
+                  className={cx(
+                    "hidden font-body text-[13.5px] tracking-[-0.005em] sm:inline",
+                    active
+                      ? "font-semibold text-ink"
+                      : done
+                        ? "font-medium text-espresso"
+                        : "font-medium text-[#a08a72]",
+                  )}
+                >
+                  {STEP_LABELS[n]}
+                </span>
+              </button>
+              {i < steps.length - 1 ? (
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    "h-px w-6 transition-colors duration-[var(--duration-base)] sm:w-12",
+                    n < current ? "bg-espresso/50" : "bg-[#DCC9AE]",
+                  )}
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
@@ -254,15 +331,20 @@ function OrderSummary({
   const lines = quote?.lines ?? cart.lines;
 
   return (
-    <div className="rounded-[22px] border border-line bg-card p-6">
-      <h2
-        className="mb-4 text-[20px] text-ink"
-        style={{ fontFamily: "var(--font-display), serif" }}
-      >
-        In your bag
-      </h2>
+    <div className="rounded-[22px] border border-line bg-card p-6 sm:p-7">
+      <div className="mb-5">
+        <p className="mb-1.5 font-mono text-[11px] font-medium tracking-[0.16em] text-espresso uppercase">
+          Order summary
+        </p>
+        <h2
+          className="text-[21px] leading-tight text-ink"
+          style={{ fontFamily: "var(--font-display), serif" }}
+        >
+          In your bag
+        </h2>
+      </div>
 
-      <ul className="mb-[18px] flex max-h-[240px] flex-col gap-3 overflow-y-auto">
+      <ul className="mb-5 flex max-h-[260px] flex-col gap-3.5 overflow-y-auto">
         {lines.map((line) => (
           <li key={line.itemId} className="flex items-center gap-3">
             <div className="relative w-[44px] flex-none">
@@ -625,7 +707,7 @@ export function CheckoutClient({
   }, [co, finishToSuccess, openRazorpay, refreshCart, router, toast]);
 
   return (
-    <main className="mx-auto max-w-[1120px] px-5 pb-20 pt-7 sm:px-8">
+    <main className="mx-auto max-w-[1120px] px-5 pb-20 pt-9 sm:px-8 lg:pt-11">
       <StepIndicator
         current={co.step}
         maxReached={maxReached}
@@ -2368,11 +2450,14 @@ function Step4Review({
           "Place order"
         )}
       </button>
+
+      <CheckoutTrustRow />
+
       <button
         type="button"
         onClick={onBack}
         className={cx(
-          "mt-3 w-full text-center font-body text-[13.5px] font-semibold text-[#6B5A49]",
+          "mt-4 w-full text-center font-body text-[13.5px] font-semibold text-[#6B5A49]",
           FOCUS_RING,
         )}
       >

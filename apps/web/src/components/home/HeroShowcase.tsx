@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import type { ProductCardView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { TONE_GRADIENTS } from "@/components/catalog/ChocoPlaceholder";
@@ -39,9 +40,23 @@ const PIECE_SHADOW =
 export interface HeroShowcaseProps {
   /** Product surfaced in the floating chip (nullable while catalog is empty). */
   product: ProductCardView | null;
+  /**
+   * Optional hero photograph. When supplied it replaces the art-directed
+   * tasting-box scene inside the same framed slot (gold seal + floating chip
+   * still overlay it), so real studio photography can drop in with no layout
+   * change. Falls back to the gradient scene when omitted.
+   */
+  imageUrl?: string | null;
+  /** Accessible description for the hero photograph. */
+  imageAlt?: string;
 }
 
-export function HeroShowcase({ product }: HeroShowcaseProps): ReactNode {
+export function HeroShowcase({
+  product,
+  imageUrl,
+  imageAlt = "KAKOA signature tasting box",
+}: HeroShowcaseProps): ReactNode {
+  const hasPhoto = typeof imageUrl === "string" && imageUrl !== "";
   return (
     <div className="relative mx-auto w-full max-w-[380px] lg:max-w-none">
       {/* ambient studio glow (behind) */}
@@ -54,11 +69,23 @@ export function HeroShowcase({ product }: HeroShowcaseProps): ReactNode {
         className="absolute bottom-0 -left-[6%] z-0 h-[34%] w-[34%] rounded-pill bg-[#C7D0A6] opacity-50 blur-[44px]"
       />
 
-      {/* plated tasting box (studio-lit) */}
+      {/* plated tasting box (studio-lit) — real photo drops into the same
+          framed slot when `imageUrl` is supplied, else the gradient scene. */}
       <div
-        aria-hidden="true"
+        aria-hidden={hasPhoto ? undefined : "true"}
         className="relative z-[1] aspect-square overflow-hidden rounded-[28px] shadow-[0_34px_80px_rgba(42,29,18,.32)]"
       >
+        {hasPhoto ? (
+          <Image
+            src={imageUrl as string}
+            alt={imageAlt}
+            fill
+            priority
+            sizes="(max-width: 1024px) 92vw, 46vw"
+            className="object-cover"
+          />
+        ) : (
+          <>
         <div
           className="absolute inset-0"
           style={{
@@ -107,6 +134,8 @@ export function HeroShowcase({ product }: HeroShowcaseProps): ReactNode {
         <div className="absolute bottom-[5.2%] left-[7%] z-[2] font-mono text-[10px] font-medium tracking-[0.2em] text-[rgba(74,46,28,.6)] uppercase">
           Signature — 16-piece tasting box
         </div>
+          </>
+        )}
       </div>
 
       {/* gold wax seal */}

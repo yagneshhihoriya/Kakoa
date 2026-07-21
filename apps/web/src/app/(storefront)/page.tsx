@@ -4,11 +4,12 @@ import type { ProductTone } from "@kakoa/core";
 import { PRODUCT_TONES } from "@kakoa/core";
 import { EmptyState } from "@kakoa/ui";
 import { getCategories, getProducts } from "@/lib/catalog/queries";
+import { getDefaultVariantIds } from "./shop/default-variants";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ChocoScene } from "@/components/home/ChocoScene";
 import { HeroShowcase } from "@/components/home/HeroShowcase";
-import { NewsletterForm } from "@/components/home/NewsletterForm";
+import { PhotoSlot } from "@/components/home/PhotoSlot";
 import { SectionReveal } from "@/components/home/SectionReveal";
 
 /** ISR — 5-min time fallback; tag-based revalidation purges sooner. */
@@ -46,6 +47,64 @@ const VALUE_PROPS = [
     body: "Insulated packaging keeps every piece perfect to your door.",
   },
 ] as const;
+
+/** Trust triad — a slim reassurance band shown high on the page. Icons are
+ * inline thin-stroke SVGs (no imagery); copy stays presentational. */
+const TRUST_SIGNALS = [
+  {
+    key: "cool",
+    title: "Kept cool, guaranteed",
+    body: "Insulated, temperature-controlled packing — or we make it right.",
+  },
+  {
+    key: "batch",
+    title: "Small-batch, bean-to-bar",
+    body: "Roasted, conched and tempered by hand in our own kitchen.",
+  },
+  {
+    key: "cacao",
+    title: "Fair-trade cacao",
+    body: "Direct-trade beans from four origins, growers paid above market.",
+  },
+] as const;
+
+/** Thin-stroke line icons for the trust band — decorative, brand-neutral. */
+function TrustIcon({ name }: { name: (typeof TRUST_SIGNALS)[number]["key"] }): ReactNode {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  if (name === "cool") {
+    return (
+      <svg {...common}>
+        <path d="M12 2v20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3" />
+        <path d="M3.6 7l16.8 10M3.6 7l4.1.4M3.6 7l.4-4.1M20.4 17l-4.1-.4M20.4 17l-.4 4.1" />
+        <path d="M20.4 7L3.6 17M20.4 7l-4.1.4M20.4 7l.4-4.1M3.6 17l4.1-.4M3.6 17l-.4 4.1" />
+      </svg>
+    );
+  }
+  if (name === "batch") {
+    return (
+      <svg {...common}>
+        <path d="M11 20A7 7 0 0 1 4 13C4 8 8 4 13 3c2 8-2 14-2 17z" />
+        <path d="M11 20c0-5 2.5-9 6.5-12" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
 
 /** Editorial marquee — the craft vocabulary, looped as a decorative ribbon. */
 const MARQUEE_WORDS = [
@@ -135,6 +194,12 @@ export default async function HomePage() {
   const heroProduct =
     featured.find((product) => product.tone === "ruby") ?? featured[0] ?? null;
 
+  // Default variant per featured product so the card's "Add to Cart" is a real
+  // one-tap add (and fires the mobile added-to-bag sheet) instead of a PDP link.
+  const defaultVariantIds = await getDefaultVariantIds(
+    featured.map((product) => product.id),
+  );
+
   return (
     <main>
       <SectionReveal />
@@ -153,14 +218,14 @@ export default async function HomePage() {
             <div className="mb-6">
               <Eyebrow>Small-batch · Single origin</Eyebrow>
             </div>
-            <h1 className="mb-6 font-display text-hero font-normal text-balance">
+            <h1 className="mb-6 font-display text-hero font-normal leading-[1.02] text-balance">
               Chocolate worth
               <br />
               slowing down
               <br />
               <span className="text-espresso italic">for.</span>
             </h1>
-            <p className="mb-8 max-w-[460px] font-body text-lead text-ink-soft">
+            <p className="mb-8 max-w-[48ch] font-body text-lead text-ink-soft">
               Ethically sourced cacao, roasted in-house and finished by hand.
               Tasting notes you can actually taste — no shortcuts, no fillers.
             </p>
@@ -224,6 +289,36 @@ export default async function HomePage() {
             ),
           )}
         </div>
+      </section>
+
+      {/* ==================== TRUST / REASSURANCE ==================== */}
+      <section
+        aria-label="The KAKOA promise"
+        className="mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 lg:pt-[72px]"
+      >
+        <ul className="grid gap-px overflow-hidden rounded-[22px] border border-line bg-line shadow-soft sm:grid-cols-3">
+          {TRUST_SIGNALS.map((signal) => (
+            <li
+              key={signal.key}
+              className="flex items-start gap-3.5 bg-cream-2 px-6 py-6 sm:px-7 sm:py-7"
+            >
+              <span
+                aria-hidden="true"
+                className="mt-px grid h-11 w-11 flex-none place-items-center rounded-[14px] border border-line-soft bg-cream text-espresso"
+              >
+                <TrustIcon name={signal.key} />
+              </span>
+              <div className="max-w-[34ch]">
+                <h3 className="font-body text-[15px] font-semibold text-ink">
+                  {signal.title}
+                </h3>
+                <p className="mt-1 font-body text-[13.5px] leading-[1.55] text-ink-soft">
+                  {signal.body}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* ======================== COLLECTIONS ======================== */}
@@ -322,7 +417,11 @@ export default async function HomePage() {
           <ul className="grid grid-cols-2 gap-4 sm:gap-[22px] lg:grid-cols-4">
             {featured.map((product) => (
               <li key={product.id}>
-                <ProductCard product={product} className="h-full" />
+                <ProductCard
+                  product={product}
+                  defaultVariantId={defaultVariantIds[product.id] ?? null}
+                  className="h-full"
+                />
               </li>
             ))}
           </ul>
@@ -365,7 +464,10 @@ export default async function HomePage() {
         className="mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 sm:px-8 sm:py-16 lg:grid-cols-[.95fr_1.05fr] lg:gap-16 lg:py-[88px]"
       >
         <div className="relative aspect-[5/4] overflow-hidden rounded-[26px] shadow-float">
-          <ChocoScene kind="story" label="Small-batch kitchen" />
+          {/* photo-ready: pass a `src` to swap in real kitchen photography. */}
+          <PhotoSlot alt="Inside the KAKOA small-batch kitchen" sizes="(max-width: 1024px) 100vw, 48vw">
+            <ChocoScene kind="story" label="Small-batch kitchen" />
+          </PhotoSlot>
         </div>
         <div>
           <div className="mb-4">
@@ -373,13 +475,13 @@ export default async function HomePage() {
           </div>
           <h2
             id="home-story"
-            className="mb-5 font-display text-h1 font-normal"
+            className="mb-5 font-display text-h1 font-normal leading-[1.06]"
           >
             From bean to bar,
             <br />
             in our own hands.
           </h2>
-          <p className="mb-7 max-w-[480px] font-body text-lead text-ink-soft">
+          <p className="mb-7 max-w-[62ch] font-body text-lead text-ink-soft">
             We started KAKOA in a tiny kitchen with one conviction: great
             chocolate should taste of somewhere. Today we work directly with
             growers across four origins, and still roast every batch ourselves.
@@ -409,11 +511,11 @@ export default async function HomePage() {
       {/* ========================= PROCESS STRIP ======================= */}
       <section className="relative overflow-hidden bg-ink text-cream kk-grain">
         <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8 py-16 lg:py-[88px]">
-          <div className="mb-10 max-w-[560px]">
+          <div className="mb-10 max-w-[62ch]">
             <div className="mb-3">
               <Eyebrow tone="gold">The craft</Eyebrow>
             </div>
-            <h2 className="font-display text-h1 font-normal text-cream">
+            <h2 className="font-display text-h1 font-normal leading-[1.06] text-balance text-cream">
               Four movements, from bean to bar.
             </h2>
           </div>
@@ -438,36 +540,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ========================= CLUB CTA ========================== */}
-      <section
-        aria-labelledby="home-club"
-        className="mx-auto my-16 max-w-[1240px] px-5 sm:px-8 lg:my-[88px]"
-      >
-        <div className="relative grid items-center gap-8 overflow-hidden rounded-[24px] p-6 text-cream shadow-float sm:rounded-[28px] sm:p-14 lg:grid-cols-[1.1fr_.9fr] kk-grain bg-[linear-gradient(135deg,var(--color-cocoa),var(--color-cocoa-deep))]">
-          <div
-            aria-hidden="true"
-            className="absolute -top-12 right-[100px] h-44 w-44 rounded-pill bg-gold-soft/15 blur-[8px]"
-          />
-          <div className="relative">
-            <div className="mb-4">
-              <Eyebrow tone="gold">The Chocolate Club</Eyebrow>
-            </div>
-            <h2
-              id="home-club"
-              className="mb-4 font-display text-h2 font-normal text-balance text-cream lg:text-h1"
-            >
-              A new tasting box, every month.
-            </h2>
-            <p className="max-w-[400px] font-body text-[15.5px] leading-[1.6] text-[#E4D3BC]">
-              Curated seasonal selections, members-only releases, and free
-              shipping. Pause or cancel anytime.
-            </p>
-          </div>
-          <div className="relative">
-            <NewsletterForm />
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

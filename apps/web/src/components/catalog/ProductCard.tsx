@@ -32,6 +32,9 @@ export function ProductCard({
   defaultVariantId,
   className,
 }: ProductCardProps): ReactNode {
+  const isOnSale =
+    product.compareAtPricePaise !== null &&
+    product.compareAtPricePaise > product.fromPricePaise;
   return (
     <article
       className={cx(
@@ -106,22 +109,63 @@ export function ProductCard({
             paise={product.fromPricePaise}
             compareAtPaise={product.compareAtPricePaise ?? undefined}
           />
+          {/* MOBILE-only "Sale" flag — desktop keeps the plain price row. The
+              struck compare-at itself is rendered by <Price> on both. */}
+          {isOnSale ? (
+            <span className="rounded-pill bg-raspberry/12 px-[9px] py-[3px] font-mono text-[10.5px] font-semibold tracking-[0.06em] text-raspberry uppercase sm:hidden">
+              Sale
+            </span>
+          ) : null}
+          {/* DESKTOP CTA — unchanged pill in the price row. `contents` keeps the
+              flex layout identical to before; `max-sm:hidden` drops it on mobile
+              in favour of the full-width button below. */}
+          <div className="contents max-sm:hidden">
+            {!product.inStock ? (
+              <button type="button" disabled className={cx(ADD_TO_BAG_CLASSES, "cursor-not-allowed opacity-50")}>
+                Add
+              </button>
+            ) : typeof defaultVariantId === "string" ? (
+              <AddToBagButton
+                variantId={defaultVariantId}
+                productName={product.name}
+              />
+            ) : (
+              <Link
+                href={`/product/${product.slug}`}
+                aria-label={`View ${product.name}`}
+                className={ADD_TO_BAG_CLASSES}
+              >
+                Add
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* MOBILE-only full-width CTA (Feature A). Hidden ≥ sm so desktop is
+            untouched. Clear "Add to Cart" / "Out of Stock" labelling. */}
+        <div className="mt-3 sm:hidden">
           {!product.inStock ? (
-            <button type="button" disabled className={cx(ADD_TO_BAG_CLASSES, "cursor-not-allowed opacity-50")}>
-              Add
+            <button
+              type="button"
+              disabled
+              className={cx(ADD_TO_BAG_CLASSES, "w-full cursor-not-allowed opacity-50")}
+            >
+              Out of Stock
             </button>
           ) : typeof defaultVariantId === "string" ? (
             <AddToBagButton
               variantId={defaultVariantId}
               productName={product.name}
+              label="Add to Cart"
+              className="w-full"
             />
           ) : (
             <Link
               href={`/product/${product.slug}`}
               aria-label={`View ${product.name}`}
-              className={ADD_TO_BAG_CLASSES}
+              className={cx(ADD_TO_BAG_CLASSES, "w-full")}
             >
-              Add
+              Add to Cart
             </Link>
           )}
         </div>

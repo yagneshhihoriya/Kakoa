@@ -3,6 +3,7 @@ import { ToastProvider } from "@kakoa/ui/client";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { WishlistProvider } from "@/components/auth/WishlistProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
+import { AddedToBagProvider } from "@/components/cart/AddedToBagSheet";
 import { BackToTop } from "@/components/chrome/BackToTop";
 import { CartDrawer } from "@/components/chrome/CartDrawer";
 import { Footer } from "@/components/chrome/Footer";
@@ -22,6 +23,7 @@ export default function StorefrontLayout({
   return (
     <ToastProvider>
       <CartProvider>
+        <AddedToBagProvider>
         {/* AuthProvider reads `?login=1` via useSearchParams — needs Suspense. */}
         <Suspense fallback={null}>
           <AuthProvider>
@@ -65,6 +67,7 @@ export default function StorefrontLayout({
             </WishlistProvider>
           </AuthProvider>
         </Suspense>
+        </AddedToBagProvider>
       </CartProvider>
     </ToastProvider>
   );

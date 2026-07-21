@@ -11,15 +11,30 @@ import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
 import { ADD_TO_BAG_CLASSES } from "@/components/cart/add-to-bag-classes";
 import { useCart } from "@/components/cart/CartProvider";
+import { useAddedToBag } from "@/components/cart/AddedToBagSheet";
 
 /** Optimistic label flip resets after this many ms (success path). */
 const RESET_MS = 1800;
+
+/** MOBILE breakpoint mirror — matches Tailwind `<sm` (< 640px, Feature B). */
+const MOBILE_QUERY = "(max-width: 639px)";
+
+/** True when the viewport is below the `sm` breakpoint (client-only guard). */
+function isMobileViewport(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(MOBILE_QUERY).matches
+  );
+}
 
 export interface AddToBagButtonProps {
   /** Default variant id resolved server-side — one-tap add, qty 1. */
   variantId: string;
   productName: string;
   className?: string;
+  /** Resting CTA label. Defaults to "Add" (card price-row pill). */
+  label?: string;
 }
 
 /**
@@ -32,9 +47,11 @@ export function AddToBagButton({
   variantId,
   productName,
   className,
+  label = "Add",
 }: AddToBagButtonProps): ReactNode {
   const { toast } = useToast();
   const { addItem } = useCart();
+  const { show: showAddedSheet } = useAddedToBag();
   const [, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
   const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,10 +71,22 @@ export function AddToBagButton({
       setAdded(false);
     }, RESET_MS);
 
+    // MOBILE (< sm) shows the "Added to your bag" sheet instead of the
+    // desktop toast + auto-opened drawer (Feature B). Captured before the
+    // async settle so an orientation/resize mid-flight can't flip behaviour.
+    const mobile = isMobileViewport();
+
     startTransition(async () => {
-      const result = await addItem({ variantId, qty: 1 });
+      const result = await addItem({ variantId, qty: 1 }, { openDrawer: !mobile });
       if (result.ok) {
-        toast({ kind: "success", message: `${productName} added to your bag` });
+        if (mobile) {
+          showAddedSheet({ productName, qty: 1 });
+        } else {
+          toast({
+            kind: "success",
+            message: `${productName} added to your bag`,
+          });
+        }
       } else {
         // Provider already toasted `ApiErr.message` — just revert the label.
         if (resetRef.current !== null) clearTimeout(resetRef.current);
@@ -78,7 +107,7 @@ export function AddToBagButton({
           Added ✓
         </span>
       ) : (
-        "Add"
+        label
       )}
     </button>
   );

@@ -13,7 +13,7 @@ import { useCartChrome } from "./useCartChrome";
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
 
-/** Desktop nav — prototype order. `activeOn` drives the active underline. */
+/** Desktop nav — inline links (≥1000px). `activeOn` drives the active underline. */
 const NAV_LINKS = [
   { href: "/shop", label: "Shop", activeOn: ["/shop", "/product"] },
   { href: "/shop", label: "Collections", activeOn: [] },
@@ -22,15 +22,33 @@ const NAV_LINKS = [
   { href: "/journal", label: "Journal", activeOn: ["/journal"] },
 ] as const;
 
-/** Mobile menu — prototype order (Search is prepended separately). */
-// Subscription & gift cards are deferred (PROJECT_PLAN §6) — links return when the modules ship.
-const MOBILE_LINKS = [
-  { href: "/shop", label: "Shop" },
-  { href: "/shop?category=gifts", label: "Gifts" },
-  { href: "/about", label: "Our Story" },
-  { href: "/journal", label: "Journal" },
-  { href: "/support", label: "Help" },
-  { href: "/login", label: "Sign in" },
+/**
+ * Mobile menu (< 1000px) — primary nav shown as a serif list. `children`, when
+ * present, renders an inline accordion (the collections drill-down).
+ * Subscription & gift cards are deferred (PROJECT_PLAN §6).
+ */
+const MOBILE_PRIMARY = [
+  {
+    label: "Shop",
+    href: "/shop",
+    children: [
+      { href: "/shop", label: "All chocolate" },
+      { href: "/shop?category=bars", label: "Bars" },
+      { href: "/shop?category=pralines", label: "Pralines" },
+      { href: "/shop?category=signature", label: "Signature" },
+      { href: "/shop?category=gifts", label: "Gifts" },
+    ],
+  },
+  { label: "Gifts", href: "/shop?category=gifts" },
+  { label: "Our Story", href: "/about" },
+  { label: "Journal", href: "/journal" },
+] as const;
+
+/** Mobile menu — secondary utility links (accent colour, below the primary list). */
+const MOBILE_SECONDARY = [
+  { href: "/support", label: "Help centre" },
+  { href: "/locator", label: "Store locator" },
+  { href: "/account/track", label: "Track an order" },
 ] as const;
 
 const ICON_BUTTON_CLASSES = cx(
@@ -57,6 +75,63 @@ function SearchIcon(): ReactNode {
   );
 }
 
+function MenuIcon(): ReactNode {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function CloseIcon(): ReactNode {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+/** Chevron used by the mobile accordion — rotates 180° when its section is open. */
+function Chevron({ open }: { open: boolean }): ReactNode {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={cx(
+        "transition-transform duration-300 ease-brand motion-reduce:transition-none",
+        open && "rotate-180",
+      )}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 /**
  * Global storefront header (prototype 00-global-header-drawers.html):
  * sticky, cream glass (rgba(251,246,239,.86) + 12px blur), 1240px / 74px
@@ -73,6 +148,8 @@ export function Header(): ReactNode {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Which mobile-menu accordion section is expanded (by label), or null.
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   // Condense the header (shorter + stronger shadow) once the page scrolls.
   useEffect(() => {
@@ -117,6 +194,25 @@ export function Header(): ReactNode {
     setMenuOpen(false);
   }, [pathname]);
 
+  // While the full-screen mobile menu is open: lock body scroll and close on
+  // Escape. Collapses any expanded accordion section when the menu closes.
+  useEffect(() => {
+    if (!menuOpen) {
+      setOpenSection(null);
+      return;
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
   const openCart = (): void => {
     if (cartCtx !== null) {
       cartCtx.openDrawer();
@@ -130,6 +226,66 @@ export function Header(): ReactNode {
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
     );
 
+  // Shared action controls, reused by the desktop (inline) and mobile (centered)
+  // header layouts so the cart bag/count markup isn't duplicated.
+  const searchButton = (
+    <button
+      type="button"
+      title="Search"
+      aria-label="Search"
+      onClick={() => {
+        setSearchOpen(true);
+      }}
+      className={ICON_BUTTON_CLASSES}
+    >
+      <SearchIcon />
+    </button>
+  );
+
+  const cartButton = (
+    <button
+      type="button"
+      title="Cart"
+      aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
+      onClick={openCart}
+      className={cx(
+        "relative flex h-10 items-center gap-1.5 rounded-pill px-3 font-body text-sm font-semibold text-ink transition-colors hover:bg-[#F0E4D2]",
+        FOCUS_RING,
+      )}
+    >
+      <span className="inline-flex [perspective:360px]">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className="origin-center animate-[kk-flip-y_2.6s_linear_infinite] [transform-style:preserve-3d] drop-shadow-[0_1.5px_1.5px_rgba(42,29,18,0.35)] motion-reduce:animate-none"
+        >
+          <defs>
+            <linearGradient id="kk-bag-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#d9ac5e" />
+              <stop offset="100%" stopColor="#8a5a34" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M5 7.5h14l-1.05 11.6a2.2 2.2 0 0 1-2.19 2H8.24a2.2 2.2 0 0 1-2.19-2L5 7.5Z"
+            fill="url(#kk-bag-grad)"
+          />
+          <path
+            d="M8.7 7.5V6.6a3.3 3.3 0 0 1 6.6 0v.9"
+            fill="none"
+            stroke="#6b4423"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <span className={pop ? "animate-[kk-pop_.45s_ease]" : undefined}>
+        {count}
+      </span>
+    </button>
+  );
+
   return (
     <>
       <header
@@ -140,154 +296,247 @@ export function Header(): ReactNode {
       >
         <div
           className={cx(
-            "mx-auto flex max-w-[1240px] items-center justify-between gap-6 px-8 transition-[height] duration-300 ease-brand max-[1000px]:gap-2.5 max-[1000px]:px-[22px] max-[680px]:gap-1 max-[680px]:px-4",
-            scrolled ? "h-[60px]" : "h-[74px]",
+            "mx-auto max-w-[1240px] px-5 transition-[height] duration-300 ease-brand sm:px-8",
+            scrolled ? "h-[60px]" : "h-[72px]",
           )}
         >
-          <Link href="/" aria-label="Kakao home" className={cx("no-underline", FOCUS_RING)}>
-            <BrandLockup size="header" />
-          </Link>
+          {/* DESKTOP (≥1000px) — unchanged: logo left · inline nav · actions right */}
+          <div className="hidden h-full items-center justify-between gap-6 min-[1000px]:flex">
+            <Link href="/" aria-label="KAKOA home" className={cx("no-underline", FOCUS_RING)}>
+              <BrandLockup size="header" />
+            </Link>
+            <nav aria-label="Primary" className="flex items-center gap-[30px]">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  aria-current={isActive(link.activeOn) ? "page" : undefined}
+                  className={cx(
+                    "relative p-0 font-body text-[14.5px] font-semibold text-ink no-underline transition-colors hover:text-espresso",
+                    "after:absolute after:-bottom-[7px] after:left-0 after:right-0 after:h-[1.5px] after:origin-left after:bg-espresso after:transition-transform after:duration-300 after:ease-[cubic-bezier(.2,.7,.3,1)] after:content-['']",
+                    isActive(link.activeOn)
+                      ? "after:scale-x-100"
+                      : "after:scale-x-0 hover:after:scale-x-100",
+                    FOCUS_RING,
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="flex items-center gap-1.5">
+              {searchButton}
+              <AccountControl auth={auth} />
+              {cartButton}
+            </div>
+          </div>
 
-          <nav
-            aria-label="Primary"
-            className="flex items-center gap-[30px] max-[1000px]:hidden"
-          >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                aria-current={isActive(link.activeOn) ? "page" : undefined}
+          {/* MOBILE (<1000px) — centered logo: menu left · logo center · search+cart right */}
+          <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-2 min-[1000px]:hidden">
+            <div className="flex items-center justify-self-start">
+              <button
+                type="button"
+                title={menuOpen ? "Close menu" : "Menu"}
+                aria-label={menuOpen ? "Close menu" : "Menu"}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-menu"
+                onClick={() => {
+                  setMenuOpen((current) => !current);
+                }}
                 className={cx(
-                  "relative p-0 font-body text-[14.5px] font-semibold text-ink no-underline transition-colors hover:text-espresso",
-                  "after:absolute after:-bottom-[7px] after:left-0 after:right-0 after:h-[1.5px] after:origin-left after:bg-espresso after:transition-transform after:duration-300 after:ease-[cubic-bezier(.2,.7,.3,1)] after:content-['']",
-                  isActive(link.activeOn)
-                    ? "after:scale-x-100"
-                    : "after:scale-x-0 hover:after:scale-x-100",
+                  "relative z-[46] inline-flex items-center gap-2 rounded-pill px-2.5 py-2 text-ink transition-colors hover:bg-[#F0E4D2]",
                   FOCUS_RING,
                 )}
               >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              title="Menu"
-              aria-label="Menu"
-              aria-expanded={menuOpen}
-              onClick={() => {
-                setMenuOpen((current) => !current);
-              }}
-              className={cx(
-                "hidden h-10 w-10 place-items-center rounded-pill text-xl text-ink transition-colors hover:bg-[#F0E4D2] max-[1000px]:grid",
-                FOCUS_RING,
-              )}
+                {menuOpen ? <CloseIcon /> : <MenuIcon />}
+                <span className="font-body text-[13px] font-semibold max-[680px]:hidden">
+                  {menuOpen ? "Close" : "Menu"}
+                </span>
+              </button>
+            </div>
+            <Link
+              href="/"
+              aria-label="KAKOA home"
+              className={cx("justify-self-center no-underline", FOCUS_RING)}
             >
-              <span aria-hidden="true">☰</span>
-            </button>
-            <button
-              type="button"
-              title="Search"
-              aria-label="Search"
-              onClick={() => {
-                setSearchOpen(true);
-              }}
-              className={ICON_BUTTON_CLASSES}
-            >
-              <SearchIcon />
-            </button>
-            <AccountControl auth={auth} />
-            <button
-              type="button"
-              title="Cart"
-              aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
-              onClick={openCart}
-              className={cx(
-                "relative flex h-10 items-center gap-1.5 rounded-pill px-3 font-body text-sm font-semibold text-ink transition-colors hover:bg-[#F0E4D2]",
-                FOCUS_RING,
-              )}
-            >
-              <span className="inline-flex [perspective:360px]">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="origin-center animate-[kk-flip-y_2.6s_linear_infinite] [transform-style:preserve-3d] drop-shadow-[0_1.5px_1.5px_rgba(42,29,18,0.35)] motion-reduce:animate-none"
-                >
-                  <defs>
-                    <linearGradient id="kk-bag-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#d9ac5e" />
-                      <stop offset="100%" stopColor="#8a5a34" />
-                    </linearGradient>
-                  </defs>
-                  {/* Filled bag body (chocolate sheen) + darker handle for depth. */}
-                  <path
-                    d="M5 7.5h14l-1.05 11.6a2.2 2.2 0 0 1-2.19 2H8.24a2.2 2.2 0 0 1-2.19-2L5 7.5Z"
-                    fill="url(#kk-bag-grad)"
-                  />
-                  <path
-                    d="M8.7 7.5V6.6a3.3 3.3 0 0 1 6.6 0v.9"
-                    fill="none"
-                    stroke="#6b4423"
-                    strokeWidth="1.9"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <span className={pop ? "animate-[kk-pop_.45s_ease]" : undefined}>
-                {count}
-              </span>
-            </button>
+              <BrandLockup size="header" />
+            </Link>
+            <div className="flex items-center justify-self-end gap-0.5">
+              {searchButton}
+              {cartButton}
+            </div>
           </div>
         </div>
       </header>
 
       {menuOpen ? (
-        <div className="sticky top-[74px] z-[38] flex flex-col gap-0.5 border-b border-line bg-cream px-5 pt-2.5 pb-4 shadow-[0_12px_24px_rgba(42,29,18,.08)] animate-[kk-menu_.22s_ease]">
-          <button
-            type="button"
-            onClick={() => {
-              setMenuOpen(false);
-              setSearchOpen(true);
-            }}
-            className={cx(
-              "flex items-center gap-2.5 border-b border-[#F0E4D2] px-1.5 py-[13px] text-left font-body text-base font-semibold text-ink",
-              FOCUS_RING,
-            )}
-          >
-            <SearchIcon />
-            Search
-          </button>
-          {MOBILE_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
+        <div
+          id="mobile-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+          className="fixed inset-0 z-50 flex flex-col bg-cream animate-[kk-overlay_.25s_ease] min-[1000px]:hidden"
+        >
+          {/* Menu's own top bar — mirrors the header: close · logo · cart. */}
+          <div className="flex h-[72px] shrink-0 items-center justify-between gap-2 border-b border-line px-5 sm:px-8">
+            <button
+              type="button"
+              aria-label="Close menu"
               onClick={() => {
                 setMenuOpen(false);
               }}
               className={cx(
-                "border-b border-[#F0E4D2] px-1.5 py-[13px] font-body text-base font-semibold text-ink no-underline",
+                "inline-flex items-center gap-2 rounded-pill px-2.5 py-2 text-ink transition-colors hover:bg-[#F0E4D2]",
                 FOCUS_RING,
               )}
             >
-              {link.label}
+              <CloseIcon />
+              <span className="font-body text-[13px] font-semibold max-[680px]:hidden">
+                Close
+              </span>
+            </button>
+            <Link
+              href="/"
+              aria-label="KAKOA home"
+              onClick={() => {
+                setMenuOpen(false);
+              }}
+              className={cx("no-underline", FOCUS_RING)}
+            >
+              <BrandLockup size="header" />
             </Link>
-          ))}
-          <Link
-            href="/account"
-            onClick={() => {
-              setMenuOpen(false);
-            }}
-            className={cx(
-              "px-1.5 py-[13px] font-body text-base font-semibold text-espresso no-underline",
-              FOCUS_RING,
-            )}
-          >
-            My account
-          </Link>
+            <div className="flex items-center gap-0.5">{cartButton}</div>
+          </div>
+
+          {/* Scrollable menu body. */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 pt-5 pb-[calc(2.5rem+env(safe-area-inset-bottom))] animate-[kk-rise_.34s_var(--ease-entrance)]">
+            {/* Search launcher */}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setSearchOpen(true);
+              }}
+              className={cx(
+                "mb-6 flex w-full items-center gap-3 rounded-2xl border border-line-soft bg-surface px-4 py-3.5 text-left font-body text-[15px] font-medium text-ink-muted shadow-soft transition-colors hover:bg-card",
+                FOCUS_RING,
+              )}
+            >
+              <SearchIcon />
+              Search chocolate…
+            </button>
+
+            {/* Primary — serif list, hairline dividers, collections accordion. */}
+            <nav aria-label="Primary" className="border-t border-line">
+              {MOBILE_PRIMARY.map((item) => {
+                const kids = "children" in item ? item.children : null;
+                const expanded = openSection === item.label;
+                return (
+                  <div key={item.label} className="border-b border-line">
+                    <div className="flex items-center">
+                      <Link
+                        href={item.href}
+                        onClick={() => {
+                          setMenuOpen(false);
+                        }}
+                        aria-current={isActive([item.href]) ? "page" : undefined}
+                        className={cx(
+                          "flex-1 py-[18px] font-display text-[26px] leading-none text-ink no-underline transition-colors hover:text-espresso",
+                          FOCUS_RING,
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                      {kids !== null ? (
+                        <button
+                          type="button"
+                          aria-label={`${expanded ? "Collapse" : "Expand"} ${item.label}`}
+                          aria-expanded={expanded}
+                          onClick={() => {
+                            setOpenSection(expanded ? null : item.label);
+                          }}
+                          className={cx(
+                            "-mr-1.5 grid h-12 w-12 place-items-center rounded-pill text-espresso transition-colors hover:bg-card",
+                            FOCUS_RING,
+                          )}
+                        >
+                          <Chevron open={expanded} />
+                        </button>
+                      ) : null}
+                    </div>
+                    {kids !== null && expanded ? (
+                      <ul className="animate-[kk-rise_.24s_var(--ease-entrance)] pb-3 pl-1">
+                        {kids.map((child) => (
+                          <li key={child.label}>
+                            <Link
+                              href={child.href}
+                              onClick={() => {
+                                setMenuOpen(false);
+                              }}
+                              className={cx(
+                                "block py-2.5 font-body text-[15px] font-medium text-ink-soft no-underline transition-colors hover:text-espresso",
+                                FOCUS_RING,
+                              )}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </nav>
+
+            {/* Secondary — utility links + account. */}
+            <nav aria-label="More" className="mt-8 flex flex-col items-start gap-1.5">
+              {MOBILE_SECONDARY.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => {
+                    setMenuOpen(false);
+                  }}
+                  className={cx(
+                    "rounded-sm py-1.5 font-body text-[14.5px] font-semibold text-espresso no-underline transition-colors hover:text-ink",
+                    FOCUS_RING,
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {auth?.customer != null ? (
+                <Link
+                  href="/account"
+                  onClick={() => {
+                    setMenuOpen(false);
+                  }}
+                  className={cx(
+                    "rounded-sm py-1.5 font-body text-[14.5px] font-semibold text-espresso no-underline transition-colors hover:text-ink",
+                    FOCUS_RING,
+                  )}
+                >
+                  My account
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (auth !== null) auth.open();
+                    else router.push("/login");
+                  }}
+                  className={cx(
+                    "rounded-sm py-1.5 text-left font-body text-[14.5px] font-semibold text-espresso transition-colors hover:text-ink",
+                    FOCUS_RING,
+                  )}
+                >
+                  Sign in
+                </button>
+              )}
+            </nav>
+          </div>
         </div>
       ) : null}
 

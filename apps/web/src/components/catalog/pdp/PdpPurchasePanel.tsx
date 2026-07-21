@@ -13,10 +13,20 @@ import { formatPaise } from "@kakoa/core";
 import { Chip, cx } from "@kakoa/ui";
 import { QtyStepper } from "@kakoa/ui/client";
 import { useCart } from "@/components/cart/CartProvider";
+import { useAddedToBag } from "@/components/cart/AddedToBagSheet";
 import { WishlistHeartButton } from "@/components/auth/WishlistHeartButton";
 
 /** Contract default cart range cap (PROJECT_PLAN §2.3 merge cap is 20). */
 const MAX_QTY = 20;
+
+/** MOBILE breakpoint mirror — matches Tailwind `<sm` (< 640px). */
+function isMobileViewport(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 639px)").matches
+  );
+}
 
 type StockMap = Record<string, { inStock: boolean; stockLow: boolean }>;
 
@@ -50,6 +60,7 @@ export function PdpPurchasePanel({
   variants,
 }: PdpPurchasePanelProps): ReactNode {
   const { addItem } = useCart();
+  const { show: showAddedSheet } = useAddedToBag();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [qty, setQty] = useState(1);
@@ -106,16 +117,27 @@ export function PdpPurchasePanel({
   );
   const lineTotalPaise = selected.pricePaise * qty;
 
-  /** Optimistic add via CartProvider — badge pops, drawer opens on success. */
+  /**
+   * Optimistic add via CartProvider. On MOBILE (< sm) we suppress the drawer
+   * and show the shared "Added to your bag" sheet instead, so the PDP add is
+   * consistent with the card add. On desktop the cart drawer opens as before.
+   */
   const handleAdd = (): void => {
+    const mobile = isMobileViewport();
     startTransition(async () => {
       // Provider handles reconcile + rollback toast on ApiErr. Pass the live
       // unit price so a first-add bumps the subtotal, not just the badge.
-      await addItem({
-        variantId: selected.id,
-        qty,
-        unitPricePaise: selected.pricePaise,
-      });
+      const result = await addItem(
+        {
+          variantId: selected.id,
+          qty,
+          unitPricePaise: selected.pricePaise,
+        },
+        { openDrawer: !mobile },
+      );
+      if (result.ok && mobile) {
+        showAddedSheet({ productName, qty });
+      }
     });
   };
 
