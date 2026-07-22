@@ -53,6 +53,7 @@ import {
   carts,
   coupons,
   db,
+  productImages,
   products,
   productVariants,
   storeSettings,
@@ -195,6 +196,14 @@ async function loadCartView(cartId: string): Promise<CartView> {
         productName: products.name,
         productTone: products.tone,
         productActive: products.isActive,
+        // Primary product image (lowest position) for the cart thumbnail.
+        productImageUrl: sql<string | null>`(
+          select ${productImages.url}
+          from ${productImages}
+          where ${productImages.productId} = ${products.id}
+          order by ${productImages.position} asc, ${productImages.createdAt} asc
+          limit 1
+        )`,
       })
       .from(cartItems)
       .leftJoin(productVariants, eq(productVariants.id, cartItems.variantId))
@@ -249,6 +258,7 @@ async function loadCartView(cartId: string): Promise<CartView> {
       name: row.productName,
       variantName: row.variantName,
       tone: toTone(row.productTone),
+      imageUrl: row.productImageUrl ?? null,
       unitPricePaise: row.unitPricePaise,
       qty,
       giftWrap: row.giftWrap,

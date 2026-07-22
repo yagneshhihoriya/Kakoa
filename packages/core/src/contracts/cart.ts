@@ -79,8 +79,10 @@ export const cartLineSchema = z.object({
   productSlug: slugSchema,
   name: z.string(),
   variantName: z.string(),
-  /** Design-system placeholder tone (drawer/page swatch rendering). */
+  /** Design-system placeholder tone (fallback swatch when no image). */
   tone: productToneSchema,
+  /** Primary product image URL, or null → render the placeholder swatch. */
+  imageUrl: z.string().nullable(),
   /** LIVE `product_variants.price_paise` at read time — never a snapshot. */
   unitPricePaise: z.number().int().positive(),
   qty: z.number().int().min(1).max(CART_QTY_MAX),
