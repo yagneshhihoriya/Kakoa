@@ -113,6 +113,10 @@ export const productDetailSchema = productCardSchema.extend({
   pdpAttributes: z.array(
     z.object({ label: z.string(), value: z.string(), unit: z.string().nullable() }),
   ),
+  /** "What you'll get" editorial copy — `attributes.whatYoullGet`; null when unset. */
+  whatYoullGet: z.string().nullable(),
+  /** Per-product Shipping copy — `attributes.shipping`; null → the standard note. */
+  shippingInfo: z.string().nullable(),
   /** From `store_settings` — Legal Metrology / FSSAI display. */
   fssaiLicense: z.string(),
   /** Approved customer reviews (newest first), reviewer name display-safe. */

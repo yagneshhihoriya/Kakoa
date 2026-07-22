@@ -56,6 +56,13 @@ function formatAttrValue(v: unknown): string {
   return '';
 }
 
+/** Read a trimmed string value from the products.attributes jsonb, else null. */
+function attrString(attributes: unknown, key: string): string | null {
+  if (attributes === null || typeof attributes !== "object") return null;
+  const value = (attributes as Record<string, unknown>)[key];
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
 /** Resolve preset attributes flagged showOnPdp into label/value/unit rows. */
 function buildPdpAttributes(
   attributes: unknown,
@@ -590,6 +597,8 @@ async function fetchProductDetail(
     storageInstructions: row.storageInstructions,
     isVeg: row.isVeg,
     pdpAttributes: buildPdpAttributes(row.attributes),
+    whatYoullGet: attrString(row.attributes, "whatYoullGet"),
+    shippingInfo: attrString(row.attributes, "shipping"),
     reviews: reviewList,
     fssaiLicense,
     images,

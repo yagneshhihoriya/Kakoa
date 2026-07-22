@@ -94,6 +94,8 @@ const CHOCOLATE: VerticalPreset = {
       options: ['Cocoa', 'Caramel', 'Berry', 'Nutty', 'Citrus', 'Floral', 'Espresso', 'Spice'] },
     { key: 'tone', label: 'Tone (art direction)', type: 'enum', group: 'Presentation',
       options: ['dark', 'milk', 'caramel', 'ruby', 'white', 'matcha'] },
+    { key: 'whatYoullGet', label: "What you'll get", type: 'rich', group: 'Storefront' },
+    { key: 'shipping', label: 'Shipping', type: 'rich', group: 'Storefront' },
   ],
   taxDefaults: { category: 'Chocolate & cocoa', rateBp: 500, codeSystem: 'HSN', code: '1806' },
   categoryTaxonomy: [

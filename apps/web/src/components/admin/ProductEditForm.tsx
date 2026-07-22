@@ -11,7 +11,12 @@ import { PRODUCT_BADGES } from "@/lib/admin/product-validation";
 const TONE_OPTIONS = ["dark", "milk", "caramel", "ruby", "white", "matcha"] as const;
 
 /** Attribute keys that now have dedicated content editors — hide from the generic list. */
-const CONTENT_ATTR_KEYS = new Set(["tasting_notes", "tone"]);
+const CONTENT_ATTR_KEYS = new Set([
+  "tasting_notes",
+  "tone",
+  "whatYoullGet",
+  "shipping",
+]);
 
 function recordToLines(r: Record<string, string> | null): string {
   if (r === null) return "";
@@ -88,10 +93,13 @@ export function ProductEditForm({
   const [categoryId, setCategoryId] = useState(product.categoryId);
   const [attrs, setAttrs] = useState<Record<string, unknown>>(product.attributes);
   const [blurb, setBlurb] = useState(product.blurb);
-  const [tastingNotes, setTastingNotes] = useState(product.tastingNotes.join(", "));
-  const [ingredients, setIngredients] = useState(product.ingredients);
-  const [allergens, setAllergens] = useState(product.allergens);
-  const [nutrition, setNutrition] = useState(recordToLines(product.nutritionFacts));
+  // Hidden from the admin UI (moved to storefront accordions / retired), but the
+  // persisted values are still seeded + re-sent on save so no data is wiped by
+  // updateProduct's unconditional column write. See PdpDetails for display.
+  const [tastingNotes] = useState(product.tastingNotes.join(", "));
+  const [ingredients] = useState(product.ingredients);
+  const [allergens] = useState(product.allergens);
+  const [nutrition] = useState(recordToLines(product.nutritionFacts));
   const [shelfLifeDays, setShelfLifeDays] = useState(
     product.shelfLifeDays !== null ? String(product.shelfLifeDays) : "",
   );
@@ -215,10 +223,36 @@ export function ProductEditForm({
                 ))}
               </select>
             </div>
+          </div>
+        </Card>
+
+        {/* Product page content — the three accordions on the storefront PDP.
+            Edit here → reflects on the product page. */}
+        <Card title="Product page content">
+          <div className="space-y-3">
             <div>
-              <label className={LABEL} htmlFor="p-desc">Description</label>
+              <label className={LABEL} htmlFor="p-desc">Product Description</label>
               <textarea id="p-desc" rows={4} className={INPUT} value={description} disabled={!canWrite}
                 onChange={(e) => setDescription(e.target.value)} />
+              <p className="mt-1 text-[11px] text-[#8a7a68]">Shown in the “Product Description” accordion.</p>
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="p-wyg">What You&apos;ll Get</label>
+              <textarea id="p-wyg" rows={4} className={INPUT}
+                value={typeof attrs.whatYoullGet === "string" ? attrs.whatYoullGet : ""}
+                disabled={!canWrite}
+                placeholder={"One 70 g bar, individually wrapped and ready to enjoy or gift."}
+                onChange={(e) => setAttr("whatYoullGet", e.target.value)} />
+              <p className="mt-1 text-[11px] text-[#8a7a68]">Shown in the “What You’ll Get” accordion. Leave blank for a default line.</p>
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="p-shipping">Shipping</label>
+              <textarea id="p-shipping" rows={4} className={INPUT}
+                value={typeof attrs.shipping === "string" ? attrs.shipping : ""}
+                disabled={!canWrite}
+                placeholder={"Ships cold & insulated. Free shipping over ₹999. Dispatched in 1–2 business days."}
+                onChange={(e) => setAttr("shipping", e.target.value)} />
+              <p className="mt-1 text-[11px] text-[#8a7a68]">Shown in the “Shipping” accordion. Leave blank for the store’s standard shipping info.</p>
             </div>
           </div>
         </Card>
@@ -249,31 +283,11 @@ export function ProductEditForm({
                 </select>
               </div>
             </div>
-            <div>
-              <label className={LABEL} htmlFor="p-notes">Tasting notes</label>
-              <input id="p-notes" className={INPUT} value={tastingNotes} disabled={!canWrite}
-                placeholder="Assorted truffles, Two bars, Keepsake box"
-                onChange={(e) => setTastingNotes(e.target.value)} />
-              <p className="mt-1 text-[11px] text-[#8a7a68]">Comma-separated chips shown on the product page.</p>
-            </div>
-            <div>
-              <label className={LABEL} htmlFor="p-ingredients">Ingredients</label>
-              <textarea id="p-ingredients" rows={3} className={INPUT} value={ingredients} disabled={!canWrite}
-                onChange={(e) => setIngredients(e.target.value)} />
-            </div>
-            <div>
-              <label className={LABEL} htmlFor="p-allergens">Allergens</label>
-              <input id="p-allergens" className={INPUT} value={allergens} disabled={!canWrite}
-                placeholder="Contains milk, soy. May contain nuts."
-                onChange={(e) => setAllergens(e.target.value)} />
-            </div>
-            <div>
-              <label className={LABEL} htmlFor="p-nutrition">Nutrition facts</label>
-              <textarea id="p-nutrition" rows={4} className={INPUT} value={nutrition} disabled={!canWrite}
-                placeholder={"Energy: 540 kcal\nProtein: 7 g\nSugar: 48 g"}
-                onChange={(e) => setNutrition(e.target.value)} />
-              <p className="mt-1 text-[11px] text-[#8a7a68]">One per line as “Label: Value”.</p>
-            </div>
+            {/* Tasting notes / Ingredients / Allergens / Nutrition inputs
+                retired from the admin UI (storefront no longer renders them as
+                separate fields). Existing values are preserved via the seeded
+                state above + save() payload. Use "What you'll get" (Attributes
+                card) for the storefront copy. */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className={LABEL} htmlFor="p-shelf">Shelf life (days)</label>

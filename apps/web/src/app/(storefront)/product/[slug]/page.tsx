@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ProductDetailView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
-import { StarRating, cx } from "@kakoa/ui";
+import { StarRating } from "@kakoa/ui";
 import { absoluteUrl } from "@/lib/seo/site";
 import {
   getCatalogSettings,
@@ -16,7 +16,8 @@ import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PdpGallery } from "@/components/catalog/pdp/PdpGallery";
 import { PdpPurchasePanel } from "@/components/catalog/pdp/PdpPurchasePanel";
-import { PdpTabs } from "@/components/catalog/pdp/PdpTabs";
+import { PdpDetails } from "@/components/catalog/pdp/PdpDetails";
+import { PdpReviews } from "@/components/catalog/pdp/PdpReviews";
 import { Reveal } from "@/components/catalog/pdp/Reveal";
 
 /** ISR: tag-driven purges (`product:{slug}`) + 5-min time fallback. */
@@ -157,154 +158,6 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
-/** FSSAI square veg/non-veg mark (green = veg, brown = non-veg). */
-function VegMark({ isVeg }: { isVeg: boolean }): ReactNode {
-  return (
-    <span
-      role="img"
-      aria-label={isVeg ? "Vegetarian" : "Non-vegetarian"}
-      className={cx(
-        "inline-flex h-5 w-5 shrink-0 items-center justify-center border-2 bg-cream",
-        isVeg ? "border-success" : "border-cocoa",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cx(
-          "h-2.5 w-2.5 rounded-pill",
-          isVeg ? "bg-success" : "bg-cocoa",
-        )}
-      />
-    </span>
-  );
-}
-
-/** 18px espresso-stroke line icon frame (reference meta card icons). */
-function MetaIcon({ children }: { children: ReactNode }): ReactNode {
-  return (
-    <svg
-      aria-hidden="true"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#8a5a34"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="flex-none"
-    >
-      {children}
-    </svg>
-  );
-}
-
-/**
- * Meta list — reference `#F6EEE1` two-column card: ships-cold, the
- * free-shipping threshold + gift-wrap fee from `store_settings` (notes
- * degrade gracefully when a key is missing), and the COD note.
- */
-function PdpMetaList({
-  freeShippingThresholdPaise,
-  giftWrapFeePaise,
-  codEnabled,
-}: {
-  freeShippingThresholdPaise: number | null;
-  giftWrapFeePaise: number | null;
-  codEnabled: boolean;
-}): ReactNode {
-  return (
-    <ul
-      aria-label="Shipping and payment notes"
-      className="mt-6 grid grid-cols-1 gap-x-5 gap-y-3.5 rounded-[18px] border border-line-soft bg-cream-2 px-5 py-4 shadow-soft sm:grid-cols-2"
-    >
-      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
-        <MetaIcon>
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <line x1="12" y1="2" x2="12" y2="22" />
-          <path d="m20 16-4-4 4-4" />
-          <path d="m4 8 4 4-4 4" />
-          <path d="m16 4-4 4-4-4" />
-          <path d="m8 20 4-4 4 4" />
-        </MetaIcon>
-        Ships cold &amp; insulated
-      </li>
-      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
-        <MetaIcon>
-          <rect x="1" y="4" width="14" height="12" rx="1" />
-          <path d="M15 8h4l3 3v5h-7z" />
-          <circle cx="6" cy="18.5" r="2" />
-          <circle cx="18" cy="18.5" r="2" />
-        </MetaIcon>
-        {freeShippingThresholdPaise !== null
-          ? `Free shipping over ${formatPaise(freeShippingThresholdPaise)}`
-          : "Pan-India insulated delivery"}
-      </li>
-      <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
-        <MetaIcon>
-          <polyline points="20 12 20 22 4 22 4 12" />
-          <rect x="2" y="7" width="20" height="5" />
-          <line x1="12" y1="22" x2="12" y2="7" />
-          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-        </MetaIcon>
-        {giftWrapFeePaise !== null
-          ? `Gift wrap available · ${formatPaise(giftWrapFeePaise)}`
-          : "Gift wrap available"}
-      </li>
-      {codEnabled ? (
-        <li className="flex items-center gap-2.5 font-body text-[13.5px] text-ink-soft">
-          <MetaIcon>
-            <rect x="2" y="6" width="20" height="12" rx="2" />
-            <circle cx="12" cy="12" r="2.5" />
-            <path d="M6 12h.01" />
-            <path d="M18 12h.01" />
-          </MetaIcon>
-          Cash on Delivery available
-        </li>
-      ) : null}
-    </ul>
-  );
-}
-
-/** Legal Metrology + FSSAI display block (module spec §1.6). */
-function LegalMetrologyBlock({
-  product,
-  netQuantities,
-}: {
-  product: ProductDetailView;
-  netQuantities: string;
-}): ReactNode {
-  return (
-    <section
-      aria-label="Legal Metrology and food safety information"
-      className="mt-4 rounded-[18px] border border-line-soft px-5 py-4"
-    >
-      <div className="flex items-center gap-2.5">
-        <VegMark isVeg={product.isVeg} />
-        <p className="font-body text-[13px] font-semibold text-ink">
-          {product.isVeg ? "Vegetarian" : "Non-vegetarian"} · MRP inclusive of
-          all taxes
-        </p>
-      </div>
-      <dl className="mt-3 flex flex-col gap-1.5 font-body text-[13px] text-ink-soft">
-        <div className="flex flex-wrap gap-x-2">
-          <dt className="font-semibold text-ink">Net quantity:</dt>
-          <dd>{netQuantities}</dd>
-        </div>
-        <div className="flex flex-wrap gap-x-2">
-          <dt className="font-semibold text-ink">FSSAI Lic. No.:</dt>
-          <dd>
-            {product.fssaiLicense !== ""
-              ? product.fssaiLicense
-              : "Details temporarily unavailable"}
-          </dd>
-        </div>
-      </dl>
-    </section>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
@@ -333,6 +186,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const netQuantities = product.variants
     .map((v) => `${v.weightGrams} g (${v.name})`)
     .join(" · ");
+
+  /** "What you'll get" — admin copy (attributes.whatYoullGet) or a graceful default. */
+  const whatYoullGet =
+    product.whatYoullGet ??
+    "Freshly made in small batches and packed ready to enjoy or gift. Every order ships cold and insulated so it arrives in perfect condition.";
 
   /** FBT bundle math — default-variant price + the smallest size of each. */
   const defaultVariant =
@@ -385,8 +243,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </ol>
       </nav>
 
-      {/* Gallery + info two-col grid (reference 1.05fr/.95fr, 56px gap) */}
-      <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-14">
+      {/* Gallery + info two-col grid (reference 1.05fr/.95fr, 56px gap).
+          `grid-cols-1` (= minmax(0,1fr)) keeps the single mobile column from
+          blowing out to max-content when a child has wide min-content. */}
+      <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-14">
         <div className="lg:sticky lg:top-[98px]">
           <PdpGallery
             tone={product.tone}
@@ -403,94 +263,52 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {product.badge !== null ? ` · ${product.badge}` : ""}
           </div>
 
-          <h1 className="mb-3.5 font-display text-h1 font-normal text-ink">
+          <h1 className="mb-3 font-display text-h1 font-normal text-ink">
             {product.name}
           </h1>
 
-          <div className="mb-5 flex items-center gap-3">
-            <StarRating value={product.ratingAvg} />
-            <span className="font-body text-sm text-ink-soft">
+          {/* Rating summary — smooth-scrolls to the reviews section (LCC). */}
+          <a
+            href="#reviews"
+            aria-label="Read the reviews"
+            className="group mb-6 inline-flex w-fit items-center gap-2.5 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+          >
+            <StarRating value={product.ratingAvg} size="sm" />
+            <span className="font-body text-[13px] text-ink-soft underline-offset-2 transition-colors group-hover:text-ink group-hover:underline">
               {product.ratingCount === 0
-                ? "No reviews yet"
+                ? "No reviews yet — write one"
                 : `${product.ratingAvg.toFixed(1)} · ${product.ratingCount} review${product.ratingCount === 1 ? "" : "s"}`}
             </span>
-          </div>
+          </a>
 
-          <p className="mb-6 max-w-[480px] font-body text-lead text-ink-soft">
-            {product.blurb}
-          </p>
-
-          {/* Tasting notes — reference pill chips */}
-          {product.tastingNotes.length > 0 ? (
-            <div className="mb-[26px]">
-              <h2 className="mb-3 font-mono text-xs font-semibold tracking-[0.14em] text-espresso uppercase">
-                Tasting notes
-              </h2>
-              <ul className="flex flex-wrap gap-2">
-                {product.tastingNotes.map((note) => (
-                  <li
-                    key={note}
-                    className="rounded-pill border border-line-soft bg-card px-3.5 py-2 font-body text-[13px] font-medium text-ink-soft shadow-soft"
-                  >
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {/* Product details from the vertical attribute schema (cocoa %, origin…) */}
-          {product.pdpAttributes.length > 0 ? (
-            <dl className="mb-[26px] grid grid-cols-2 gap-x-6 gap-y-2 max-[420px]:grid-cols-1">
-              {product.pdpAttributes.map((attr) => (
-                <div key={attr.label} className="flex items-baseline justify-between gap-3 border-b border-line-soft pb-1.5">
-                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-muted">
-                    {attr.label}
-                  </dt>
-                  <dd className="font-body text-[13.5px] text-ink">
-                    {attr.value}{attr.unit !== null ? attr.unit : ""}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-
-          {/* Price row + variant chips + live stock + qty/add/wishlist + buy now */}
+          {/* Price row + variant chips + live stock + qty/add/wishlist */}
           <PdpPurchasePanel
             productId={product.id}
             productName={product.name}
             variants={product.variants}
           />
 
-          <PdpMetaList
+          {/* Details — LCC-style accordions, in the info column below Add to bag:
+              Product Description / What You'll Get / Ingredients & nutrition / Shipping */}
+          <PdpDetails
+            description={product.description}
+            whatYoullGet={whatYoullGet}
+            shippingInfo={product.shippingInfo}
             freeShippingThresholdPaise={settings.freeShippingThresholdPaise}
             giftWrapFeePaise={settings.giftWrapFeePaise}
             codEnabled={settings.codEnabled}
+            ingredients={product.ingredients}
+            allergens={product.allergens}
+            nutritionFacts={product.nutritionFacts}
+            isVeg={product.isVeg}
+            netQuantities={netQuantities}
+            countryOfOrigin={countryOfOrigin}
+            shelfLifeDays={product.shelfLifeDays}
+            storageInstructions={product.storageInstructions}
+            fssaiLicense={product.fssaiLicense}
           />
-
-          <LegalMetrologyBlock product={product} netQuantities={netQuantities} />
         </div>
       </div>
-
-      {/* Tabs — Description / Ingredients & Nutrition / Reviews */}
-      <Reveal index={1} className="mt-16">
-        <PdpTabs
-          description={product.description}
-          ingredients={product.ingredients}
-          allergens={product.allergens}
-          isVeg={product.isVeg}
-          nutritionFacts={product.nutritionFacts}
-          categoryName={categoryName}
-          netQuantities={netQuantities}
-          countryOfOrigin={countryOfOrigin}
-          shelfLifeDays={product.shelfLifeDays}
-          storageInstructions={product.storageInstructions}
-          ratingAvg={product.ratingAvg}
-          ratingCount={product.ratingCount}
-          productId={product.id}
-          reviews={product.reviews}
-        />
-      </Reveal>
 
       {/* Frequently bought together — reference `#F6EEE1` band. Degrades to
           omission when the co-occurrence query returned []. */}
@@ -578,6 +396,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </section>
         </Reveal>
       ) : null}
+
+      {/* Reviews — full section at the very bottom (id="reviews"); the rating
+          summary under the title smooth-scrolls here. */}
+      <PdpReviews
+        productId={product.id}
+        ratingAvg={product.ratingAvg}
+        ratingCount={product.ratingCount}
+        reviews={product.reviews}
+      />
     </main>
   );
 }

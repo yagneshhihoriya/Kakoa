@@ -7,7 +7,6 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import type { ApiResult, ProductVariantView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { Chip, cx } from "@kakoa/ui";
@@ -46,10 +45,9 @@ export interface PdpPurchasePanelProps {
 }
 
 /**
- * PDP purchase island, prototype composition: price row (bold 30px price +
- * compare-at + per-gram note), variant Chip group, live-stock line, then the
- * qty pill stepper + full-width "Add to bag · ₹…" pill + wishlist icon
- * button row, and the caramel "Buy it now" pill below.
+ * PDP purchase island: price row (bold price + compare-at strike), variant
+ * Chip group, live-stock line, then the qty pill stepper + "Add to bag · ₹…"
+ * pill + wishlist icon button row.
  *
  * Add-to-bag posts to the Cart module's `addToCart` Server Action and opens
  * the cart drawer on success (`useCart().openDrawer()`).
@@ -61,7 +59,6 @@ export function PdpPurchasePanel({
 }: PdpPurchasePanelProps): ReactNode {
   const { addItem } = useCart();
   const { show: showAddedSheet } = useAddedToBag();
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [qty, setQty] = useState(1);
   const [selectedId, setSelectedId] = useState<string>(() => {
@@ -110,11 +107,6 @@ export function PdpPurchasePanel({
       : (liveStock[selected.id] ?? { inStock: false, stockLow: false });
   const soldOut = live !== null && !live.inStock;
 
-  /** Integer paise per gram (display only — single formatPaise render path). */
-  const perGramPaise = Math.max(
-    1,
-    Math.round(selected.pricePaise / selected.weightGrams),
-  );
   const lineTotalPaise = selected.pricePaise * qty;
 
   /**
@@ -141,49 +133,26 @@ export function PdpPurchasePanel({
     });
   };
 
-  /** Prototype "Buy it now" — silent add (no drawer), straight to checkout. */
-  const handleBuyNow = (): void => {
-    startTransition(async () => {
-      const result = await addItem(
-        {
-          variantId: selected.id,
-          qty,
-          unitPricePaise: selected.pricePaise,
-        },
-        { openDrawer: false },
-      );
-      if (result.ok) {
-        router.push("/checkout");
-      }
-    });
-  };
-
   return (
-    <div className="flex flex-col gap-6">
-      {/* Price row — bold 30px price, compare-at strike, per-gram note. */}
-      <div className="flex flex-col gap-1">
-        <p className="flex items-baseline gap-3">
-          <data
-            value={selected.pricePaise}
-            className="font-body text-[30px] leading-none font-bold text-ink"
+    <div className="flex flex-col gap-5">
+      {/* Price row — bold 30px price + compare-at strike. */}
+      <p className="flex items-baseline gap-3">
+        <data
+          value={selected.pricePaise}
+          className="font-body text-[30px] leading-none font-bold text-ink"
+        >
+          {formatPaise(selected.pricePaise)}
+        </data>
+        {selected.compareAtPricePaise !== null &&
+        selected.compareAtPricePaise > selected.pricePaise ? (
+          <s
+            aria-label={`Original price ${formatPaise(selected.compareAtPricePaise)}`}
+            className="font-body text-[17px] text-ink-muted"
           >
-            {formatPaise(selected.pricePaise)}
-          </data>
-          {selected.compareAtPricePaise !== null &&
-          selected.compareAtPricePaise > selected.pricePaise ? (
-            <s
-              aria-label={`Original price ${formatPaise(selected.compareAtPricePaise)}`}
-              className="font-body text-[17px] text-ink-muted"
-            >
-              {formatPaise(selected.compareAtPricePaise)}
-            </s>
-          ) : null}
-        </p>
-        <p className="font-body text-[13px] text-ink-muted">
-          {formatPaise(perGramPaise)} per gram · Net quantity{" "}
-          {selected.weightGrams} g · MRP inclusive of all taxes
-        </p>
-      </div>
+            {formatPaise(selected.compareAtPricePaise)}
+          </s>
+        ) : null}
+      </p>
 
       {/* Variant selector — net quantity beside each name (Legal Metrology). */}
       {variants.length > 1 ? (
@@ -229,8 +198,10 @@ export function PdpPurchasePanel({
                 : "In stock — ships in 1–2 days"}
       </p>
 
-      {/* Qty pill + Add-to-bag pill + wishlist icon button (prototype row). */}
-      <div className="flex items-center gap-3">
+      {/* Qty pill + Add-to-bag pill + wishlist icon button. On mobile the row
+          wraps: [qty … wishlist] on top, full-width Add-to-bag below (the
+          button can't shrink under its text, so it would otherwise overflow). */}
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:justify-start">
         <QtyStepper
           value={qty}
           min={1}
@@ -248,7 +219,7 @@ export function PdpPurchasePanel({
           disabled={soldOut || isPending}
           onClick={handleAdd}
           className={cx(
-            "flex h-[54px] flex-1 items-center justify-center rounded-pill bg-ink px-6",
+            "order-last flex h-[54px] w-full items-center justify-center rounded-pill bg-ink px-6 sm:order-none sm:w-auto sm:flex-1",
             "font-body text-[15.5px] font-bold whitespace-nowrap text-card",
             "shadow-lift transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-cocoa motion-reduce:transform-none",
             "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
@@ -271,20 +242,6 @@ export function PdpPurchasePanel({
           )}
         />
       </div>
-
-      {/* Buy it now — caramel pill, full width (prototype). */}
-      <button
-        type="button"
-        disabled={soldOut || isPending}
-        onClick={handleBuyNow}
-        className={cx(
-          "-mt-2 h-[54px] w-full rounded-pill bg-gold-soft px-6 font-body text-[15.5px] font-bold text-ink shadow-soft transition-colors hover:bg-[#f0d6ac]",
-          "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
-          "disabled:cursor-not-allowed disabled:opacity-60",
-        )}
-      >
-        Buy it now
-      </button>
     </div>
   );
 }

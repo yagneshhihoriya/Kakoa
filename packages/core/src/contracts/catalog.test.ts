@@ -21,6 +21,7 @@ const card = {
   fromPricePaise: 49900,
   compareAtPricePaise: 59900,
   inStock: true,
+  imageUrl: null,
 } as const;
 
 const detail = {
@@ -33,7 +34,20 @@ const detail = {
   shelfLifeDays: 90,
   storageInstructions: 'Store below 20°C away from sunlight.',
   isVeg: true,
+  pdpAttributes: [{ label: 'Cocoa', value: '70', unit: '%' }],
+  whatYoullGet: 'A sixteen-piece box, ready to gift.',
+  shippingInfo: null,
   fssaiLicense: '11522998000123',
+  reviews: [
+    {
+      id: 'a1b2c3d4-e5f6-4789-8abc-def012345678',
+      author: 'Asha',
+      rating: 5,
+      title: 'Divine',
+      body: 'Melts beautifully — a wonderful gift.',
+      dateIso: '2026-01-01T00:00:00.000Z',
+    },
+  ],
   images: [
     {
       id: '7c8d9e0f-1a2b-4c3d-9e5f-6a7b8c9d0e1f',

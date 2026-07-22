@@ -2,11 +2,13 @@
  * Storefront review submission — verified-purchase only. A review requires an
  * unreviewed `order_items` row for the product on one of the customer's real
  * (paid, non-cancelled) orders; `reviews.order_item_id` is unique, enforcing
- * one review per purchased line. New reviews start `pending` and appear on the
- * PDP only after admin approval. SERVER-ONLY: uses @kakoa/db.
+ * one review per purchased line. Reviews from verified buyers publish
+ * immediately — inserted as `approved`, with the product's denormalized rating
+ * recomputed in the same tx (no admin moderation step). SERVER-ONLY: uses @kakoa/db.
  */
-import { db, orderItems, orders, productVariants, reviews } from "@kakoa/db";
+import { db, orderItems, orders, products, productVariants, reviews } from "@kakoa/db";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { revalidateCatalog } from "@/lib/catalog/queries";
 import { isUuid } from "@/lib/admin/product-validation";
 
 /** Orders that count as a completed purchase for reviewing. */
@@ -123,18 +125,52 @@ export async function submitReview(
   }
 
   try {
-    await db.insert(reviews).values({
-      productId,
-      customerId,
-      orderItemId,
-      rating: input.rating,
-      title: input.title,
-      body: input.body,
-      // status defaults to 'pending' — appears on the PDP after moderation.
+    // Verified-buyer reviews publish immediately (no admin moderation): insert
+    // as 'approved' and recompute the product's denormalized rating from its
+    // approved reviews — in one tx. The product row is locked first so
+    // concurrent submissions for the same product can't clobber the aggregate
+    // (same lost-update guard as moderateReview / adjustStock).
+    await db.transaction(async (tx) => {
+      await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.id, productId))
+        .for("update")
+        .limit(1);
+
+      await tx.insert(reviews).values({
+        productId,
+        customerId,
+        orderItemId,
+        rating: input.rating,
+        title: input.title,
+        body: input.body,
+        status: "approved",
+      });
+
+      const [agg] = await tx
+        .select({
+          cnt: sql<number>`count(*)::int`,
+          avg: sql<string>`coalesce(round(avg(${reviews.rating})::numeric, 2), 0)`,
+        })
+        .from(reviews)
+        .where(and(eq(reviews.productId, productId), eq(reviews.status, "approved")));
+
+      await tx
+        .update(products)
+        .set({
+          ratingCount: Number(agg?.cnt ?? 0),
+          ratingAvg: String(agg?.avg ?? "0"), // numeric column ↔ string in drizzle
+          updatedAt: sql`now()`,
+        })
+        .where(eq(products.id, productId));
     });
-    return { ok: true };
   } catch {
     // Unique(order_item_id) race → already reviewed.
     return { ok: false, code: "CONFLICT", message: "You've already reviewed this product." };
   }
+
+  // Purge catalog caches so the new review + updated rating show immediately.
+  await revalidateCatalog();
+  return { ok: true };
 }

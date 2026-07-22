@@ -1,7 +1,7 @@
 /**
  * POST /api/reviews — submit a product review (verified buyers only). Session is
- * the credential. New reviews are held for admin moderation before appearing on
- * the PDP.
+ * the credential. Reviews publish immediately (no admin moderation) and the
+ * product's rating is recomputed on submit.
  */
 import { jsonErr, jsonOk, NO_STORE } from "@/lib/api/http";
 import { getCurrentCustomer } from "@/lib/auth/session";
