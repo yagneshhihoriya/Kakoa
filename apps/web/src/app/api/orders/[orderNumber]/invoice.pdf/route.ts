@@ -36,7 +36,7 @@ export async function GET(
 
   // InvoicePdf is hook-free and returns the <Document> element renderToBuffer wants.
   const buffer = await renderToBuffer(InvoicePdf({ model: result.invoice }));
-  const fileName = `Kakao-Invoice-${result.invoice.invoiceNumber.replace(/[^A-Za-z0-9-]/g, '-')}.pdf`;
+  const fileName = `KAKOA-Invoice-${result.invoice.invoiceNumber.replace(/[^A-Za-z0-9-]/g, '-')}.pdf`;
   return new Response(new Uint8Array(buffer), {
     headers: {
       'content-type': 'application/pdf',

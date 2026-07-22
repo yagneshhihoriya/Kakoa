@@ -65,7 +65,7 @@ export async function POST(req: Request): Promise<Response> {
   void getEmailProvider()
     .send({
       to: email,
-      subject: 'Your Kakao admin sign-in code',
+      subject: 'Your KAKOA admin sign-in code',
       html: `<p>Your admin sign-in code is <strong>${code}</strong>. It expires in 10 minutes.</p>`,
       text: `Your admin sign-in code is ${code}. It expires in 10 minutes.`,
       idempotencyKey: `admin-otp-${challengeId}`,

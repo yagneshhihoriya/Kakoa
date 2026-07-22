@@ -29,25 +29,6 @@ function categoryTone(slug: string, index: number): ProductTone {
   );
 }
 
-/** Value-props trio — copy + icons verbatim from the prototype (`props3`). */
-const VALUE_PROPS = [
-  {
-    icon: "🌱",
-    title: "Ethically sourced",
-    body: "Direct-trade cacao from four origins, farmers paid above market.",
-  },
-  {
-    icon: "🔥",
-    title: "Roasted in-house",
-    body: "Every batch roasted, conched and tempered in our own kitchen.",
-  },
-  {
-    icon: "❄️",
-    title: "Ships cold & safe",
-    body: "Insulated packaging keeps every piece perfect to your door.",
-  },
-] as const;
-
 /** Trust triad — a slim reassurance band shown high on the page. Icons are
  * inline thin-stroke SVGs (no imagery); copy stays presentational. */
 const TRUST_SIGNALS = [
@@ -141,6 +122,65 @@ const PROCESS = [
   },
 ] as const;
 
+/** Gifting band — gift-led reasons to choose KAKOA, grounded in real features:
+ * signature packaging, a handwritten note added at checkout, and cold-chain
+ * nationwide shipping. Thin-stroke line icons match the Trust triad's language. */
+const GIFT_FEATURES = [
+  {
+    key: "wrap" as const,
+    title: "Hand-wrapped, ready to gift",
+    body: "Every order arrives in signature packaging — gifting-ready, straight out of the box.",
+  },
+  {
+    key: "note" as const,
+    title: "Add a handwritten note",
+    body: "Write a personal message at checkout and we tuck it in by hand.",
+  },
+  {
+    key: "cold" as const,
+    title: "Ships cold, across India",
+    body: "Temperature-controlled packing keeps every piece perfect — door to door.",
+  },
+];
+
+/** Thin-stroke line icons for the gifting band — decorative, brand-neutral. */
+function GiftIcon({ name }: { name: (typeof GIFT_FEATURES)[number]["key"] }): ReactNode {
+  const common = {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  if (name === "wrap") {
+    return (
+      <svg {...common}>
+        <path d="M20 12v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8" />
+        <path d="M2 7h20v5H2zM12 21V7M12 7S9.5 3 7.5 4.2 8.5 7 12 7zM12 7s2.5-4 4.5-2.8S15.5 7 12 7z" />
+      </svg>
+    );
+  }
+  if (name === "note") {
+    return (
+      <svg {...common}>
+        <path d="M4 20l1-4 11-11 3 3-11 11-4 1z" />
+        <path d="M13.5 6.5l3 3" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z" />
+      <circle cx="7" cy="18" r="1.6" />
+      <circle cx="17" cy="18" r="1.6" />
+    </svg>
+  );
+}
+
 /** Shared focus treatment for bespoke (non-`Button`) interactive elements. */
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
@@ -188,6 +228,12 @@ export default async function HomePage() {
       return total;
     }),
   );
+
+  // Only advertise collections that actually hold products — an empty tile
+  // linking to an empty shop filter is a dead end (never advertise empty rooms).
+  const collections = categories
+    .map((category, index) => ({ category, count: categoryCounts[index] ?? 0 }))
+    .filter((entry) => entry.count > 0);
 
   // Floating hero chip — prototype spotlights the ruby "new this season"
   // product; fall back to the top featured item.
@@ -322,7 +368,7 @@ export default async function HomePage() {
       </section>
 
       {/* ======================== COLLECTIONS ======================== */}
-      {categories.length > 0 ? (
+      {collections.length > 0 ? (
         <section
           aria-labelledby="home-collections"
           className="mx-auto max-w-[1240px] px-5 sm:px-8 py-14 lg:py-[72px]"
@@ -347,7 +393,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <ul className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-[18px]">
-            {categories.map((category, index) => (
+            {collections.map(({ category, count }, index) => (
               <li key={category.id}>
                 <Link
                   href={`/shop?category=${category.slug}`}
@@ -372,7 +418,7 @@ export default async function HomePage() {
                         {category.name}
                       </div>
                       <div className="font-mono text-[11px] font-medium tracking-[0.1em] opacity-85">
-                        {categoryCounts[index] ?? 0} pieces
+                        {count} {count === 1 ? "piece" : "pieces"}
                       </div>
                     </div>
                     <span
@@ -432,30 +478,6 @@ export default async function HomePage() {
             cta={{ label: "Browse the shop", href: "/shop" }}
           />
         )}
-      </section>
-
-      {/* ========================= VALUE PROPS ======================== */}
-      <section aria-label="Why KAKOA" className="border-y border-line bg-cream-2">
-        <ul className="mx-auto grid max-w-[1240px] gap-9 px-5 py-12 sm:px-8 md:grid-cols-3">
-          {VALUE_PROPS.map((prop) => (
-            <li key={prop.title} className="flex items-start gap-4">
-              <span
-                aria-hidden="true"
-                className="grid h-[48px] w-[48px] flex-none place-items-center rounded-lg bg-ink text-xl text-gold-soft shadow-soft"
-              >
-                {prop.icon}
-              </span>
-              <div>
-                <h3 className="mb-1 font-body text-base font-semibold text-ink">
-                  {prop.title}
-                </h3>
-                <p className="font-body text-sm leading-[1.55] text-ink-soft">
-                  {prop.body}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
       </section>
 
       {/* ========================== STORY BAND ========================= */}
@@ -537,6 +559,67 @@ export default async function HomePage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* ========================== GIFTING ========================== */}
+      <section
+        aria-labelledby="home-gifting"
+        className="mx-auto max-w-[1240px] px-5 sm:px-8 py-14 lg:py-[72px]"
+      >
+        <div className="relative overflow-hidden rounded-[28px] border border-line bg-gradient-to-br from-card to-cream-2 shadow-soft">
+          <div
+            aria-hidden="true"
+            className="absolute -top-[28%] -right-[10%] h-[62%] w-[42%] rounded-pill bg-gold-soft opacity-30 blur-[80px]"
+          />
+          <div className="relative grid gap-10 p-8 sm:p-11 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14 lg:p-14">
+            <div>
+              <div className="mb-3.5">
+                <Eyebrow>Made for gifting</Eyebrow>
+              </div>
+              <h2
+                id="home-gifting"
+                className="font-display text-h2 font-normal leading-[1.08] text-balance"
+              >
+                A box that says it
+                <br className="hidden sm:block" /> better than words.
+              </h2>
+              <p className="mt-4 max-w-[46ch] font-body text-lead text-ink-soft">
+                Single-origin chocolate, wrapped and ready to give — finished by
+                hand, with a personal note and cold-chain delivery anywhere in
+                India.
+              </p>
+              <Link
+                href="/shop?category=gifts"
+                className={`mt-8 inline-block ${PRIMARY_CTA}`}
+              >
+                Shop gifts
+              </Link>
+            </div>
+            <ul className="grid gap-3.5">
+              {GIFT_FEATURES.map((feature) => (
+                <li
+                  key={feature.key}
+                  className="flex items-start gap-4 rounded-[16px] border border-line-soft bg-cream/70 px-5 py-4"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mt-px grid h-10 w-10 flex-none place-items-center rounded-[12px] border border-line bg-cream text-espresso"
+                  >
+                    <GiftIcon name={feature.key} />
+                  </span>
+                  <div>
+                    <h3 className="font-body text-[15px] font-semibold text-ink">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-1 font-body text-[13.5px] leading-[1.55] text-ink-soft">
+                      {feature.body}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 

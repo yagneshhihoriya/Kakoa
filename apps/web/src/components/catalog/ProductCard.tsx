@@ -54,7 +54,7 @@ export function ProductCard({
               src={product.imageUrl}
               alt={product.name}
               fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 33vw, 25vw"
               className="object-cover"
             />
             </div>
@@ -98,11 +98,19 @@ export function ProductCard({
         <p className="mt-1 line-clamp-2 flex-1 font-body text-[13px] leading-relaxed text-ink-muted">
           {product.blurb}
         </p>
-        <div className="mt-2.5 mb-[14px] flex items-center gap-1.5">
-          <StarRating value={product.ratingAvg} size="sm" />
-          <span className="font-body text-[12.5px] text-ink-soft">
-            {product.ratingAvg.toFixed(1)} ({product.ratingCount})
-          </span>
+        <div className="mt-2.5 mb-[14px] flex min-h-[18px] items-center gap-1.5">
+          {product.ratingCount > 0 ? (
+            <>
+              <StarRating value={product.ratingAvg} size="sm" />
+              <span className="font-body text-[12.5px] text-ink-soft">
+                {product.ratingAvg.toFixed(1)} ({product.ratingCount})
+              </span>
+            </>
+          ) : (
+            <span className="font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase">
+              New
+            </span>
+          )}
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-[14px]">
           <Price

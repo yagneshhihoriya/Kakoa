@@ -310,10 +310,10 @@ export async function sendFulfilmentUpdate(
     const smsBody =
       overrideSms ??
       (stage === 'delivered'
-        ? `Kakao: Order ${order.orderNumber} delivered. Enjoy! ${trackUrl}`
+        ? `KAKOA: Order ${order.orderNumber} delivered. Enjoy! ${trackUrl}`
         : stage === 'out_for_delivery'
-          ? `Kakao: Order ${order.orderNumber} is out for delivery today. Track: ${trackUrl}`
-          : `Kakao: Order ${order.orderNumber} shipped${courierName ? ` via ${courierName}` : ''}${awb ? ` (AWB ${awb})` : ''}. Track: ${trackUrl}`);
+          ? `KAKOA: Order ${order.orderNumber} is out for delivery today. Track: ${trackUrl}`
+          : `KAKOA: Order ${order.orderNumber} shipped${courierName ? ` via ${courierName}` : ''}${awb ? ` (AWB ${awb})` : ''}. Track: ${trackUrl}`);
     await deliverSms(key, orderId, order.contactPhone, smsBody);
   } catch (cause) {
     console.error('email.order_fulfilment_failed', {
@@ -394,7 +394,7 @@ export async function sendAdminNewOrderAlert(orderId: string): Promise<void> {
     if (alertPhone !== '') {
       await sendSmsBestEffort(
         alertPhone,
-        `Kakao new order ${order.orderNumber}: ₹${(order.totalPaise / 100).toFixed(0)} · ${itemCount} item(s) · ${model.paymentMode.toUpperCase()}`,
+        `KAKOA new order ${order.orderNumber}: ₹${(order.totalPaise / 100).toFixed(0)} · ${itemCount} item(s) · ${model.paymentMode.toUpperCase()}`,
         'admin_new_order',
       );
     }

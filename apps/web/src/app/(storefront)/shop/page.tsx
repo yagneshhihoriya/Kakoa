@@ -263,7 +263,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
       {/* Grid / empty state */}
       {products.length > 0 ? (
-        <ul className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
             <li key={product.id}>
               <ProductCard

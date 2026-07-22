@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
-import { getFssaiLicense } from "@/lib/catalog/queries";
+import { getCompanyInfo, getFssaiLicense } from "@/lib/catalog/queries";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { BrandLockup } from "./BrandMark";
 
@@ -50,7 +50,10 @@ const LEGAL_LINKS: FooterLink[] = [
  * routes preserved — UI only.
  */
 export async function Footer(): Promise<ReactNode> {
-  const fssai = await getFssaiLicense().catch(() => null);
+  const [fssai, company] = await Promise.all([
+    getFssaiLicense().catch(() => null),
+    getCompanyInfo(),
+  ]);
   const year = new Date().getFullYear();
 
   return (
@@ -64,7 +67,7 @@ export async function Footer(): Promise<ReactNode> {
           <h2 className="font-display text-h2 font-normal text-cream">
             Sweeten your inbox
           </h2>
-          <p className="mx-auto mt-2.5 max-w-[460px] font-body text-[15px] leading-[1.5] text-[#D8C7B0]">
+          <p className="mx-auto mt-2.5 max-w-[460px] font-body text-[15px] leading-[1.5] text-cream/75">
             15% off your first box, plus first access to seasonal drops.
           </p>
           <div className="mx-auto mt-6 max-w-[520px]">
@@ -89,20 +92,26 @@ export async function Footer(): Promise<ReactNode> {
                 our own kitchen.
               </p>
 
-              <div className="mt-5 flex flex-col gap-1 font-body text-[15px] font-medium">
+              <address className="mt-5 flex flex-col gap-1 font-body text-[15px] font-medium not-italic">
                 <a
-                  href="mailto:support@kakoa.in"
+                  href={`mailto:${company.supportEmail}`}
                   className="w-fit text-ink-soft no-underline transition-colors hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                 >
-                  support@kakoa.in
+                  {company.supportEmail}
                 </a>
                 <a
-                  href="tel:+919820012345"
+                  href={`tel:${company.supportPhone.replace(/\s/g, "")}`}
                   className="w-fit text-ink-soft no-underline transition-colors hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                 >
-                  +91 98200 12345
+                  {company.supportPhone}
                 </a>
-              </div>
+                <span className="mt-2 text-[13px] font-normal leading-[1.55] text-ink-muted">
+                  <span className="block font-medium text-ink-soft">
+                    {company.legalName}
+                  </span>
+                  {company.address}
+                </span>
+              </address>
             </div>
 
             <FooterColumn heading="Shop" links={SHOP_LINKS} />

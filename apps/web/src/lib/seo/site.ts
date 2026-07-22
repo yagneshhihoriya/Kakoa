@@ -12,8 +12,8 @@
 
 /** Brand palette used by manifest + generated icons (cocoa / cream). */
 export const BRAND = {
-  name: "Kakao",
-  shortName: "Kakao",
+  name: "KAKOA",
+  shortName: "KAKOA",
   themeColor: "#2A1D12",
   backgroundColor: "#FBF6EF",
 } as const;

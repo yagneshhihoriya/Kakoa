@@ -148,6 +148,13 @@ export function LoginSheet({
   const [verifying, setVerifying] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Mount/unmount motion: `mounted` keeps the DOM alive through the exit
+  // animation after `isOpen` flips false; `visible` drives the enter/exit
+  // transforms (true → resting position, false → translated off-screen).
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const rateCountdown = useCountdown();
   const resendCountdown = useCountdown();
 
@@ -243,6 +250,47 @@ export function LoginSheet({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
+
+  /* ---- mount/unmount motion driver ----
+   * Every dismissal (backdrop, ESC, close button, successful auth) flips
+   * `isOpen` false via onClose, so reacting to that transition here animates
+   * ALL exits uniformly: slide the panel + fade the scrim out, then unmount
+   * once the transition settles (~250ms fallback timer). prefers-reduced-motion
+   * is honoured by the global transition-duration catch-all + motion-reduce
+   * classes below, so the timer simply delays an already-instant teardown. */
+  useEffect(() => {
+    if (isOpen) {
+      if (exitTimerRef.current !== null) {
+        clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = null;
+      }
+      setMounted(true);
+      // Flip to the resting position AFTER the browser has painted the
+      // translated-off starting frame — otherwise the mount commit and the
+      // visible flip can coalesce into a single paint and the enter slide is
+      // skipped. A double rAF guarantees the off-screen frame paints first.
+      let innerRaf = 0;
+      const outerRaf = requestAnimationFrame(() => {
+        innerRaf = requestAnimationFrame(() => setVisible(true));
+      });
+      return () => {
+        cancelAnimationFrame(outerRaf);
+        if (innerRaf !== 0) cancelAnimationFrame(innerRaf);
+      };
+    }
+    if (!mounted) return undefined;
+    setVisible(false);
+    exitTimerRef.current = setTimeout(() => {
+      setMounted(false);
+      exitTimerRef.current = null;
+    }, 250);
+    return () => {
+      if (exitTimerRef.current !== null) {
+        clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = null;
+      }
+    };
+  }, [isOpen, mounted]);
 
   /* ---- derived ---- */
 
@@ -365,7 +413,7 @@ export function LoginSheet({
         if (result.ok) {
           // Success — reconcile auth + cart, toast, close (stay on page).
           await Promise.all([refreshAuth(), refreshCart()]);
-          toast({ kind: "success", message: "Welcome to Kakao." });
+          toast({ kind: "success", message: "Welcome to KAKOA." });
           if (result.data.cartMerged) {
             toast({
               kind: "info",
@@ -495,7 +543,8 @@ export function LoginSheet({
     void submitPhone();
   }, [resendCountdown.remaining, submitPhone]);
 
-  if (!isOpen) return null;
+  // Stay mounted through the exit animation even after `isOpen` flips false.
+  if (!mounted) return null;
 
   const reasonCopy = reason !== undefined ? REASON_COPY[reason] : undefined;
 
@@ -508,19 +557,28 @@ export function LoginSheet({
       <div
         aria-hidden="true"
         onClick={() => onCloseRef.current()}
-        className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]"
+        className={cx(
+          "absolute inset-0 bg-ink/50 backdrop-blur-[2px] transition-opacity duration-[240ms] ease-out motion-reduce:transition-none",
+          visible ? "opacity-100" : "opacity-0",
+        )}
       />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Sign in to Kakao"
+        aria-label="Sign in to KAKOA"
         tabIndex={-1}
         className={cx(
           "absolute flex flex-col bg-cream shadow-[0_30px_70px_rgba(42,29,18,.28)] focus-visible:outline-none",
           // Desktop: right panel. Mobile: bottom sheet.
           "inset-y-0 right-0 w-full max-w-[440px]",
           "max-[560px]:inset-x-0 max-[560px]:inset-y-auto max-[560px]:bottom-0 max-[560px]:max-h-[92vh] max-[560px]:w-full max-[560px]:max-w-none max-[560px]:rounded-t-[26px]",
+          // Enter/exit motion: desktop slides on X (from the right edge), mobile
+          // slides on Y (up from below). Same track drives both directions.
+          "transition-transform duration-[300ms] ease-[cubic-bezier(.2,.7,.3,1)] will-change-transform motion-reduce:transition-none",
+          visible
+            ? "translate-x-0 max-[560px]:translate-y-0"
+            : "translate-x-full max-[560px]:translate-x-0 max-[560px]:translate-y-full",
         )}
       >
         {/* Header */}
@@ -678,7 +736,7 @@ export function LoginSheet({
               ) : null}
 
               <p className="mt-5 text-center font-body text-[12px] leading-relaxed text-[#8a7a68]">
-                By continuing you agree to Kakao's Terms &amp; Privacy Policy.
+                By continuing you agree to KAKOA's Terms &amp; Privacy Policy.
               </p>
             </form>
           ) : (

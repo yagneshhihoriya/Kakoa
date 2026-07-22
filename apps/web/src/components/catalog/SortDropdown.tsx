@@ -86,7 +86,7 @@ export function SortDropdown({ value }: { value: ProductSort }): ReactNode {
           setOpen((current) => !current);
         }}
         className={cx(
-          "relative z-[41] flex min-h-11 min-w-[150px] cursor-pointer items-center gap-[9px] rounded-pill border border-line-soft bg-surface py-[11px] pr-[15px] pl-[17px] font-body text-[13.5px] font-semibold text-ink shadow-soft transition-colors hover:border-espresso/40",
+          "relative z-30 flex min-h-11 min-w-[150px] cursor-pointer items-center gap-[9px] rounded-pill border border-line-soft bg-surface py-[11px] pr-[15px] pl-[17px] font-body text-[13.5px] font-semibold text-ink shadow-soft transition-colors hover:border-espresso/40",
           "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
         )}
       >
@@ -114,7 +114,7 @@ export function SortDropdown({ value }: { value: ProductSort }): ReactNode {
           id={listboxId}
           role="listbox"
           aria-label="Sort products"
-          className="absolute top-[calc(100%+8px)] right-0 z-40 min-w-[238px] rounded-[16px] border border-line-soft bg-surface p-[6px] shadow-lift"
+          className="absolute top-[calc(100%+8px)] right-0 z-30 min-w-[238px] rounded-[16px] border border-line-soft bg-surface p-[6px] shadow-lift"
         >
           {PRODUCT_SORTS.map((sort) => {
             const active = sort === value;

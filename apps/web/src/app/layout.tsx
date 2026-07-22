@@ -34,7 +34,7 @@ const SITE_DESCRIPTION =
 /**
  * Root metadata. `metadataBase` makes every relative canonical / OG URL a page
  * sets resolve to an absolute one (crawlers reject relative OG images). The
- * title `template` gives inner pages a "Page · Kakao" suffix while the home
+ * title `template` gives inner pages a "Page · KAKOA" suffix while the home
  * page keeps the bare `default`.
  */
 export const metadata: Metadata = {

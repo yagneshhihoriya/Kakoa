@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ReactNode,
@@ -51,6 +52,10 @@ export interface PdpPurchasePanelProps {
  *
  * Add-to-bag posts to the Cart module's `addToCart` Server Action and opens
  * the cart drawer on success (`useCart().openDrawer()`).
+ *
+ * Feature B — on MOBILE only (`sm:hidden`) a fixed bottom bar mirrors the CTA
+ * once the main action row scrolls above the viewport, so on long phones the
+ * add is always reachable. It reuses the SAME `handleAdd` and label logic.
  */
 export function PdpPurchasePanel({
   productId,
@@ -66,6 +71,10 @@ export function PdpPurchasePanel({
     return (variants.find((v) => v.isDefault) ?? fallback)?.id ?? "";
   });
   const [liveStock, setLiveStock] = useState<LiveStock>("loading");
+
+  /** Main action row — watched by the sticky-bar IntersectionObserver. */
+  const actionRowRef = useRef<HTMLDivElement | null>(null);
+  const [showSticky, setShowSticky] = useState(false);
 
   const variantIds = useMemo(() => variants.map((v) => v.id), [variants]);
   const selected =
@@ -98,6 +107,31 @@ export function PdpPurchasePanel({
     };
   }, [variantIds]);
 
+  // Feature B — reveal the mobile sticky CTA only once the real action row has
+  // scrolled ABOVE the viewport top. SSR-safe: guarded on window + the ref, and
+  // a no-op where IntersectionObserver is unavailable.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof IntersectionObserver === "undefined") return;
+    const node = actionRowRef.current;
+    if (node === null) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry === undefined) return;
+        setShowSticky(
+          !entry.isIntersecting && entry.boundingClientRect.top < 0,
+        );
+      },
+      { threshold: 0 },
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   if (selected === null) return null;
 
   /** Live truth for the selected variant. Absent id ⇒ treated as sold out. */
@@ -108,6 +142,13 @@ export function PdpPurchasePanel({
   const soldOut = live !== null && !live.inStock;
 
   const lineTotalPaise = selected.pricePaise * qty;
+
+  /** Shared CTA label — kept identical between the panel + sticky buttons. */
+  const ctaLabel = isPending
+    ? "Adding…"
+    : soldOut
+      ? "Just sold out"
+      : `Add to bag · ${formatPaise(lineTotalPaise)}`;
 
   /**
    * Optimistic add via CartProvider. On MOBILE (< sm) we suppress the drawer
@@ -201,7 +242,10 @@ export function PdpPurchasePanel({
       {/* Qty pill + Add-to-bag pill + wishlist icon button. On mobile the row
           wraps: [qty … wishlist] on top, full-width Add-to-bag below (the
           button can't shrink under its text, so it would otherwise overflow). */}
-      <div className="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:justify-start">
+      <div
+        ref={actionRowRef}
+        className="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:justify-start"
+      >
         <QtyStepper
           value={qty}
           min={1}
@@ -226,11 +270,7 @@ export function PdpPurchasePanel({
             "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
           )}
         >
-          {isPending
-            ? "Adding…"
-            : soldOut
-              ? "Just sold out"
-              : `Add to bag · ${formatPaise(lineTotalPaise)}`}
+          {ctaLabel}
         </button>
         <WishlistHeartButton
           productId={productId}
@@ -242,6 +282,47 @@ export function PdpPurchasePanel({
           )}
         />
       </div>
+
+      {/* Feature B — MOBILE-only sticky Add-to-bag bar. Appears once the real
+          action row scrolls above the viewport so the CTA stays reachable on
+          long phones. No qty stepper here (kept compact); it mirrors the same
+          handleAdd + disabled/label states. Hard-hidden ≥ sm. */}
+      {showSticky ? (
+        <div
+          className={cx(
+            "fixed inset-x-0 bottom-0 z-40 border-t border-line bg-cream sm:hidden",
+            "px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+            "shadow-[0_-14px_36px_rgba(42,29,18,.20)]",
+            "animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none",
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-body text-[13.5px] font-semibold text-ink">
+                {productName}
+              </p>
+              <p className="font-body text-[13px] text-ink-muted">
+                {formatPaise(lineTotalPaise)}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-busy={isPending}
+              disabled={soldOut || isPending}
+              onClick={handleAdd}
+              className={cx(
+                "flex h-[50px] flex-none items-center justify-center rounded-pill bg-ink px-6",
+                "font-body text-[15px] font-bold whitespace-nowrap text-card",
+                "transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-cocoa motion-reduce:transform-none",
+                "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
+                "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
+              )}
+            >
+              {isPending ? "Adding…" : soldOut ? "Sold out" : "Add to bag"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

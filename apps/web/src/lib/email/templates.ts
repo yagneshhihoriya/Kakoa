@@ -1,5 +1,5 @@
 /**
- * Transactional email templates — Kakao brand voice (storefront launch-gate).
+ * Transactional email templates — KAKOA brand voice (storefront launch-gate).
  *
  * Pure render functions: `(model) → { subject, html, text }`. No DB, no env, no
  * I/O — so they are trivially unit-testable and `send.ts` owns all data loading.
@@ -92,7 +92,7 @@ const CARD = '#ffffff';
 
 /** Outer wrapper: cream page → centered 600px card. */
 function shell(inner: string): string {
-  return `<!-- Kakao transactional email -->
+  return `<!-- KAKOA transactional email -->
 <div style="margin:0;padding:0;background:${CREAM};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};">
     <tr>
@@ -100,7 +100,7 @@ function shell(inner: string): string {
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${CARD};border:1px solid ${LINE};border-radius:12px;overflow:hidden;font-family:Georgia,'Times New Roman',serif;color:${INK};">
           <tr>
             <td style="padding:28px 32px 8px 32px;text-align:center;">
-              <span style="font-size:22px;letter-spacing:6px;font-weight:700;color:${INK};">Kakao</span>
+              <span style="font-size:22px;letter-spacing:6px;font-weight:700;color:${INK};">KAKOA</span>
             </td>
           </tr>
           ${inner}
@@ -128,7 +128,7 @@ function shell(inner: string): string {
  * Wrap an admin/override body (already HTML-escaped) in the brand shell. Blank
  * lines split paragraphs; single newlines become `<br/>`. Used by editable
  * notification-template overrides + the send-test so overridden copy still
- * renders in the Kakao chrome.
+ * renders in the KAKOA chrome.
  */
 export function wrapEmailBody(escapedBody: string): string {
   const paras = escapedBody
@@ -267,7 +267,7 @@ export function orderConfirmationEmail(m: OrderEmailModel): RenderedEmail {
   const lede = paid
     ? `Thank you — your payment is in and your order is confirmed. We're getting it ready with care.`
     : `Thank you — your order is placed. We'll confirm the details by phone shortly, then get it ready with care.`;
-  const subject = `${headline} — order ${m.orderNumber} · Kakao`;
+  const subject = `${headline} — order ${m.orderNumber} · KAKOA`;
 
   const inner = `
     <tr>
@@ -326,7 +326,7 @@ export function orderConfirmationEmail(m: OrderEmailModel): RenderedEmail {
  * refund note is added by copy only (the refund itself is the payments module).
  */
 export function orderCancelledEmail(m: OrderEmailModel): RenderedEmail {
-  const subject = `Order ${m.orderNumber} cancelled · Kakao`;
+  const subject = `Order ${m.orderNumber} cancelled · KAKOA`;
   const refundLine =
     m.paymentMode === 'prepaid'
       ? `Any amount paid will be refunded to your original payment method — this usually takes 5–7 business days.`
@@ -343,7 +343,7 @@ export function orderCancelledEmail(m: OrderEmailModel): RenderedEmail {
         <div style="height:20px;"></div>
         ${totalsBlock(m)}
         <div style="height:24px;"></div>
-        ${para(`Changed your mind? You're always welcome back at Kakao.`)}
+        ${para(`Changed your mind? You're always welcome back at KAKOA.`)}
       </td>
     </tr>`;
 
@@ -388,18 +388,18 @@ const FULFILMENT_COPY: Record<
 > = {
   shipped: {
     headline: 'Your order is on its way',
-    lede: 'Good news — your Kakao box has shipped and is heading to you.',
-    subject: (n) => `Shipped — order ${n} is on its way · Kakao`,
+    lede: 'Good news — your KAKOA box has shipped and is heading to you.',
+    subject: (n) => `Shipped — order ${n} is on its way · KAKOA`,
   },
   out_for_delivery: {
     headline: 'Out for delivery today',
     lede: "Your box is out for delivery today — keep your phone handy for the courier.",
-    subject: (n) => `Out for delivery — order ${n} · Kakao`,
+    subject: (n) => `Out for delivery — order ${n} · KAKOA`,
   },
   delivered: {
     headline: 'Delivered — enjoy!',
-    lede: 'Your Kakao order has been delivered. We hope every piece is a delight.',
-    subject: (n) => `Delivered — order ${n} · Kakao`,
+    lede: 'Your KAKOA order has been delivered. We hope every piece is a delight.',
+    subject: (n) => `Delivered — order ${n} · KAKOA`,
   },
 };
 

@@ -71,10 +71,14 @@ const LABEL =
   "mb-[7px] block font-body text-[13px] font-semibold text-[#5C4B3A]";
 
 const PRIMARY_BTN =
-  "flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 py-4 font-body text-[15.5px] font-bold text-card transition-colors hover:bg-[#3f2c1b] disabled:cursor-not-allowed disabled:opacity-60";
+  "flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 py-4 font-body text-[15.5px] font-bold text-card transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-60 " +
+  // Mobile: pin the primary CTA to the bottom of the viewport so it stays
+  // reachable on long step forms (the summary aside/disclosure is elsewhere).
+  // No-op inside the short non-scrolling failure dialogs that reuse this class.
+  "max-lg:sticky max-lg:bottom-4 max-lg:z-30 max-lg:shadow-lift";
 
 const GHOST_BTN =
-  "rounded-pill border-[1.5px] border-[#E0CFB6] bg-transparent px-[26px] py-4 font-body text-[15px] font-bold text-ink transition-colors hover:bg-[#F3E7D5]";
+  "rounded-pill border-[1.5px] border-line bg-transparent px-[26px] py-4 font-body text-[15px] font-bold text-ink transition-colors hover:bg-card";
 
 const STEP_LABELS: Record<CheckoutStep, string> = {
   1: "Information",
@@ -715,6 +719,41 @@ export function CheckoutClient({
       />
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px] lg:gap-10">
+        {/* Mobile order-summary disclosure — keeps the running total reachable
+            while filling the form (the sticky aside below is desktop-only). */}
+        <details className="group rounded-[18px] border border-line bg-card lg:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-body [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-2 text-[14px] font-semibold text-ink">
+              Order summary
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="text-espresso transition-transform duration-[var(--duration-base)] ease-brand group-[[open]]:rotate-180 motion-reduce:transition-none"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </span>
+            <span className="text-[15px] font-bold tabular-nums text-ink">
+              {co.quote !== null ? formatPaise(co.quote.totalPaise) : "—"}
+            </span>
+          </summary>
+          <div className="border-t border-line px-5 pt-4 pb-5">
+            <OrderSummary
+              cart={cart}
+              quote={co.quote}
+              quoteLoading={co.quoteStatus === "loading"}
+              paymentMode={co.paymentMode}
+            />
+          </div>
+        </details>
+
         <section className="rounded-[22px] border border-line bg-card p-6 sm:p-8">
           {co.step === 1 ? (
             <Step1Information
@@ -747,7 +786,7 @@ export function CheckoutClient({
           ) : null}
         </section>
 
-        <aside className="lg:sticky lg:top-[98px]">
+        <aside className="hidden lg:sticky lg:top-[98px] lg:block">
           <OrderSummary
             cart={cart}
             quote={co.quote}
@@ -2471,13 +2510,84 @@ function Step4Review({
 /* Blocking failure sheets                                             */
 /* ================================================================== */
 
-function Backdrop({ children }: { children: ReactNode }): ReactNode {
+function Backdrop({
+  children,
+  label,
+  onDismiss,
+}: {
+  children: ReactNode;
+  label: string;
+  onDismiss?: () => void;
+}): ReactNode {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const dismissRef = useRef(onDismiss);
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  // Modal a11y: initial focus, focus-trap, Escape, body scroll-lock, and focus
+  // restore to the opener. Bound once — the latest onDismiss is read via a ref
+  // so the single keydown listener never goes stale.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    const focusable = (): HTMLElement[] =>
+      panel === null
+        ? []
+        : Array.from(
+            panel.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => el.offsetParent !== null);
+    const initial = focusable();
+    (initial[0] ?? panel)?.focus();
+
+    const onKey = (event: globalThis.KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dismissRef.current?.();
+        return;
+      }
+      if (event.key !== "Tab" || panel === null) return;
+      const list = focusable();
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !panel.contains(active)) {
+          event.preventDefault();
+          last?.focus();
+        }
+      } else if (active === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      opener?.focus?.();
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 px-4 pb-4 backdrop-blur-[2px] sm:items-center sm:pb-0">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 px-4 pb-4 backdrop-blur-[2px] motion-safe:animate-[kk-overlay_.2s_ease] motion-reduce:animate-none sm:items-center sm:pb-0"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) dismissRef.current?.();
+      }}
+    >
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-[440px] rounded-[22px] bg-card p-6 shadow-[0_30px_70px_rgba(42,29,18,.3)]"
+        aria-label={label}
+        tabIndex={-1}
+        className="w-full max-w-[440px] rounded-[22px] bg-card p-6 shadow-[0_30px_70px_rgba(42,29,18,.3)] outline-none motion-safe:animate-[kk-rise_.28s_var(--ease-entrance)] motion-reduce:animate-none"
       >
         {children}
       </div>
@@ -2496,7 +2606,7 @@ function PriceChangedSheet({
 }): ReactNode {
   const delta = quote.totalPaise - oldTotalPaise;
   return (
-    <Backdrop>
+    <Backdrop label="Your total changed" onDismiss={onAccept}>
       <h2
         className="mb-2 text-[22px] text-ink"
         style={{ fontFamily: "var(--font-display), serif" }}
@@ -2550,7 +2660,7 @@ function SoldOutSheet({
   const nameFor = (variantId: string): string =>
     source.find((l) => l.variantId === variantId)?.name ?? "An item";
   return (
-    <Backdrop>
+    <Backdrop label="Just sold out" onDismiss={onClose}>
       <h2
         className="mb-2 text-[22px] text-ink"
         style={{ fontFamily: "var(--font-display), serif" }}
@@ -2593,7 +2703,7 @@ function UpstreamSheet({
   onClose: () => void;
 }): ReactNode {
   return (
-    <Backdrop>
+    <Backdrop label="Payment setup failed" onDismiss={onClose}>
       <h2
         className="mb-2 text-[22px] text-ink"
         style={{ fontFamily: "var(--font-display), serif" }}

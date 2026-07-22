@@ -12,8 +12,22 @@
  * The picker owns NO placement state — it hands the chosen `SavedAddress` back
  * to the caller (which copies the values into checkout state) and closes.
  * Add / edit go through the `useAddresses` hook the caller passes in.
+ *
+ * Modal a11y (mirrors ReviewComposer / PdpGallery): rendered through a portal
+ * with role="dialog" aria-modal, a Tab/Shift+Tab focus trap, Escape + backdrop
+ * dismiss, body scroll-lock, and focus restored to the opener on close. A
+ * single keydown listener reads the live `onClose` from a ref so the Escape
+ * handler never fires a stale closure.
  */
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import type { SavedAddress } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
 import { AddressCard } from "./AddressCard";
@@ -27,6 +41,9 @@ import type { UseAddresses } from "@/components/account/useAddresses";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 /** Turn a form payload into the create/update wire shape. */
 function toWirePayload(v: AddressFormValues): {
@@ -81,54 +98,91 @@ export function AddressPicker({
   onSelect,
   onClose,
 }: AddressPickerProps): ReactNode {
+  const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<Mode>({ kind: "list" });
   const [formError, setFormError] = useState<string | null>(null);
   const [serviceable, setServiceable] = useState<Record<string, boolean>>({});
   const dialogRef = useRef<HTMLDivElement>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
+  // Keep the latest `onClose` in a ref so the single keydown listener — whose
+  // closure is frozen on the render where the modal mounted — always calls the
+  // current callback (avoids the stale-closure Escape bug).
+  const onCloseRef = useRef(onClose);
 
-  // Focus trap + Escape-to-close + restore focus on unmount.
   useEffect(() => {
-    previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const node = dialogRef.current;
-    const focusFirst = (): void => {
-      const focusables = node?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      focusables?.[0]?.focus();
-    };
-    focusFirst();
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => setMounted(true), []);
+
+  // Focus trap + Escape-to-close + body scroll-lock + focus restore. Registered
+  // once on mount; the trap reads focusables live at keydown time, so it stays
+  // correct across `mode` changes (list ↔ add ↔ edit) without re-running. The
+  // opener is captured mount-only so focus restore always returns to the true
+  // opener (re-running per mode would capture a mid-transition <body>).
+  useEffect(() => {
+    if (!mounted) return;
+    const opener = document.activeElement as HTMLElement | null;
 
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
-      if (e.key !== "Tab" || node === null) return;
+      if (e.key !== "Tab") return;
+      const node = dialogRef.current;
+      if (node === null) return;
       const focusables = Array.from(
-        node.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled"));
+        node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter(
+        (el) =>
+          !el.hasAttribute("disabled") &&
+          el.tabIndex >= 0 &&
+          el.offsetParent !== null,
+      );
       if (focusables.length === 0) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
       if (first === undefined || last === undefined) return;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      const active = document.activeElement;
+      if (e.shiftKey) {
+        if (active === first || !node.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !node.contains(active)) {
         e.preventDefault();
         first.focus();
       }
     };
+
     document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Move initial focus into the dialog (first focusable, else the panel).
+    const node = dialogRef.current;
+    const firstFocusable = node?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    (firstFocusable ?? node)?.focus();
+
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      previouslyFocused.current?.focus();
+      document.body.style.overflow = prevOverflow;
+      opener?.focus?.();
     };
-  }, [onClose, mode]);
+  }, [mounted]);
+
+  // When the view switches (list ↔ add ↔ edit) the focused control unmounts and
+  // focus falls to <body>; since the portal sits at the end of <body>, a Tab
+  // from there would escape into the page behind the modal. Pull focus back into
+  // the dialog on every mode change so the trap stays airtight.
+  useEffect(() => {
+    if (!mounted) return;
+    const node = dialogRef.current;
+    if (node === null) return;
+    const first = node.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    (first ?? node).focus();
+  }, [mode, mounted]);
 
   const reportSvc = useCallback((id: string, ok: boolean) => {
     setServiceable((prev) => (prev[id] === ok ? prev : { ...prev, [id]: ok }));
@@ -162,14 +216,17 @@ export function AddressPicker({
     [book, onSelect, onClose],
   );
 
-  const titleId = "address-picker-title";
+  const titleId = useId();
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 px-4 pb-0 backdrop-blur-[2px] sm:items-center sm:pb-4">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 px-4 pb-0 backdrop-blur-[2px] motion-safe:animate-[kk-overlay_.2s_var(--ease-entrance)] sm:items-center sm:pb-4">
       {/* Backdrop dismiss */}
       <button
         type="button"
         aria-label="Close"
+        tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 cursor-default"
       />
@@ -178,7 +235,8 @@ export function AddressPicker({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex max-h-[85vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-[22px] bg-card shadow-[0_30px_70px_rgba(42,29,18,.3)] sm:rounded-[22px]"
+        tabIndex={-1}
+        className="relative flex max-h-[85vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-[22px] bg-card shadow-[0_30px_70px_rgba(42,29,18,.3)] outline-none motion-safe:animate-[kk-rise_.28s_var(--ease-entrance)] sm:rounded-[22px]"
       >
         <div className="flex items-center justify-between border-b border-[#EADBC6] px-6 py-4">
           <h2
@@ -270,6 +328,7 @@ export function AddressPicker({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

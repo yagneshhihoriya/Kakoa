@@ -42,10 +42,10 @@ export async function generateMetadata({
   params: Promise<{ doc: string }>;
 }): Promise<Metadata> {
   const { doc } = await params;
-  if (!(doc in DOC_TITLES)) return { title: "Legal · Kakao" };
+  if (!(doc in DOC_TITLES)) return { title: "Legal" };
   return {
-    title: `${DOC_TITLES[doc as Doc]} · Kakao`,
-    description: `${DOC_TITLES[doc as Doc]} for Kakao Chocolate.`,
+    title: DOC_TITLES[doc as Doc],
+    description: `${DOC_TITLES[doc as Doc]} for KAKOA Chocolate.`,
     alternates: { canonical: `/legal/${doc}` },
   };
 }

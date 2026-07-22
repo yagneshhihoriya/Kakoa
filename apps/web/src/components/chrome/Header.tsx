@@ -7,19 +7,20 @@ import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
 import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
 import { BrandLockup } from "./BrandMark";
+import { MegaMenu } from "./MegaMenu";
 import { SearchOverlay } from "./SearchOverlay";
 import { useCartChrome } from "./useCartChrome";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
 
-/** Desktop nav — inline links (≥1000px). `activeOn` drives the active underline. */
+/** Desktop nav — inline links (≥1000px). `activeOn` drives the active
+ * underline; `mega` marks the item that opens the Shop mega-menu on hover/focus. */
 const NAV_LINKS = [
-  { href: "/shop", label: "Shop", activeOn: ["/shop", "/product"] },
-  { href: "/shop", label: "Collections", activeOn: [] },
-  { href: "/shop", label: "Gifts", activeOn: [] },
-  { href: "/about", label: "Our Story", activeOn: ["/about"] },
-  { href: "/journal", label: "Journal", activeOn: ["/journal"] },
+  { href: "/shop", label: "Shop", activeOn: ["/shop", "/product"], mega: true },
+  { href: "/shop?category=gifts", label: "Gifts", activeOn: [], mega: false },
+  { href: "/about", label: "Our Story", activeOn: ["/about"], mega: false },
+  { href: "/journal", label: "Journal", activeOn: ["/journal"], mega: false },
 ] as const;
 
 /**
@@ -52,7 +53,7 @@ const MOBILE_SECONDARY = [
 ] as const;
 
 const ICON_BUTTON_CLASSES = cx(
-  "grid h-10 w-10 place-items-center rounded-pill text-ink transition-colors hover:bg-[#F0E4D2]",
+  "grid h-10 w-10 place-items-center rounded-pill text-ink transition-colors hover:bg-cream-2",
   FOCUS_RING,
 );
 
@@ -151,6 +152,41 @@ export function Header(): ReactNode {
   // Which mobile-menu accordion section is expanded (by label), or null.
   const [openSection, setOpenSection] = useState<string | null>(null);
 
+  // Desktop "Shop" mega-menu. Opens on hover/focus of the Shop trigger (or the
+  // panel); a short close delay bridges the gap between the trigger and panel so
+  // the pointer can travel between them without the menu flickering shut.
+  const [megaOpen, setMegaOpen] = useState(false);
+  const megaCloseTimer = useRef<number | undefined>(undefined);
+  const openMega = (): void => {
+    if (megaCloseTimer.current !== undefined) window.clearTimeout(megaCloseTimer.current);
+    setMegaOpen(true);
+  };
+  const closeMegaSoon = (): void => {
+    if (megaCloseTimer.current !== undefined) window.clearTimeout(megaCloseTimer.current);
+    megaCloseTimer.current = window.setTimeout(() => setMegaOpen(false), 120);
+  };
+  const closeMegaNow = (): void => {
+    if (megaCloseTimer.current !== undefined) window.clearTimeout(megaCloseTimer.current);
+    setMegaOpen(false);
+  };
+  useEffect(
+    () => () => {
+      if (megaCloseTimer.current !== undefined) window.clearTimeout(megaCloseTimer.current);
+    },
+    [],
+  );
+  // Close the mega-menu on Escape (focus stays where the user left it).
+  useEffect(() => {
+    if (!megaOpen) return undefined;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") setMegaOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [megaOpen]);
+
   // Condense the header (shorter + stronger shadow) once the page scrolls.
   useEffect(() => {
     const onScroll = (): void => {
@@ -189,9 +225,10 @@ export function Header(): ReactNode {
     };
   }, [count, mounted]);
 
-  // Close the mobile menu after any navigation.
+  // Close the mobile menu and Shop mega-menu after any navigation.
   useEffect(() => {
     setMenuOpen(false);
+    setMegaOpen(false);
   }, [pathname]);
 
   // While the full-screen mobile menu is open: lock body scroll and close on
@@ -249,7 +286,7 @@ export function Header(): ReactNode {
       aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
       onClick={openCart}
       className={cx(
-        "relative flex h-10 items-center gap-1.5 rounded-pill px-3 font-body text-sm font-semibold text-ink transition-colors hover:bg-[#F0E4D2]",
+        "relative flex h-10 items-center gap-1.5 rounded-pill px-3 font-body text-sm font-semibold text-ink transition-colors hover:bg-cream-2",
         FOCUS_RING,
       )}
     >
@@ -305,25 +342,70 @@ export function Header(): ReactNode {
             <Link href="/" aria-label="KAKOA home" className={cx("no-underline", FOCUS_RING)}>
               <BrandLockup size="header" />
             </Link>
-            <nav aria-label="Primary" className="flex items-center gap-[30px]">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  aria-current={isActive(link.activeOn) ? "page" : undefined}
-                  className={cx(
-                    "relative p-0 font-body text-[14.5px] font-semibold text-ink no-underline transition-colors hover:text-espresso",
-                    "after:absolute after:-bottom-[7px] after:left-0 after:right-0 after:h-[1.5px] after:origin-left after:bg-espresso after:transition-transform after:duration-300 after:ease-[cubic-bezier(.2,.7,.3,1)] after:content-['']",
-                    isActive(link.activeOn)
-                      ? "after:scale-x-100"
-                      : "after:scale-x-0 hover:after:scale-x-100",
-                    FOCUS_RING,
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <nav
+              aria-label="Primary"
+              className="flex items-center gap-[30px]"
+              onMouseLeave={closeMegaSoon}
+            >
+              {NAV_LINKS.map((link) => {
+                const active = isActive(link.activeOn);
+                const megaProps = link.mega
+                  ? {
+                      "aria-haspopup": "menu" as const,
+                      "aria-expanded": megaOpen,
+                      onMouseEnter: openMega,
+                      onFocus: openMega,
+                    }
+                  : { onMouseEnter: closeMegaNow };
+                return (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    {...megaProps}
+                    className={cx(
+                      "relative flex items-center p-0 font-body text-[14.5px] font-semibold text-ink no-underline transition-colors hover:text-espresso",
+                      "after:absolute after:-bottom-[7px] after:left-0 after:right-0 after:h-[1.5px] after:origin-left after:bg-espresso after:transition-transform after:duration-300 after:ease-[cubic-bezier(.2,.7,.3,1)] after:content-['']",
+                      active ? "after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100",
+                      FOCUS_RING,
+                    )}
+                  >
+                    {link.label}
+                    {link.mega ? (
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                        className={cx(
+                          "ml-1 text-espresso/70 transition-transform duration-[var(--duration-base)] ease-brand motion-reduce:transition-none",
+                          megaOpen && "rotate-180",
+                        )}
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    ) : null}
+                  </Link>
+                );
+              })}
             </nav>
+
+            {megaOpen ? (
+              <div
+                role="region"
+                aria-label="Shop menu"
+                onMouseEnter={openMega}
+                onMouseLeave={closeMegaSoon}
+                className="absolute inset-x-0 top-full z-40 border-b border-line bg-cream shadow-[0_22px_44px_-18px_rgba(42,29,18,0.30)] animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none"
+              >
+                <MegaMenu onNavigate={closeMegaNow} />
+              </div>
+            ) : null}
             <div className="flex items-center gap-1.5">
               {searchButton}
               <AccountControl auth={auth} />
@@ -344,7 +426,7 @@ export function Header(): ReactNode {
                   setMenuOpen((current) => !current);
                 }}
                 className={cx(
-                  "relative z-[46] inline-flex items-center gap-2 rounded-pill px-2.5 py-2 text-ink transition-colors hover:bg-[#F0E4D2]",
+                  "relative z-[46] inline-flex items-center gap-2 rounded-pill px-2.5 py-2 text-ink transition-colors hover:bg-cream-2",
                   FOCUS_RING,
                 )}
               >
@@ -386,7 +468,7 @@ export function Header(): ReactNode {
                 setMenuOpen(false);
               }}
               className={cx(
-                "inline-flex items-center gap-2 rounded-pill px-2.5 py-2 text-ink transition-colors hover:bg-[#F0E4D2]",
+                "inline-flex items-center gap-2 rounded-pill px-2.5 py-2 text-ink transition-colors hover:bg-cream-2",
                 FOCUS_RING,
               )}
             >

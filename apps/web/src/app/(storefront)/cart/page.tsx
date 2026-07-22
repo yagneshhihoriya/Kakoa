@@ -5,7 +5,7 @@ import { CartPageClient } from "@/components/cart/CartPageClient";
 export const metadata: Metadata = {
   title: "Your bag",
   description:
-    "Review your Kakao bag — small-batch chocolate, gift wrap, and coupons.",
+    "Review your KAKOA bag — small-batch chocolate, gift wrap, and coupons.",
   robots: { index: false },
 };
 

@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { ProductCardView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { TONE_GRADIENTS } from "@/components/catalog/ChocoPlaceholder";
+
+/** Focus ring for the bespoke floating chip link. */
+const CHIP_FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream";
 
 /**
  * Home hero visual — studio-lit plated 16-piece tasting box with gold wax
@@ -156,21 +161,39 @@ export function HeroShowcase({
         </div>
       </div>
 
-      {/* floating product chip — live catalog data */}
+      {/* floating product chip — live catalog data; links to its PDP */}
       {product !== null ? (
-        <div className="absolute bottom-6 -left-1 z-[3] flex items-center gap-3 rounded-lg bg-cream px-[15px] py-3 shadow-[0_18px_44px_rgba(42,29,18,.22)] motion-safe:animate-[kk-float_6s_ease-in-out_infinite] sm:bottom-11 sm:-left-[22px] sm:px-[17px] sm:py-[13px]">
+        <Link
+          href={`/product/${product.slug}`}
+          aria-label={`View ${product.name}`}
+          className={`group/chip absolute bottom-6 -left-1 z-[3] flex items-center gap-3 rounded-lg bg-cream px-[15px] py-3 no-underline shadow-[0_18px_44px_rgba(42,29,18,.22)] transition-shadow duration-[var(--duration-base)] ease-brand hover:shadow-[0_22px_54px_rgba(42,29,18,.30)] motion-safe:animate-[kk-float_6s_ease-in-out_infinite] sm:bottom-11 sm:-left-[22px] sm:px-[17px] sm:py-[13px] ${CHIP_FOCUS}`}
+        >
           <div
             aria-hidden="true"
-            className="relative h-[52px] w-11 overflow-hidden rounded-[10px]"
-            style={{
-              backgroundImage: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%), ${TONE_GRADIENTS[product.tone]}`,
-            }}
-          />
+            className="relative h-[52px] w-11 flex-none overflow-hidden rounded-[10px]"
+            style={
+              product.imageUrl !== null
+                ? undefined
+                : {
+                    backgroundImage: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%), ${TONE_GRADIENTS[product.tone]}`,
+                  }
+            }
+          >
+            {product.imageUrl !== null ? (
+              <Image
+                src={product.imageUrl}
+                alt=""
+                fill
+                sizes="44px"
+                className="object-cover"
+              />
+            ) : null}
+          </div>
           <div>
-            <div className="font-body text-[13.5px] font-semibold text-ink">
+            <div className="font-body text-[13.5px] font-semibold text-ink transition-colors group-hover/chip:text-espresso">
               {product.name}
             </div>
-            <div className="mt-0.5 mb-[3px] text-xs text-[#8a7a68]">
+            <div className="mt-0.5 mb-[3px] text-xs text-ink-muted">
               {product.badge ?? "New this season"}
             </div>
             <div className="font-body text-sm font-bold text-espresso">
@@ -179,7 +202,7 @@ export function HeroShowcase({
               </data>
             </div>
           </div>
-        </div>
+        </Link>
       ) : null}
     </div>
   );

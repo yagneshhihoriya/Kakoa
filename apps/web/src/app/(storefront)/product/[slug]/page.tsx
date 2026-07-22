@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ProductDetailView } from "@kakoa/core";
@@ -12,13 +11,14 @@ import {
   getCompanyInfo,
   getProductBySlug,
 } from "@/lib/catalog/queries";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PdpGallery } from "@/components/catalog/pdp/PdpGallery";
 import { PdpPurchasePanel } from "@/components/catalog/pdp/PdpPurchasePanel";
+import { PdpBundle } from "@/components/catalog/pdp/PdpBundle";
 import { PdpDetails } from "@/components/catalog/pdp/PdpDetails";
 import { PdpReviews } from "@/components/catalog/pdp/PdpReviews";
 import { Reveal } from "@/components/catalog/pdp/Reveal";
+import { getDefaultVariantIds } from "../../shop/default-variants";
 
 /** ISR: tag-driven purges (`product:{slug}`) + 5-min time fallback. */
 export const revalidate = 300;
@@ -64,10 +64,10 @@ export async function generateMetadata({
     description: product.blurb,
     alternates: { canonical: `/product/${slug}` },
     openGraph: {
-      title: `${product.name} · Kakao`,
+      title: `${product.name} · KAKOA`,
       description: product.blurb,
       type: "website",
-      siteName: "Kakao",
+      siteName: "KAKOA",
       url: `/product/${slug}`,
       ...(ogImage !== null ? { images: [{ url: ogImage, alt: product.name }] } : {}),
     },
@@ -109,7 +109,7 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
         name: product.name,
         description: product.blurb,
         ...(defaultVariant !== undefined ? { sku: defaultVariant.sku } : {}),
-        brand: { "@type": "Brand", name: "Kakao" },
+        brand: { "@type": "Brand", name: "KAKOA" },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",
@@ -154,10 +154,6 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
 /* Server-rendered blocks                                              */
 /* ------------------------------------------------------------------ */
 
-/** Shared focus treatment for bespoke (non-`Button`) interactive elements. */
-const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
-
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
@@ -196,9 +192,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const defaultVariant =
     product.variants.find((v) => v.isDefault) ?? product.variants[0];
   const activePricePaise = defaultVariant?.pricePaise ?? product.fromPricePaise;
-  const bundleTotalPaise = product.frequentlyBoughtTogether.reduce(
-    (sum, item) => sum + item.fromPricePaise,
-    activePricePaise,
+  // Default variant per FBT product so the bundle "Add" is a real one-tap add.
+  const fbtVariantIds = await getDefaultVariantIds(
+    product.frequentlyBoughtTogether.map((item) => item.id),
   );
 
   return (
@@ -314,65 +310,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
           omission when the co-occurrence query returned []. */}
       {product.frequentlyBoughtTogether.length > 0 ? (
         <Reveal index={2} className="mt-16">
-          <section
-            aria-labelledby="pdp-fbt"
-            className="rounded-[24px] border border-line-soft bg-cream-2 p-6 shadow-card sm:p-9"
-          >
-            <h2
-              id="pdp-fbt"
-              className="mb-6 font-display text-h2 font-normal text-ink"
-            >
-              Frequently bought together
-            </h2>
-            <div className="flex flex-wrap items-center gap-4">
-              {/* This product — anchor tile, not a link. */}
-              <div className="w-[120px]">
-                <div className="mb-2 overflow-hidden rounded-[18px]">
-                  <ChocoPlaceholder tone={product.tone} ratio="1 / 1" />
-                </div>
-                <p className="font-body text-[13px] font-semibold text-ink">
-                  {product.name}
-                </p>
-                <p className="font-body text-[13px] font-bold text-espresso">
-                  {formatPaise(activePricePaise)}
-                </p>
-              </div>
-
-              {product.frequentlyBoughtTogether.map((item) => (
-                <Fragment key={item.id}>
-                  <span
-                    aria-hidden="true"
-                    className="font-body text-2xl text-ink-muted"
-                  >
-                    +
-                  </span>
-                  <Link
-                    href={`/product/${item.slug}`}
-                    className={`group w-[120px] rounded-[18px] ${FOCUS_RING}`}
-                  >
-                    <span className="mb-2 block overflow-hidden rounded-[18px]">
-                      <ChocoPlaceholder tone={item.tone} ratio="1 / 1" />
-                    </span>
-                    <span className="block font-body text-[13px] font-semibold text-ink group-hover:underline">
-                      {item.name}
-                    </span>
-                    <span className="block font-body text-[13px] font-bold text-espresso">
-                      {formatPaise(item.fromPricePaise)}
-                    </span>
-                  </Link>
-                </Fragment>
-              ))}
-
-              <div className="ml-auto text-right">
-                <p className="mb-0.5 font-body text-[13px] text-ink-soft">
-                  Bundle total
-                </p>
-                <p className="font-body text-2xl font-bold text-ink">
-                  {formatPaise(bundleTotalPaise)}
-                </p>
-              </div>
-            </div>
-          </section>
+          <PdpBundle
+            main={{
+              id: product.id,
+              name: product.name,
+              tone: product.tone,
+              imageUrl: product.images[0]?.url ?? null,
+              defaultVariantId: defaultVariant?.id ?? null,
+              pricePaise: activePricePaise,
+            }}
+            items={product.frequentlyBoughtTogether.map((item) => ({
+              id: item.id,
+              slug: item.slug,
+              name: item.name,
+              tone: item.tone,
+              imageUrl: item.imageUrl,
+              fromPricePaise: item.fromPricePaise,
+              defaultVariantId: fbtVariantIds[item.id] ?? null,
+            }))}
+          />
         </Reveal>
       ) : null}
 

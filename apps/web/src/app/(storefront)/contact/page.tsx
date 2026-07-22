@@ -5,8 +5,8 @@ import { getCompanyInfo } from "@/lib/catalog/queries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Contact Us · Kakao",
-  description: "Get in touch with Kakao Chocolate — support, address, phone, email and our Grievance Officer.",
+  title: "Contact Us",
+  description: "Get in touch with KAKOA Chocolate — support, address, phone, email and our Grievance Officer.",
   alternates: { canonical: "/contact" },
 };
 
