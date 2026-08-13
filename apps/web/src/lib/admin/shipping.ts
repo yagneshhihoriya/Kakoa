@@ -31,7 +31,7 @@ import {
   type AddressSnapshot,
 } from '@kakoa/db';
 import { type OrderStatus, type ShipmentStatus } from '@kakoa/core';
-import { getShippingProvider } from '@kakoa/integrations';
+import { getShippingProvider, mapShiprocketStatus } from '@kakoa/integrations';
 import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { withConstraintMapping } from './db-errors';
 import { isUuid } from './product-validation';
@@ -841,6 +841,61 @@ export async function listStalePollShipments(
   return rows
     .filter((r): r is { id: string; awbCode: string } => r.awbCode !== null)
     .map((r) => ({ id: r.id, awbCode: r.awbCode }));
+}
+
+export interface PollResult {
+  checked: number;
+  advanced: number;
+  failed: number;
+}
+
+/**
+ * Reconciliation poller — the safety net for missed webhooks (HANDOFF-Shiprocket §7).
+ * Scans stale active non-terminal shipments, calls `track(awb)` for each, maps the
+ * status, and applies it via the SAME forward-only `applyTrackingStatus` as the
+ * webhook. Best-effort per shipment — one failure never aborts the batch.
+ *
+ * The single source of truth shared by the admin `POST /api/admin/shipping/poll`
+ * (manual trigger) and the scheduled `GET /api/cron/poll-shipments` (Vercel Cron).
+ */
+export async function pollStaleShipments(opts?: {
+  olderThanMinutes?: number;
+  limit?: number;
+}): Promise<PollResult> {
+  const olderThanMinutes = opts?.olderThanMinutes ?? 30;
+  const limit = opts?.limit ?? 100;
+
+  const stale = await listStalePollShipments(olderThanMinutes, limit);
+  const provider = getShippingProvider();
+
+  let advanced = 0;
+  let checked = 0;
+  let failed = 0;
+  for (const s of stale) {
+    checked += 1;
+    try {
+      const tr = await provider.track(s.awbCode);
+      const mapped = mapShiprocketStatus(tr.statusCode, tr.statusLabel);
+      if (mapped === null) continue;
+      const last = tr.scans[tr.scans.length - 1];
+      const { advanced: didAdvance } = await applyTrackingStatus(s.id, {
+        toStatus: mapped as ShipmentStatus,
+        source: 'poll',
+        activity: last?.activity ?? tr.statusLabel ?? null,
+        location: last?.location ?? null,
+        occurredAt: last?.occurredAtIso ? new Date(last.occurredAtIso) : null,
+      });
+      if (didAdvance) advanced += 1;
+    } catch (cause) {
+      failed += 1;
+      console.error('tracking.poll_failed', {
+        shipment_id: s.id,
+        cause: cause instanceof Error ? cause.message : 'unknown',
+      });
+    }
+  }
+
+  return { checked, advanced, failed };
 }
 
 /**

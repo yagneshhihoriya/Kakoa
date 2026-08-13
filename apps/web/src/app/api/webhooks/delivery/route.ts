@@ -1,5 +1,8 @@
 /**
- * POST /api/webhooks/shiprocket — courier tracking auto-sync (HANDOFF-Shiprocket §6).
+ * POST /api/webhooks/delivery — courier tracking auto-sync (HANDOFF-Shiprocket §6).
+ *
+ * NOTE: path is intentionally provider-neutral ("delivery", not "shiprocket") —
+ * Shiprocket's webhook config rejects URLs containing shiprocket/sr/kr keywords.
  *
  * Auth is a STATIC `x-api-key` header (no HMAC) compared constant-time to
  * `SHIPROCKET_WEBHOOK_TOKEN`. The handler is persist-then-ack, dedupe + forward-

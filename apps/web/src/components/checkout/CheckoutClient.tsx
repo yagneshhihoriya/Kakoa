@@ -36,7 +36,33 @@ import {
 import { cx } from "@kakoa/ui";
 import { Skeleton } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
+import Image from "next/image";
+import type { ProductTone } from "@kakoa/core";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+
+/**
+ * Order-line thumbnail: real product photo when the cart line has one
+ * (`imageUrl`), else the design-system tone placeholder. Keeps the same 44/52
+ * aspect box so the summary layout is unchanged either way.
+ */
+function LineThumb({
+  imageUrl,
+  tone,
+  name,
+}: {
+  imageUrl: string | null;
+  tone: ProductTone;
+  name: string;
+}): ReactNode {
+  if (imageUrl !== null && imageUrl !== "") {
+    return (
+      <div className="relative aspect-[44/52] w-full overflow-hidden rounded-[8px] bg-cream-2">
+        <Image src={imageUrl} alt={name} fill sizes="60px" className="object-cover" />
+      </div>
+    );
+  }
+  return <ChocoPlaceholder tone={tone} ratio="44 / 52" />;
+}
 import { useCart } from "@/components/cart/CartProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useAddresses } from "@/components/account/useAddresses";
@@ -62,23 +88,23 @@ import {
 /* ------------------------------------------------------------------ */
 
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream";
 
 const INPUT_BASE =
-  "w-full rounded-xl border bg-[#F9F3EA] px-4 py-[14px] font-body text-[15px] text-ink outline-none transition-colors placeholder:text-[#b3a288] focus:ring-2 focus:ring-gold";
+  "w-full rounded-[13px] border bg-cream-2 px-4 py-[13px] font-body text-[15px] text-ink outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] ease-brand placeholder:text-ink-muted/65 focus:border-espresso focus:ring-2 focus:ring-gold/70";
 
 const LABEL =
-  "mb-[7px] block font-body text-[13px] font-semibold text-[#5C4B3A]";
+  "mb-2 block font-body text-[12.5px] font-semibold tracking-[0.01em] text-ink-soft";
 
 const PRIMARY_BTN =
-  "flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 py-4 font-body text-[15.5px] font-bold text-card transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-60 " +
+  "group relative flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 py-[17px] font-body text-[15.5px] font-semibold tracking-[0.01em] text-card shadow-soft transition-[transform,box-shadow,background-color] duration-[var(--duration-fast)] ease-brand hover:bg-ink-hover hover:shadow-lift disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none motion-safe:hover:-translate-y-[1px] motion-safe:active:translate-y-0 motion-safe:active:scale-[.994] motion-safe:disabled:translate-y-0 " +
   // Mobile: pin the primary CTA to the bottom of the viewport so it stays
   // reachable on long step forms (the summary aside/disclosure is elsewhere).
   // No-op inside the short non-scrolling failure dialogs that reuse this class.
   "max-lg:sticky max-lg:bottom-4 max-lg:z-30 max-lg:shadow-lift";
 
 const GHOST_BTN =
-  "rounded-pill border-[1.5px] border-line bg-transparent px-[26px] py-4 font-body text-[15px] font-bold text-ink transition-colors hover:bg-card";
+  "rounded-pill border-[1.5px] border-line bg-transparent px-[26px] py-[17px] font-body text-[15px] font-semibold text-ink transition-colors duration-[var(--duration-fast)] hover:border-espresso hover:bg-cream-2";
 
 const STEP_LABELS: Record<CheckoutStep, string> = {
   1: "Information",
@@ -148,6 +174,45 @@ function FieldError({ id, message }: { id: string; message: string }): ReactNode
   );
 }
 
+/**
+ * Shared step heading — a DM Mono eyebrow over a DM Serif Display title.
+ * Presentational only; keeps every step's header rhythm consistent.
+ */
+function StepHeading({
+  eyebrow,
+  title,
+}: {
+  eyebrow: string;
+  title: string;
+}): ReactNode {
+  return (
+    <div className="mb-7">
+      <p className="mb-2 font-mono text-[11px] font-medium tracking-[0.2em] text-espresso uppercase">
+        {eyebrow}
+      </p>
+      <h1
+        className="text-[27px] leading-[1.08] tracking-[-0.01em] text-ink sm:text-[30px]"
+        style={{ fontFamily: "var(--font-display), serif" }}
+      >
+        {title}
+      </h1>
+      <span
+        aria-hidden="true"
+        className="mt-4 block h-px w-full bg-gradient-to-r from-line via-line/70 to-transparent"
+      />
+    </div>
+  );
+}
+
+/** Small DM Mono eyebrow that groups a set of related fields. */
+function FieldGroupLabel({ children }: { children: ReactNode }): ReactNode {
+  return (
+    <p className="mb-3 font-mono text-[10.5px] font-medium tracking-[0.18em] text-ink-muted uppercase">
+      {children}
+    </p>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Trust / reassurance row (presentational only)                       */
 /* ------------------------------------------------------------------ */
@@ -177,11 +242,11 @@ const TRUST_ROW = [
  * only — no data, no logic, purely presentational. */
 function CheckoutTrustRow(): ReactNode {
   return (
-    <ul className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-[14px] border border-[#EADBC6] bg-[#EADBC6] sm:grid-cols-3">
+    <ul className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-[14px] border border-line bg-line sm:grid-cols-3">
       {TRUST_ROW.map((item) => (
         <li
           key={item.key}
-          className="flex items-center gap-2.5 bg-[#F6EEE1] px-4 py-3"
+          className="flex items-center gap-2.5 bg-cream-2 px-4 py-3"
         >
           <svg
             aria-hidden="true"
@@ -201,7 +266,7 @@ function CheckoutTrustRow(): ReactNode {
             <span className="block font-body text-[12.5px] font-semibold leading-tight text-ink">
               {item.label}
             </span>
-            <span className="block font-body text-[11.5px] leading-tight text-[#8a7a68]">
+            <span className="block font-body text-[11.5px] leading-tight text-ink-muted">
               {item.sub}
             </span>
           </span>
@@ -226,48 +291,65 @@ function StepIndicator({
 }): ReactNode {
   const steps: CheckoutStep[] = [1, 2, 3, 4];
   return (
-    <div className="mb-10 sm:mb-12">
-      <p className="mb-3.5 text-center font-mono text-[11px] font-medium tracking-[0.2em] text-espresso uppercase">
+    <div className="mb-9 sm:mb-11">
+      <p className="mb-4 flex items-center justify-center gap-2 text-center font-mono text-[11px] font-medium tracking-[0.22em] text-espresso uppercase">
+        <svg
+          aria-hidden="true"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="4" y="10.5" width="16" height="10" rx="2.2" />
+          <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+        </svg>
         Secure checkout
       </p>
-      <ol className="flex items-center justify-center gap-1.5 sm:gap-3">
+      <ol className="mx-auto flex max-w-[560px] items-center justify-center">
         {steps.map((n, i) => {
           const active = n === current;
           const done = n < current;
           const reachable = n <= maxReached;
           return (
-            <li key={n} className="flex items-center gap-1.5 sm:gap-3">
+            <li
+              key={n}
+              className={cx("flex items-center", i < steps.length - 1 && "flex-1")}
+            >
               <button
                 type="button"
                 disabled={!reachable}
                 onClick={() => reachable && onGo(n)}
                 aria-current={active ? "step" : undefined}
                 className={cx(
-                  "flex items-center gap-2.5 rounded-pill px-1.5 py-1",
+                  "flex flex-none items-center gap-2.5 rounded-pill px-1 py-1",
                   reachable ? "cursor-pointer" : "cursor-not-allowed",
                   FOCUS_RING,
                 )}
               >
                 <span
                   className={cx(
-                    "grid h-8 w-8 place-items-center rounded-pill font-body text-[13px] font-bold transition-colors duration-[var(--duration-base)]",
+                    "grid h-9 w-9 flex-none place-items-center rounded-pill border font-body text-[13px] font-semibold tabular-nums transition-[background-color,color,border-color,box-shadow,transform] duration-[var(--duration-base)] ease-brand",
                     done
-                      ? "bg-ink text-card"
+                      ? "border-ink bg-ink text-card shadow-soft"
                       : active
-                        ? "bg-ink text-card ring-2 ring-gold/60 ring-offset-2 ring-offset-cream"
-                        : "bg-[#EFE3CE] text-[#a08a72]",
+                        ? "border-ink bg-ink text-card shadow-card ring-2 ring-gold/70 ring-offset-2 ring-offset-cream motion-safe:scale-105"
+                        : "border-line bg-cream-2 text-ink-muted",
                   )}
                 >
                   {done ? <CheckIcon className="text-card" /> : n}
                 </span>
                 <span
                   className={cx(
-                    "hidden font-body text-[13.5px] tracking-[-0.005em] sm:inline",
+                    "hidden font-body text-[13.5px] tracking-[-0.005em] transition-colors sm:inline",
                     active
                       ? "font-semibold text-ink"
                       : done
                         ? "font-medium text-espresso"
-                        : "font-medium text-[#a08a72]",
+                        : "font-medium text-ink-muted",
                   )}
                 >
                   {STEP_LABELS[n]}
@@ -276,11 +358,15 @@ function StepIndicator({
               {i < steps.length - 1 ? (
                 <span
                   aria-hidden="true"
-                  className={cx(
-                    "h-px w-6 transition-colors duration-[var(--duration-base)] sm:w-12",
-                    n < current ? "bg-espresso/50" : "bg-[#DCC9AE]",
-                  )}
-                />
+                  className="relative mx-2 h-[2px] flex-1 overflow-hidden rounded-pill bg-line sm:mx-3"
+                >
+                  <span
+                    className={cx(
+                      "absolute inset-y-0 left-0 rounded-pill bg-espresso/60 transition-[width] duration-[var(--duration-slow)] ease-brand motion-reduce:transition-none",
+                      n < current ? "w-full" : "w-0",
+                    )}
+                  />
+                </span>
               ) : null}
             </li>
           );
@@ -299,19 +385,26 @@ function SummaryRow({
   value,
   strong,
   muted,
+  accent,
 }: {
   label: string;
   value: string;
   strong?: boolean;
   muted?: boolean;
+  /** Render the value in the success tone (savings / free shipping). */
+  accent?: boolean;
 }): ReactNode {
   return (
-    <div className="mb-2.5 flex items-baseline justify-between font-body text-[14px]">
-      <span className={muted ? "text-[#8a7a68]" : "text-[#5C4B3A]"}>{label}</span>
+    <div className="flex items-baseline justify-between gap-4 py-[7px] font-body text-[14px]">
+      <span className={muted ? "text-ink-muted" : "text-ink-soft"}>{label}</span>
       <span
         className={cx(
           "tabular-nums",
-          strong ? "font-semibold text-ink" : "text-ink",
+          accent
+            ? "font-semibold text-pistachio-deep"
+            : strong
+              ? "font-semibold text-ink"
+              : "text-ink",
         )}
       >
         {value}
@@ -333,97 +426,117 @@ function OrderSummary({
 }): ReactNode {
   // Lines come from the quote when it is fresh, else the initial cart view.
   const lines = quote?.lines ?? cart.lines;
+  const itemCount = lines.reduce((sum, line) => sum + line.qty, 0);
+  const freeShipping = quote !== null && quote.shippingFeePaise === 0;
 
   return (
-    <div className="rounded-[22px] border border-line bg-card p-6 sm:p-7">
-      <div className="mb-5">
-        <p className="mb-1.5 font-mono text-[11px] font-medium tracking-[0.16em] text-espresso uppercase">
-          Order summary
-        </p>
-        <h2
-          className="text-[21px] leading-tight text-ink"
-          style={{ fontFamily: "var(--font-display), serif" }}
-        >
-          In your bag
-        </h2>
+    <div className="overflow-hidden rounded-[22px] border border-line-soft bg-surface shadow-card">
+      <div className="flex items-baseline justify-between gap-3 border-b border-line-soft px-6 pt-6 pb-5 sm:px-7">
+        <div>
+          <p className="mb-1.5 font-mono text-[11px] font-medium tracking-[0.18em] text-espresso uppercase">
+            Order summary
+          </p>
+          <h2
+            className="text-[22px] leading-tight text-ink"
+            style={{ fontFamily: "var(--font-display), serif" }}
+          >
+            In your bag
+          </h2>
+        </div>
+        <span className="rounded-pill bg-cream-2 px-3 py-1 font-body text-[12px] font-semibold tabular-nums text-espresso">
+          {itemCount} {itemCount === 1 ? "item" : "items"}
+        </span>
       </div>
 
-      <ul className="mb-5 flex max-h-[260px] flex-col gap-3.5 overflow-y-auto">
-        {lines.map((line) => (
-          <li key={line.itemId} className="flex items-center gap-3">
-            <div className="relative w-[44px] flex-none">
-              <ChocoPlaceholder tone={line.tone} ratio="44 / 52" />
-              <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-pill bg-ink px-1 font-body text-[11px] font-bold text-card">
-                {line.qty}
-              </span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-body text-[13.5px] font-semibold text-ink">
-                {line.name}
-              </p>
-              {line.variantName !== "" ? (
-                <p className="truncate font-body text-[12px] text-[#8a7a68]">
-                  {line.variantName}
+      <div className="px-6 py-5 sm:px-7">
+        <ul className="-mr-1 flex max-h-[268px] flex-col gap-4 overflow-y-auto pr-1">
+          {lines.map((line) => (
+            <li key={line.itemId} className="flex items-center gap-3.5">
+              <div className="relative w-[46px] flex-none">
+                <div className="overflow-hidden rounded-[10px] ring-1 ring-line-soft">
+                  <LineThumb
+                    imageUrl={line.imageUrl}
+                    tone={line.tone}
+                    name={line.name}
+                  />
+                </div>
+                <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-pill bg-ink px-1 font-body text-[11px] font-bold text-card ring-2 ring-surface">
+                  {line.qty}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-body text-[13.5px] font-semibold leading-snug text-ink">
+                  {line.name}
                 </p>
-              ) : null}
-            </div>
-            <span className="font-body text-[14px] font-bold tabular-nums text-ink">
-              {formatPaise(line.lineTotalPaise)}
-            </span>
-          </li>
-        ))}
-      </ul>
+                {line.variantName !== "" ? (
+                  <p className="truncate font-body text-[12px] text-ink-muted">
+                    {line.variantName}
+                  </p>
+                ) : null}
+              </div>
+              <span className="font-body text-[14px] font-semibold tabular-nums text-ink">
+                {formatPaise(line.lineTotalPaise)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      <div className="border-t border-[#EADBC6] pt-4">
+      <div className="border-t border-line-soft px-6 pt-4 pb-6 sm:px-7">
         {quote === null || quoteLoading ? (
-          <div className="space-y-2.5" aria-hidden="true">
+          <div className="space-y-3" aria-hidden="true">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="mt-3 h-7 w-1/2" />
+            <Skeleton className="mt-3 h-9 w-1/2" />
           </div>
         ) : (
           <>
-            <SummaryRow
-              label="Subtotal"
-              value={formatPaise(quote.subtotalPaise)}
-            />
-            {quote.discountPaise > 0 ? (
+            <div className="divide-y divide-line-soft/70">
               <SummaryRow
-                label={
-                  quote.coupon !== null
-                    ? `Discount · ${quote.coupon.code}`
-                    : "Discount"
+                label="Subtotal"
+                value={formatPaise(quote.subtotalPaise)}
+              />
+              {quote.discountPaise > 0 ? (
+                <SummaryRow
+                  accent
+                  label={
+                    quote.coupon !== null
+                      ? `Discount · ${quote.coupon.code}`
+                      : "Discount"
+                  }
+                  value={`− ${formatPaise(quote.discountPaise)}`}
+                />
+              ) : null}
+              <SummaryRow
+                label="Shipping"
+                accent={freeShipping}
+                value={
+                  freeShipping ? "Free" : formatPaise(quote.shippingFeePaise)
                 }
-                value={`− ${formatPaise(quote.discountPaise)}`}
               />
-            ) : null}
-            <SummaryRow
-              label="Shipping"
-              value={
-                quote.shippingFeePaise === 0
-                  ? "Free"
-                  : formatPaise(quote.shippingFeePaise)
-              }
-            />
-            {quote.giftWrapTotalPaise > 0 ? (
-              <SummaryRow
-                label="Gift wrap"
-                value={formatPaise(quote.giftWrapTotalPaise)}
-              />
-            ) : null}
-            {paymentMode === "cod" && quote.codFeePaise > 0 ? (
-              <SummaryRow
-                label="COD fee"
-                value={formatPaise(quote.codFeePaise)}
-              />
-            ) : null}
+              {quote.giftWrapTotalPaise > 0 ? (
+                <SummaryRow
+                  label="Gift wrap"
+                  value={formatPaise(quote.giftWrapTotalPaise)}
+                />
+              ) : null}
+              {paymentMode === "cod" && quote.codFeePaise > 0 ? (
+                <SummaryRow
+                  label="COD fee"
+                  value={formatPaise(quote.codFeePaise)}
+                />
+              ) : null}
+            </div>
 
-            <div className="mt-3 flex items-baseline justify-between border-t border-[#EADBC6] pt-4">
-              <span className="font-body text-[15px] font-semibold text-ink">
+            <div className="mt-4 flex items-baseline justify-between border-t border-line pt-4">
+              <span className="font-body text-[13px] font-semibold tracking-[0.02em] text-ink-soft uppercase">
                 Total
               </span>
-              <span className="font-body text-[22px] font-bold tabular-nums text-ink">
+              <span
+                className="text-[26px] leading-none tabular-nums text-ink"
+                style={{ fontFamily: "var(--font-display), serif" }}
+              >
                 {formatPaise(quote.totalPaise)}
               </span>
             </div>
@@ -439,7 +552,7 @@ function OrderSummary({
               const gstLabel =
                 quote.taxIncluded.igstPaise > 0 ? "IGST" : "CGST + SGST";
               return gstPaise > 0 ? (
-                <p className="mt-2 font-body text-[12.5px] text-[#8a7a68]">
+                <p className="mt-2.5 font-body text-[12.5px] leading-relaxed text-ink-muted">
                   Inclusive of {formatPaise(gstPaise)} {gstLabel} · MRP includes
                   all taxes
                 </p>
@@ -447,10 +560,44 @@ function OrderSummary({
             })()}
 
             {quote.etaDaysMin > 0 ? (
-              <p className="mt-1.5 font-body text-[12.5px] text-[#8a7a68]">
+              <p className="mt-1.5 flex items-center gap-1.5 font-body text-[12.5px] text-ink-muted">
+                <svg
+                  aria-hidden="true"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="flex-none text-espresso"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
                 Estimated delivery in {quote.etaDaysMin}–{quote.etaDaysMax} days
               </p>
             ) : null}
+
+            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-[12px] bg-cream-2 py-2.5 font-body text-[12px] font-medium text-espresso">
+              <svg
+                aria-hidden="true"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="flex-none"
+              >
+                <rect x="4" y="10.5" width="16" height="10" rx="2.2" />
+                <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+              </svg>
+              Secure, encrypted checkout
+            </div>
           </>
         )}
       </div>
@@ -718,12 +865,28 @@ export function CheckoutClient({
         onGo={co.goToStep}
       />
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px] lg:gap-10">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_368px] lg:gap-10">
         {/* Mobile order-summary disclosure — keeps the running total reachable
             while filling the form (the sticky aside below is desktop-only). */}
-        <details className="group rounded-[18px] border border-line bg-card lg:hidden">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-body [&::-webkit-details-marker]:hidden">
+        <details className="group lg:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-[16px] border border-line-soft bg-surface px-5 py-4 font-body shadow-soft [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-2 text-[14px] font-semibold text-ink">
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="flex-none text-espresso"
+              >
+                <path d="M6 7h15l-1.5 9.5a2 2 0 0 1-2 1.7H9.5a2 2 0 0 1-2-1.7L6 4H3" />
+                <circle cx="9.5" cy="20.5" r="1.2" />
+                <circle cx="17" cy="20.5" r="1.2" />
+              </svg>
               Order summary
               <svg
                 width="16"
@@ -744,7 +907,7 @@ export function CheckoutClient({
               {co.quote !== null ? formatPaise(co.quote.totalPaise) : "—"}
             </span>
           </summary>
-          <div className="border-t border-line px-5 pt-4 pb-5">
+          <div className="mt-2.5">
             <OrderSummary
               cart={cart}
               quote={co.quote}
@@ -754,7 +917,7 @@ export function CheckoutClient({
           </div>
         </details>
 
-        <section className="rounded-[22px] border border-line bg-card p-6 sm:p-8">
+        <section className="rounded-[24px] border border-line-soft bg-surface p-6 shadow-card sm:p-8 lg:p-9">
           {co.step === 1 ? (
             <Step1Information
               co={co}
@@ -833,10 +996,10 @@ export function CheckoutClient({
       {confirming ? (
         <div
           role="status"
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-ink/50 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-ink/55 backdrop-blur-[3px] motion-safe:animate-[kk-overlay_.2s_ease] motion-reduce:animate-none"
         >
-          <div className="flex items-center gap-3 rounded-2xl bg-card px-6 py-5 shadow-[0_20px_50px_rgba(42,29,18,.3)]">
-            <Spinner className="h-5 w-5 text-ink" />
+          <div className="flex items-center gap-3 rounded-[18px] border border-line-soft bg-surface px-7 py-5 shadow-float">
+            <Spinner className="h-5 w-5 text-espresso" />
             <span className="font-body text-[15px] font-semibold text-ink">
               Confirming payment…
             </span>
@@ -938,12 +1101,7 @@ function SavedAddressStep({
 
   return (
     <div>
-      <h1
-        className="mb-6 text-[28px] text-ink"
-        style={{ fontFamily: "var(--font-display), serif" }}
-      >
-        Delivery address
-      </h1>
+      <StepHeading eyebrow="Step 1 · Information" title="Delivery address" />
 
       <div className="mb-4">
         <AddressCard
@@ -1151,17 +1309,12 @@ function Step1AddressForm({
 
   return (
     <div>
-      <h1
-        className="mb-6 text-[28px] text-ink"
-        style={{ fontFamily: "var(--font-display), serif" }}
-      >
-        Contact &amp; shipping
-      </h1>
+      <StepHeading eyebrow="Step 1 · Information" title="Contact & shipping" />
 
       {/* Optional sign-in for returning customers (guests only) — never a wall.
           Amazon/Shopify pattern: log in to auto-fill saved addresses. */}
       {!co.loggedIn ? (
-        <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-[#E8DBC6] bg-[#F9F3EA] px-4 py-3 font-body text-[13.5px] text-espresso">
+        <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-line bg-cream-2 px-4 py-3 font-body text-[13.5px] text-espresso">
           <span>Already have an account?</span>
           <button
             type="button"
@@ -1178,18 +1331,19 @@ function Step1AddressForm({
       ) : null}
 
       {/* Contact */}
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <FieldGroupLabel>Contact details</FieldGroupLabel>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="co-phone" className={LABEL}>
             Mobile number
           </label>
           <div
             className={cx(
-              "flex items-center overflow-hidden rounded-xl border bg-[#F9F3EA] transition-colors focus-within:ring-2 focus-within:ring-gold",
-              errors["contactPhone"] ? "border-danger" : "border-[#E8DBC6]",
+              "flex items-center overflow-hidden rounded-xl border bg-cream-2 transition-colors focus-within:ring-2 focus-within:ring-gold",
+              errors["contactPhone"] ? "border-danger" : "border-line",
             )}
           >
-            <span className="select-none border-r border-[#E8DBC6] px-3.5 py-[14px] font-body text-[15px] font-semibold text-espresso">
+            <span className="select-none border-r border-line px-3.5 py-[14px] font-body text-[15px] font-semibold text-espresso">
               +91
             </span>
             <input
@@ -1208,7 +1362,7 @@ function Step1AddressForm({
                 });
               }}
               maxLength={10}
-              className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-[#b3a288]"
+              className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-ink-muted/65"
             />
           </div>
           {errors["contactPhone"] ? (
@@ -1217,7 +1371,7 @@ function Step1AddressForm({
         </div>
         <div>
           <label htmlFor="co-email" className={LABEL}>
-            Email <span className="font-normal text-[#a08a72]">(optional)</span>
+            Email <span className="font-normal text-ink-muted">(optional)</span>
           </label>
           <input
             id="co-email"
@@ -1235,7 +1389,7 @@ function Step1AddressForm({
             }}
             className={cx(
               INPUT_BASE,
-              errors["contactEmail"] ? "border-danger" : "border-[#E8DBC6]",
+              errors["contactEmail"] ? "border-danger" : "border-line",
             )}
           />
           {errors["contactEmail"] ? (
@@ -1245,6 +1399,7 @@ function Step1AddressForm({
       </div>
 
       {/* Recipient */}
+      <FieldGroupLabel>Shipping address</FieldGroupLabel>
       <div className="mb-4">
         <label htmlFor="co-name" className={LABEL}>
           Full name
@@ -1257,7 +1412,7 @@ function Step1AddressForm({
           onChange={(e) => setField("fullName", e.target.value)}
           className={cx(
             INPUT_BASE,
-            errors["fullName"] ? "border-danger" : "border-[#E8DBC6]",
+            errors["fullName"] ? "border-danger" : "border-line",
           )}
         />
         {errors["fullName"] ? (
@@ -1271,11 +1426,11 @@ function Step1AddressForm({
         </label>
         <div
           className={cx(
-            "flex items-center overflow-hidden rounded-xl border bg-[#F9F3EA] transition-colors focus-within:ring-2 focus-within:ring-gold",
-            errors["phone"] ? "border-danger" : "border-[#E8DBC6]",
+            "flex items-center overflow-hidden rounded-xl border bg-cream-2 transition-colors focus-within:ring-2 focus-within:ring-gold",
+            errors["phone"] ? "border-danger" : "border-line",
           )}
         >
-          <span className="select-none border-r border-[#E8DBC6] px-3.5 py-[14px] font-body text-[15px] font-semibold text-espresso">
+          <span className="select-none border-r border-line px-3.5 py-[14px] font-body text-[15px] font-semibold text-espresso">
             +91
           </span>
           <input
@@ -1287,7 +1442,7 @@ function Step1AddressForm({
             value={co.address.phone}
             onChange={(e) => setField("phone", e.target.value.replace(/[^\d]/g, ""))}
             maxLength={10}
-            className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-[#b3a288]"
+            className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-ink-muted/65"
           />
         </div>
         {errors["phone"] ? (
@@ -1307,7 +1462,7 @@ function Step1AddressForm({
           onChange={(e) => setField("line1", e.target.value)}
           className={cx(
             INPUT_BASE,
-            errors["line1"] ? "border-danger" : "border-[#E8DBC6]",
+            errors["line1"] ? "border-danger" : "border-line",
           )}
         />
         {errors["line1"] ? (
@@ -1319,7 +1474,7 @@ function Step1AddressForm({
         <div>
           <label htmlFor="co-line2" className={LABEL}>
             Address line 2{" "}
-            <span className="font-normal text-[#a08a72]">(optional)</span>
+            <span className="font-normal text-ink-muted">(optional)</span>
           </label>
           <input
             id="co-line2"
@@ -1327,20 +1482,20 @@ function Step1AddressForm({
             placeholder="Area, colony"
             value={co.address.line2}
             onChange={(e) => setField("line2", e.target.value)}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
         <div>
           <label htmlFor="co-landmark" className={LABEL}>
             Landmark{" "}
-            <span className="font-normal text-[#a08a72]">(optional)</span>
+            <span className="font-normal text-ink-muted">(optional)</span>
           </label>
           <input
             id="co-landmark"
             placeholder="Near…"
             value={co.address.landmark}
             onChange={(e) => setField("landmark", e.target.value)}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
       </div>
@@ -1358,7 +1513,7 @@ function Step1AddressForm({
             onChange={(e) => setField("city", e.target.value)}
             className={cx(
               INPUT_BASE,
-              errors["city"] ? "border-danger" : "border-[#E8DBC6]",
+              errors["city"] ? "border-danger" : "border-line",
             )}
           />
           {errors["city"] ? (
@@ -1376,8 +1531,8 @@ function Step1AddressForm({
             className={cx(
               INPUT_BASE,
               "appearance-none",
-              errors["state"] ? "border-danger" : "border-[#E8DBC6]",
-              co.address.stateCode === "" ? "text-[#b3a288]" : "",
+              errors["state"] ? "border-danger" : "border-line",
+              co.address.stateCode === "" ? "text-ink-muted/70" : "",
             )}
           >
             <option value="">Select…</option>
@@ -1406,7 +1561,7 @@ function Step1AddressForm({
             maxLength={6}
             className={cx(
               INPUT_BASE,
-              errors["pincode"] ? "border-danger" : "border-[#E8DBC6]",
+              errors["pincode"] ? "border-danger" : "border-line",
             )}
           />
           {errors["pincode"] ? (
@@ -1423,8 +1578,8 @@ function Step1AddressForm({
         </p>
       ) : null}
       {svcStatus === "serviceable" ? (
-        <p className="mb-5 flex items-center gap-2 font-body text-[13px] font-medium text-[#5f6d3a]">
-          <CheckIcon className="text-[#7C8A4E]" />
+        <p className="mb-5 flex items-center gap-2 font-body text-[13px] font-medium text-pistachio-deep">
+          <CheckIcon className="text-pistachio" />
           Great — we deliver to {co.address.pincode}.
         </p>
       ) : null}
@@ -1440,7 +1595,7 @@ function Step1AddressForm({
       {svcStatus === "fallback" ? (
         <div
           role="status"
-          className="mb-5 rounded-xl border border-[#E8DBC6] bg-[#F5E3C4]/50 px-4 py-3 font-body text-[13.5px] text-[#7a5a1e]"
+          className="mb-5 rounded-xl border border-line bg-[#F5E3C4]/50 px-4 py-3 font-body text-[13.5px] text-[#7a5a1e]"
         >
           Standard delivery only — final serviceability verified at dispatch.
         </div>
@@ -1468,19 +1623,19 @@ function Step1AddressForm({
 
       {/* State C — logged-in with no saved address: offer to save it. */}
       {co.loggedIn ? (
-        <label className="mb-5 flex cursor-pointer items-center gap-3 font-body text-[14px] text-espresso">
+        <label className="mb-5 flex cursor-pointer items-center gap-3 rounded-[14px] border border-line-soft bg-cream-2 px-4 py-3.5 font-body text-[14px] text-ink-soft transition-colors hover:border-espresso/40">
           <input
             type="checkbox"
             checked={co.saveToBook}
             onChange={(e) => co.setSaveToBook(e.target.checked)}
-            className="h-[18px] w-[18px] accent-[#2a1d12]"
+            className="h-[18px] w-[18px] accent-ink"
           />
           Save this to my address book for next time
         </label>
       ) : (
         /* State D — guest: a non-blocking hint, no account wall (visual only).
            Returning customers use the "Sign in for faster checkout" CTA above. */
-        <p className="mb-5 font-body text-[13px] text-[#8a7a68]">
+        <p className="mb-5 font-body text-[13px] leading-relaxed text-ink-muted">
           Checking out as a guest.{" "}
           <span className="text-espresso">
             Sign in anytime to save your details for next time.
@@ -1531,21 +1686,17 @@ function Step2Delivery({
 
   return (
     <div>
-      <h1
-        className="mb-6 text-[28px] text-ink"
-        style={{ fontFamily: "var(--font-display), serif" }}
-      >
-        Delivery method
-      </h1>
+      <StepHeading eyebrow="Step 2 · Delivery" title="Delivery method" />
 
       {options.length === 0 ? (
-        <div className="mb-6 rounded-xl border border-[#E8DBC6] bg-[#F5E3C4]/50 px-4 py-3 font-body text-[13.5px] text-[#7a5a1e]">
+        <div className="mb-6 rounded-[14px] border border-line bg-[#F5E3C4]/45 px-4 py-3 font-body text-[13.5px] text-[#7a5a1e]">
           Standard delivery only for this PIN code.
         </div>
       ) : (
         <div className="mb-6 flex flex-col gap-3">
           {options.map((opt) => {
             const selected = co.deliveryOption === opt.option;
+            const isFree = shipsFree || opt.feePaise === 0;
             return (
               <button
                 key={opt.option}
@@ -1553,17 +1704,29 @@ function Step2Delivery({
                 onClick={() => pick(opt.option)}
                 aria-pressed={selected}
                 className={cx(
-                  "flex items-center justify-between gap-3 rounded-[14px] border-2 bg-[#F9F3EA] px-5 py-[18px] text-left transition-colors",
-                  selected ? "border-ink" : "border-transparent hover:border-[#E0CFB6]",
+                  "group/opt flex items-center gap-3.5 rounded-[16px] border-[1.5px] px-5 py-[17px] text-left transition-[border-color,background-color,box-shadow] duration-[var(--duration-fast)] ease-brand",
+                  selected
+                    ? "border-ink bg-surface shadow-soft"
+                    : "border-line bg-cream-2 hover:border-espresso/45 hover:bg-surface",
                   FOCUS_RING,
                 )}
               >
-                <span>
+                <span
+                  className={cx(
+                    "mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-pill border-2 transition-colors",
+                    selected ? "border-ink bg-ink" : "border-[#C9B394]",
+                  )}
+                >
+                  {selected ? (
+                    <span className="h-2 w-2 rounded-pill bg-card" />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1">
                   <span className="block font-body text-[15.5px] font-semibold text-ink">
                     {opt.option === "express" ? "Express" : "Standard"} ·{" "}
                     {opt.etaDaysMin}–{opt.etaDaysMax} days
                   </span>
-                  <span className="block font-body text-[13px] text-[#8a7a68]">
+                  <span className="block font-body text-[13px] text-ink-muted">
                     {opt.option === "express"
                       ? "Priority handling & tracking"
                       : "Insulated, ships cold & safe"}
@@ -1571,15 +1734,11 @@ function Step2Delivery({
                 </span>
                 <span
                   className={cx(
-                    "font-body text-[15px] font-bold tabular-nums",
-                    shipsFree || opt.feePaise === 0
-                      ? "text-[#7C8A4E]"
-                      : "text-ink",
+                    "flex-none font-body text-[15px] font-bold tabular-nums",
+                    isFree ? "text-pistachio-deep" : "text-ink",
                   )}
                 >
-                  {shipsFree || opt.feePaise === 0
-                    ? "Free"
-                    : formatPaise(opt.feePaise)}
+                  {isFree ? "Free" : formatPaise(opt.feePaise)}
                 </span>
               </button>
             );
@@ -1590,7 +1749,7 @@ function Step2Delivery({
       <div className="mb-6">
         <label htmlFor="co-note" className={LABEL}>
           Order note{" "}
-          <span className="font-normal text-[#a08a72]">(optional)</span>
+          <span className="font-normal text-ink-muted">(optional)</span>
         </label>
         <textarea
           id="co-note"
@@ -1599,7 +1758,7 @@ function Step2Delivery({
           placeholder="Anything we should know?"
           className={cx(
             INPUT_BASE,
-            "h-[72px] resize-none border-[#E8DBC6]",
+            "h-[76px] resize-none border-line",
           )}
         />
       </div>
@@ -1679,15 +1838,15 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
             placeholder="Amara Patel"
             value={b.fullName}
             onChange={(e) => co.setBillingAddress({ fullName: e.target.value })}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
         <div>
           <label htmlFor="bi-phone" className={LABEL}>
             Phone
           </label>
-          <div className="flex items-center overflow-hidden rounded-xl border border-[#E8DBC6] bg-[#F9F3EA] transition-colors focus-within:ring-2 focus-within:ring-gold">
-            <span className="select-none border-r border-[#E8DBC6] px-3.5 py-[14px] font-body text-[15px] font-semibold text-espresso">
+          <div className="flex items-center overflow-hidden rounded-xl border border-line bg-cream-2 transition-colors focus-within:ring-2 focus-within:ring-gold">
+            <span className="select-none border-r border-line px-3.5 py-[14px] font-body text-[15px] font-semibold text-espresso">
               +91
             </span>
             <input
@@ -1703,7 +1862,7 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
                 })
               }
               maxLength={10}
-              className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-[#b3a288]"
+              className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-ink-muted/65"
             />
           </div>
         </div>
@@ -1720,7 +1879,7 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
           value={b.line1}
           maxLength={150}
           onChange={(e) => co.setBillingAddress({ line1: e.target.value })}
-          className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+          className={cx(INPUT_BASE, "border-line")}
         />
       </div>
 
@@ -1728,7 +1887,7 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
         <div>
           <label htmlFor="bi-line2" className={LABEL}>
             Address line 2{" "}
-            <span className="font-normal text-[#a08a72]">(optional)</span>
+            <span className="font-normal text-ink-muted">(optional)</span>
           </label>
           <input
             id="bi-line2"
@@ -1737,13 +1896,13 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
             value={b.line2}
             maxLength={150}
             onChange={(e) => co.setBillingAddress({ line2: e.target.value })}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
         <div>
           <label htmlFor="bi-landmark" className={LABEL}>
             Landmark{" "}
-            <span className="font-normal text-[#a08a72]">(optional)</span>
+            <span className="font-normal text-ink-muted">(optional)</span>
           </label>
           <input
             id="bi-landmark"
@@ -1751,7 +1910,7 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
             value={b.landmark}
             maxLength={100}
             onChange={(e) => co.setBillingAddress({ landmark: e.target.value })}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
       </div>
@@ -1767,7 +1926,7 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
             placeholder="Mumbai"
             value={b.city}
             onChange={(e) => co.setBillingAddress({ city: e.target.value })}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
         <div>
@@ -1785,8 +1944,8 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
             }
             className={cx(
               INPUT_BASE,
-              "appearance-none border-[#E8DBC6]",
-              b.stateCode === "" ? "text-[#b3a288]" : "",
+              "appearance-none border-line",
+              b.stateCode === "" ? "text-ink-muted/70" : "",
             )}
           >
             <option value="">Select…</option>
@@ -1809,7 +1968,7 @@ function BillingAddressFields({ co }: { co: UseCheckout }): ReactNode {
             value={b.pincode}
             onChange={(e) => onPincodeChange(e.target.value)}
             maxLength={6}
-            className={cx(INPUT_BASE, "border-[#E8DBC6]")}
+            className={cx(INPUT_BASE, "border-line")}
           />
         </div>
       </div>
@@ -1873,12 +2032,7 @@ function Step3Payment({
 
   return (
     <div>
-      <h1
-        className="mb-6 text-[28px] text-ink"
-        style={{ fontFamily: "var(--font-display), serif" }}
-      >
-        Payment
-      </h1>
+      <StepHeading eyebrow="Step 3 · Payment" title="Payment" />
 
       <div className="mb-6 flex flex-col gap-3">
         <PaymentOption
@@ -1902,18 +2056,18 @@ function Step3Payment({
       {needsOtp ? <CodOtpBlock co={co} /> : null}
 
       {/* Billing address (§ billing toggle) — default OFF ⇒ same as shipping. */}
-      <div className="mt-6 border-t border-[#EADBC6] pt-6">
-        <label className="flex cursor-pointer items-center gap-3 font-body text-[14px] text-espresso">
+      <div className="mt-7 border-t border-line pt-7">
+        <label className="flex cursor-pointer items-center gap-3 font-body text-[14px] text-ink-soft">
           <input
             type="checkbox"
             checked={!co.billingSameAsShipping}
             onChange={(e) => co.setBillingSameAsShipping(!e.target.checked)}
-            className="h-[18px] w-[18px] accent-[#2a1d12]"
+            className="h-[18px] w-[18px] accent-ink"
           />
           Billing address is different from shipping
         </label>
         {!co.billingSameAsShipping ? (
-          <div className="mt-5">
+          <div className="mt-5 rounded-[16px] border border-line-soft bg-cream-2/50 p-5">
             <BillingAddressFields co={co} />
           </div>
         ) : null}
@@ -1965,18 +2119,18 @@ function PaymentOption({
       disabled={disabled}
       aria-pressed={selected}
       className={cx(
-        "flex items-start gap-3 rounded-[14px] border-2 bg-[#F9F3EA] px-5 py-[18px] text-left transition-colors",
+        "flex items-start gap-3.5 rounded-[16px] border-[1.5px] px-5 py-[17px] text-left transition-[border-color,background-color,box-shadow] duration-[var(--duration-fast)] ease-brand",
         disabled
-          ? "cursor-not-allowed border-transparent opacity-55"
+          ? "cursor-not-allowed border-line bg-cream-2 opacity-55"
           : selected
-            ? "border-ink"
-            : "border-transparent hover:border-[#E0CFB6]",
+            ? "border-ink bg-surface shadow-soft"
+            : "border-line bg-cream-2 hover:border-espresso/45 hover:bg-surface",
         FOCUS_RING,
       )}
     >
       <span
         className={cx(
-          "mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-pill border-2",
+          "mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-pill border-2 transition-colors",
           selected ? "border-ink bg-ink" : "border-[#C9B394]",
         )}
       >
@@ -1988,7 +2142,7 @@ function PaymentOption({
         <span className="block font-body text-[15.5px] font-semibold text-ink">
           {title}
         </span>
-        <span className="block font-body text-[13px] text-[#8a7a68]">
+        <span className="block font-body text-[13px] text-ink-muted">
           {subtitle}
         </span>
         {reason !== null && reason !== undefined ? (
@@ -2153,15 +2307,15 @@ function CodOtpBlock({ co }: { co: UseCheckout }): ReactNode {
   // Already verified — a confirmation panel, nothing to do.
   if (co.codOtp !== null) {
     return (
-      <div className="mb-2 flex items-center gap-2 rounded-xl border border-[#E8DBC6] bg-[#F6EEE1] px-4 py-3 font-body text-[13.5px] font-medium text-[#5f6d3a]">
-        <CheckIcon className="text-[#7C8A4E]" />
+      <div className="mb-2 flex items-center gap-2 rounded-xl border border-line bg-cream-2 px-4 py-3 font-body text-[13.5px] font-medium text-pistachio-deep">
+        <CheckIcon className="text-pistachio" />
         Phone verified — you&apos;re ready to place a COD order.
       </div>
     );
   }
 
   return (
-    <div className="mb-2 rounded-[14px] border border-[#E8DBC6] bg-[#F6EEE1] p-5">
+    <div className="mb-2 rounded-[14px] border border-line bg-cream-2 p-5">
       {phase === "prompt" ? (
         <>
           <p className="mb-3 font-body text-[14px] text-espresso">
@@ -2183,7 +2337,7 @@ function CodOtpBlock({ co }: { co: UseCheckout }): ReactNode {
             onClick={() => void request()}
             disabled={requesting}
             className={cx(
-              "flex items-center justify-center gap-2 rounded-pill bg-ink px-5 py-3 font-body text-[14px] font-bold text-card transition-colors hover:bg-[#3f2c1b] disabled:opacity-60",
+              "flex items-center justify-center gap-2 rounded-pill bg-ink px-5 py-3 font-body text-[14px] font-bold text-card transition-colors hover:bg-ink-hover disabled:opacity-60",
               FOCUS_RING,
             )}
           >
@@ -2225,8 +2379,8 @@ function CodOtpBlock({ co }: { co: UseCheckout }): ReactNode {
                 onKeyDown={(e) => onKeyDown(index, e)}
                 onPaste={onPaste}
                 className={cx(
-                  "h-[52px] w-full rounded-xl border bg-card text-center font-body text-[20px] font-semibold text-ink outline-none transition-colors focus:ring-2 focus:ring-gold disabled:opacity-60",
-                  error !== null ? "border-danger" : "border-[#E8DBC6]",
+                  "h-[54px] w-full rounded-[13px] border bg-surface text-center font-body text-[20px] font-semibold tabular-nums text-ink outline-none transition-[border-color,box-shadow] focus:border-espresso focus:ring-2 focus:ring-gold disabled:opacity-60",
+                  error !== null ? "border-danger" : "border-line",
                 )}
               />
             ))}
@@ -2240,7 +2394,7 @@ function CodOtpBlock({ co }: { co: UseCheckout }): ReactNode {
               onClick={() => void verify(code)}
               disabled={verifying || code.length !== OTP_LENGTH}
               className={cx(
-                "flex items-center justify-center gap-2 rounded-pill bg-ink px-5 py-2.5 font-body text-[14px] font-bold text-card transition-colors hover:bg-[#3f2c1b] disabled:opacity-60",
+                "flex items-center justify-center gap-2 rounded-pill bg-ink px-5 py-2.5 font-body text-[14px] font-bold text-card transition-colors hover:bg-ink-hover disabled:opacity-60",
                 FOCUS_RING,
               )}
             >
@@ -2317,17 +2471,12 @@ function Step4Review({
 
   return (
     <div>
-      <h1
-        className="mb-6 text-[28px] text-ink"
-        style={{ fontFamily: "var(--font-display), serif" }}
-      >
-        Review your order
-      </h1>
+      <StepHeading eyebrow="Step 4 · Review" title="Review your order" />
 
       {/* Ship-to + payment recap */}
       <div className="mb-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-        <div className="rounded-[14px] bg-[#F6EEE1] px-[18px] py-4">
-          <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.1em] text-[#8a5a34]">
+        <div className="rounded-[16px] border border-line-soft bg-cream-2 px-5 py-4">
+          <p className="mb-2 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-espresso">
             Ship to
           </p>
           <p className="font-body text-[14px] leading-relaxed text-ink">
@@ -2346,8 +2495,8 @@ function Step4Review({
             +91 {a.phone}
           </p>
         </div>
-        <div className="rounded-[14px] bg-[#F6EEE1] px-[18px] py-4">
-          <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.1em] text-[#8a5a34]">
+        <div className="rounded-[16px] border border-line-soft bg-cream-2 px-5 py-4">
+          <p className="mb-2 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-espresso">
             Payment &amp; delivery
           </p>
           <p className="font-body text-[14px] leading-relaxed text-ink">
@@ -2367,8 +2516,8 @@ function Step4Review({
       {/* Coupon */}
       <div className="mb-5">
         {quote?.coupon != null ? (
-          <div className="flex items-center justify-between rounded-[12px] border border-[#7C8A4E]/40 bg-[#7C8A4E]/10 px-4 py-3">
-            <span className="font-body text-[13.5px] font-semibold text-[#5f6d3a]">
+          <div className="flex items-center justify-between rounded-[14px] border border-pistachio/40 bg-pistachio/10 px-4 py-3">
+            <span className="font-body text-[13.5px] font-semibold text-pistachio-deep">
               {quote.coupon.code} applied · −{" "}
               {formatPaise(quote.coupon.discountPaise)}
             </span>
@@ -2393,8 +2542,8 @@ function Step4Review({
               }}
               placeholder="Discount code"
               className={cx(
-                "min-w-0 flex-1 rounded-pill border bg-[#F6EEE1] px-4 py-3 font-body text-[14px] font-medium text-ink outline-none placeholder:text-[#a08a72] focus:ring-2 focus:ring-gold",
-                couponError !== null ? "border-danger" : "border-[#E8DBC6]",
+                "min-w-0 flex-1 rounded-pill border bg-cream-2 px-4 py-3 font-body text-[14px] font-medium text-ink outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-gold",
+                couponError !== null ? "border-danger" : "border-line",
               )}
             />
             <button
@@ -2402,7 +2551,7 @@ function Step4Review({
               onClick={() => void applyCoupon()}
               disabled={applyingCoupon || couponInput.trim() === ""}
               className={cx(
-                "rounded-pill bg-card px-[18px] font-body text-[13.5px] font-bold text-ink transition-colors hover:bg-[#e8d6bc] disabled:opacity-50",
+                "flex-none rounded-pill border-[1.5px] border-line bg-transparent px-[22px] font-body text-[13.5px] font-semibold text-ink transition-colors duration-[var(--duration-fast)] hover:border-espresso hover:bg-cream-2 disabled:opacity-50",
                 FOCUS_RING,
               )}
             >
@@ -2417,7 +2566,7 @@ function Step4Review({
 
       {/* Line items + totals */}
       {quote === null || co.quoteStatus === "loading" ? (
-        <div className="mb-6 space-y-3 rounded-[14px] border border-[#EADBC6] p-4">
+        <div className="mb-6 space-y-3 rounded-[14px] border border-line p-4">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-6 w-1/2" />
@@ -2442,20 +2591,20 @@ function Step4Review({
           </button>
         </div>
       ) : (
-        <div className="mb-6 rounded-[14px] border border-[#EADBC6] px-[18px]">
+        <div className="mb-6 overflow-hidden rounded-[16px] border border-line-soft bg-cream-2/40 px-5">
           {quote.lines.map((line) => (
             <div
               key={line.itemId}
-              className="flex items-center gap-3.5 border-b border-[#F0E4D2] py-3 last:border-b-0"
+              className="flex items-center gap-3.5 border-b border-line-soft py-3.5 last:border-b-0"
             >
-              <div className="w-[44px] flex-none">
-                <ChocoPlaceholder tone={line.tone} ratio="44 / 52" />
+              <div className="w-[46px] flex-none overflow-hidden rounded-[10px] ring-1 ring-line-soft">
+                <LineThumb imageUrl={line.imageUrl} tone={line.tone} name={line.name} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-body text-[14.5px] font-semibold text-ink">
                   {line.name}
                 </p>
-                <p className="font-body text-[12.5px] text-[#8a7a68]">
+                <p className="font-body text-[12.5px] text-ink-muted">
                   Qty {line.qty}
                   {line.giftWrap ? " · Gift wrapped" : ""}
                 </p>
@@ -2472,11 +2621,7 @@ function Step4Review({
         type="button"
         onClick={() => void onPlace()}
         disabled={co.placing || quote === null || co.quoteStatus !== "ready"}
-        className={cx(
-          PRIMARY_BTN,
-          "shadow-[0_12px_30px_rgba(42,29,18,.24)]",
-          FOCUS_RING,
-        )}
+        className={cx(PRIMARY_BTN, "shadow-lift", FOCUS_RING)}
       >
         {co.placing ? (
           <>
@@ -2496,7 +2641,7 @@ function Step4Review({
         type="button"
         onClick={onBack}
         className={cx(
-          "mt-4 w-full text-center font-body text-[13.5px] font-semibold text-[#6B5A49]",
+          "mt-4 w-full rounded-pill py-2 text-center font-body text-[13.5px] font-semibold text-ink-soft transition-colors hover:text-ink",
           FOCUS_RING,
         )}
       >
@@ -2587,7 +2732,7 @@ function Backdrop({
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="w-full max-w-[440px] rounded-[22px] bg-card p-6 shadow-[0_30px_70px_rgba(42,29,18,.3)] outline-none motion-safe:animate-[kk-rise_.28s_var(--ease-entrance)] motion-reduce:animate-none"
+        className="w-full max-w-[440px] rounded-[22px] border border-line-soft bg-surface p-6 shadow-float outline-none motion-safe:animate-[kk-rise_.28s_var(--ease-entrance)] motion-reduce:animate-none"
       >
         {children}
       </div>
@@ -2617,10 +2762,10 @@ function PriceChangedSheet({
         Prices have changed since you started checkout. Please review the
         updated total before placing your order.
       </p>
-      <div className="mb-5 rounded-[14px] bg-[#F6EEE1] px-4 py-3">
+      <div className="mb-5 rounded-[14px] bg-cream-2 px-4 py-3">
         <div className="mb-2 flex items-baseline justify-between font-body text-[14px]">
-          <span className="text-[#8a7a68] line-through">Previous</span>
-          <span className="tabular-nums text-[#8a7a68] line-through">
+          <span className="text-ink-muted line-through">Previous</span>
+          <span className="tabular-nums text-ink-muted line-through">
             {formatPaise(oldTotalPaise)}
           </span>
         </div>
@@ -2630,7 +2775,7 @@ function PriceChangedSheet({
             {formatPaise(quote.totalPaise)}
           </span>
         </div>
-        <p className="mt-2 font-body text-[12.5px] text-[#8a7a68]">
+        <p className="mt-2 font-body text-[12.5px] text-ink-muted">
           {delta > 0
             ? `That's ${formatPaise(delta)} more.`
             : delta < 0
@@ -2675,7 +2820,7 @@ function SoldOutSheet({
         {lines.map((line) => (
           <li
             key={line.variantId}
-            className="rounded-[12px] bg-[#F6EEE1] px-4 py-3 font-body text-[13.5px] text-ink"
+            className="rounded-[12px] bg-cream-2 px-4 py-3 font-body text-[13.5px] text-ink"
           >
             <span className="font-semibold">{nameFor(line.variantId)}</span> —{" "}
             {line.available > 0

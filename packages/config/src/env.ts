@@ -35,6 +35,11 @@ export const serverEnvSchema = z.object({
   SHIPROCKET_PASSWORD: nonEmpty.optional(),
   SHIPROCKET_WEBHOOK_TOKEN: nonEmpty.optional(),
 
+  // ── Vercel Cron (optional; secures the scheduled shipment poller) ───
+  // When set, Vercel attaches `Authorization: Bearer <CRON_SECRET>` to cron
+  // invocations; /api/cron/poll-shipments rejects anything else.
+  CRON_SECRET: nonEmpty.optional(),
+
   // ── MSG91 SMS/OTP (optional; mocked locally) ───────────────────────
   MSG91_AUTH_KEY: nonEmpty.optional(),
   MSG91_OTP_TEMPLATE_ID: nonEmpty.optional(),
