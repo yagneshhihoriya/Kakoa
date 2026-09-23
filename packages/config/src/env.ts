@@ -57,18 +57,28 @@ export const serverEnvSchema = z.object({
   // ── Observability (optional) ───────────────────────────────────────
   SENTRY_DSN: z.string().url().optional(),
 
-  // ── Media storage / S3 (optional; LocalMediaProvider used until set) ─
-  // When S3_BUCKET + S3 creds are present the S3MediaProvider is selected;
-  // otherwise the Media Library writes to apps/web/public/uploads for local dev.
+  // ── Media storage / S3-compatible (optional; LocalMediaProvider until set) ─
+  // When S3_BUCKET + S3_REGION + creds are present the S3MediaProvider is
+  // selected; otherwise the Media Library writes to apps/web/public/uploads.
+  // Works with AWS S3 or any S3-compatible store. For CLOUDFLARE R2 set:
+  //   S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com   S3_REGION=auto
+  //   S3_PUBLIC_BASE_URL=<the bucket's public r2.dev URL or custom domain>
+  // See docs/MEDIA-STORAGE-R2.md.
   S3_BUCKET: nonEmpty.optional(),
   S3_REGION: nonEmpty.optional(),
   S3_ACCESS_KEY_ID: nonEmpty.optional(),
   S3_SECRET_ACCESS_KEY: nonEmpty.optional(),
-  // Optional CDN / custom domain in front of the bucket (e.g. CloudFront). When
-  // absent the public URL is derived from bucket + region (+ S3_ENDPOINT).
+  // Public base URL for objects: a CDN / custom domain (CloudFront, an R2 custom
+  // domain) or R2's public bucket URL (https://pub-<hash>.r2.dev). REQUIRED when
+  // S3_ENDPOINT is set — an S3-API endpoint (R2's especially) is not publicly
+  // readable, so without it uploads would persist URLs that 403 in the browser.
   S3_PUBLIC_BASE_URL: z.string().url().optional(),
-  // Optional custom endpoint for S3-compatible stores (R2, MinIO, etc.).
+  // Custom S3-API endpoint for S3-compatible stores (Cloudflare R2, MinIO).
   S3_ENDPOINT: z.string().url().optional(),
+  // Comma-separated hostnames of PREVIOUS media hosts (e.g. the old AWS bucket
+  // host after moving to R2). Existing rows still point at them, so they must
+  // stay allowed in next/image remotePatterns. Legacy objects are never deleted.
+  S3_LEGACY_PUBLIC_HOSTS: z.string().optional(),
 
   // ── Razorpay client key (public; also passed via checkout response) ──
   NEXT_PUBLIC_RAZORPAY_KEY_ID: nonEmpty.optional(),

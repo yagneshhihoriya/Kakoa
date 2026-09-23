@@ -59,6 +59,11 @@ export { ShiprocketShippingProvider, buildAdhocOrderBody } from "./shipping/ship
 
 // ── Media storage (admin Media Library) ──────────────────────────────
 export type { MediaProvider, MediaUploadInput } from "./media/provider";
-export { getMediaProvider, resetMediaProvider } from "./media/index";
+export {
+  getMediaProvider,
+  resetMediaProvider,
+  resolveMediaProvider,
+  type MediaEnv,
+} from "./media/index";
 export { LocalMediaProvider } from "./media/local";
 export { S3MediaProvider, type S3Config } from "./media/s3";

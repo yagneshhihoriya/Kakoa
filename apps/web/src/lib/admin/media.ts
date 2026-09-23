@@ -177,11 +177,16 @@ export async function deleteMedia(
     .limit(1);
   if (!row) return { ok: false, code: "NOT_FOUND", message: "We couldn't find that file." };
 
+  // Resolve the provider outside the try: a misconfiguration (e.g. R2 endpoint
+  // without S3_PUBLIC_BASE_URL) must surface as the real error, not be reported
+  // to the admin as a transient storage failure.
+  const provider = getMediaProvider();
+
   // Remove the object first (best-effort — a storage failure shouldn't strand
   // the row; but a successful DB delete with an orphaned object is worse, so we
   // try storage first and only delete the row if it succeeds).
   try {
-    await getMediaProvider().remove(row.key);
+    await provider.remove(row.key);
   } catch {
     return { ok: false, code: "VALIDATION_ERROR", message: "Could not remove the file from storage — try again." };
   }

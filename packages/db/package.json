@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx src/seed.ts"
+    "db:seed": "tsx src/seed.ts",
+    "db:migrate-media": "tsx src/migrate-media-s3-to-r2.ts"
   },
   "dependencies": {
     "@kakoa/core": "workspace:*",
@@ -24,6 +25,7 @@
     "postgres": "^3.4.0"
   },
   "devDependencies": {
+    "@kakoa/integrations": "workspace:*",
     "@types/node": "^22.0.0",
     "drizzle-kit": "^0.31.0",
     "tsx": "^4.19.0",

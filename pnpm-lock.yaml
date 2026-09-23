@@ -135,6 +135,9 @@ importers:
         specifier: ^3.4.0
         version: 3.4.9
     devDependencies:
+      '@kakoa/integrations':
+        specifier: workspace:*
+        version: link:../integrations
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.0

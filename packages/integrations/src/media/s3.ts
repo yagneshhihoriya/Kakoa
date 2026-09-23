@@ -3,6 +3,12 @@
  * via `endpoint`, e.g. Cloudflare R2 / MinIO). Objects are written with a long
  * immutable cache header (keys are content-unique). Public URL is the CDN base
  * when configured, else the standard bucket URL.
+ *
+ * Cloudflare R2: pass `endpoint` = `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`,
+ * `region` = `auto`, and ALWAYS a `publicBaseUrl` (the bucket's public r2.dev URL
+ * or a connected custom domain) — R2's S3-API endpoint is not publicly readable,
+ * so the path-style fallback below is never a valid public URL there. The
+ * provider factory (`resolveMediaProvider`) enforces this.
  */
 import {
   DeleteObjectCommand,
