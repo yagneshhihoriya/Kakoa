@@ -79,7 +79,7 @@ function CartSkeleton(): ReactNode {
       <div className="border-t border-line-soft">
         {[0, 1].map((row) => (
           <div key={row} className="flex items-center gap-5 border-b border-line-soft py-7">
-            <Skeleton variant="card" width={112} height={132} className="rounded-[12px]" />
+            <Skeleton variant="card" width={112} height={132} className="rounded-none" />
             <div className="flex-1">
               <Skeleton variant="line" width="46%" className="mb-3" />
               <Skeleton variant="text" width="30%" className="mb-4" />
@@ -89,7 +89,7 @@ function CartSkeleton(): ReactNode {
           </div>
         ))}
       </div>
-      <Skeleton variant="card" height={460} className="rounded-[22px]" />
+      <Skeleton variant="card" height={460} className="rounded-none" />
     </div>
   );
 }
@@ -97,13 +97,13 @@ function CartSkeleton(): ReactNode {
 /** Inline retry panel — GET /api/cart failed; page chrome stays live. */
 function CartError({ onRetry }: { onRetry: () => void }): ReactNode {
   return (
-    <div role="alert" className="mx-auto flex max-w-[520px] flex-col items-center gap-[18px] rounded-[24px] border border-line-soft bg-surface px-10 py-20 text-center shadow-soft">
-      <div className="font-display text-[26px] text-ink">We couldn&rsquo;t load your bag</div>
+    <div role="alert" className="mx-auto flex max-w-[520px] flex-col items-center gap-[18px] px-10 py-20 text-center">
+      <div className="text-[26px] font-medium text-[#000]">We couldn&rsquo;t load your bag</div>
       <div className="text-[15px] text-ink-soft">Something went wrong on our side. Your items are safe — try again.</div>
       <button
         type="button"
         onClick={onRetry}
-        className={cx("rounded-pill bg-ink px-[30px] py-[15px] font-body text-[15px] font-bold text-card transition-colors hover:bg-ink-hover", FOCUS_RING)}
+        className={cx("rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]", FOCUS_RING)}
       >
         Retry
       </button>
@@ -114,17 +114,17 @@ function CartError({ onRetry }: { onRetry: () => void }): ReactNode {
 /** On-brand empty state — single, focused CTA. */
 function CartEmpty(): ReactNode {
   return (
-    <div className="mx-auto flex max-w-[520px] flex-col items-center justify-center gap-5 rounded-[24px] border border-line-soft bg-surface px-10 py-20 text-center shadow-soft">
+    <div className="mx-auto flex max-w-[520px] flex-col items-center justify-center gap-5 px-10 py-20 text-center">
       <div className="grid h-[92px] w-[92px] place-items-center rounded-pill bg-cream-2 text-espresso">
         <BagIcon />
       </div>
       <div>
-        <div className="mb-1.5 font-display text-[28px] text-ink">Your bag is empty</div>
+        <div className="mb-1.5 text-[28px] font-medium text-[#000]">Your bag is empty</div>
         <div className="text-[15px] text-ink-soft">Once you add something delicious, it&rsquo;ll show up here.</div>
       </div>
       <Link
         href="/shop"
-        className={cx("rounded-pill bg-ink px-[30px] py-[15px] font-body text-[15px] font-bold text-card no-underline transition-colors hover:bg-ink-hover", FOCUS_RING)}
+        className={cx("rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] no-underline", FOCUS_RING)}
       >
         Browse chocolates
       </Link>
@@ -164,7 +164,7 @@ function GiftEditor({ line }: { line: CartLine }): ReactNode {
         onClick={() => {
           setOpen(true);
         }}
-        className={cx("mt-3.5 self-start font-body text-[13px] font-semibold text-espresso underline-offset-2 transition-colors hover:text-ink hover:underline", FOCUS_RING)}
+        className={cx("mt-3.5 self-start text-[13px] font-semibold text-espresso underline-offset-2 transition-colors hover:text-ink hover:underline", FOCUS_RING)}
       >
         + Add gift options
       </button>
@@ -172,8 +172,8 @@ function GiftEditor({ line }: { line: CartLine }): ReactNode {
   }
 
   return (
-    <div className="mt-4 rounded-[14px] border border-line-soft bg-cream-2 p-4">
-      <label className="flex cursor-pointer items-center gap-2.5 font-body text-[13.5px] font-semibold text-ink">
+    <div className="mt-4 rounded-none border border-line-soft bg-cream-2 p-4">
+      <label className="flex cursor-pointer items-center gap-2.5 text-[13.5px] font-semibold text-ink">
         <input
           type="checkbox"
           checked={line.giftWrap}
@@ -200,7 +200,7 @@ function GiftEditor({ line }: { line: CartLine }): ReactNode {
           onChange={(event) => {
             setMessage(event.target.value);
           }}
-          className={cx("w-full resize-none rounded-[10px] border border-line bg-surface px-3 py-2 font-body text-[13.5px] text-ink placeholder:text-ink-muted", FOCUS_RING)}
+          className={cx("w-full resize-none rounded-none border border-[#683126] bg-[#FEF6EB] px-3 py-2 text-[13.5px] text-ink placeholder:text-ink-muted", FOCUS_RING)}
         />
         <div className="mt-1 flex items-center justify-between">
           <span id={`${fieldId}-count`} className="font-mono text-[11.5px] text-ink-soft">
@@ -213,7 +213,7 @@ function GiftEditor({ line }: { line: CartLine }): ReactNode {
               onClick={() => {
                 persist(line.giftWrap, message);
               }}
-              className={cx("rounded-pill bg-card px-3.5 py-1.5 font-body text-[12.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
+              className={cx("rounded-none bg-[#FEF6EB] border border-[#683126] px-3.5 py-1.5 text-[12.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
             >
               Save note
             </button>
@@ -238,7 +238,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
         href={`/product/${line.productSlug}`}
         aria-label={line.name}
         className={cx(
-          "group relative h-[120px] w-[104px] flex-none overflow-hidden rounded-[12px] bg-cream-2 shadow-soft sm:h-[132px] sm:w-[112px]",
+          "group relative h-[120px] w-[104px] flex-none overflow-hidden rounded-none bg-cream-2 shadow-soft sm:h-[132px] sm:w-[112px]",
           unavailable && "opacity-50",
           FOCUS_RING,
         )}
@@ -259,12 +259,12 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="font-body text-[17px] leading-snug font-semibold text-ink">
+            <div className="text-[17px] leading-snug font-semibold text-ink">
               <Link href={`/product/${line.productSlug}`} className={cx("text-ink no-underline underline-offset-2 transition-colors hover:text-espresso hover:underline", FOCUS_RING)}>
                 {line.name}
               </Link>
             </div>
-            <div className="mt-1.5 font-body text-[13.5px] text-ink-soft">
+            <div className="mt-1.5 text-[13.5px] text-ink-soft">
               {line.variantName}
               <span className="mx-1.5 text-line">·</span>
               {formatPaise(line.unitPricePaise)} each
@@ -273,13 +273,13 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
               ) : null}
             </div>
           </div>
-          <div className={cx("font-body text-[17px] font-bold whitespace-nowrap text-ink", unavailable && "text-ink-muted line-through")}>
+          <div className={cx("text-[17px] font-bold whitespace-nowrap text-ink", unavailable && "text-ink-muted line-through")}>
             {formatPaise(line.lineTotalPaise)}
           </div>
         </div>
 
         {unavailable ? (
-          <p role="status" className="mt-3 font-body text-[13px] font-semibold text-raspberry">
+          <p role="status" className="mt-3 text-[13px] font-semibold text-raspberry">
             Unavailable — this item is out of stock and excluded from your total. Please remove it to check out.
           </p>
         ) : null}
@@ -288,7 +288,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
           <div
             role="group"
             aria-label={`Quantity for ${line.name}`}
-            className={cx("flex items-center overflow-hidden rounded-[12px] border border-line bg-surface shadow-soft", unavailable && "opacity-50")}
+            className={cx("flex items-center overflow-hidden rounded-none border border-[#683126] bg-[#FEF6EB] shadow-soft", unavailable && "opacity-50")}
           >
             <button
               type="button"
@@ -301,7 +301,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
             >
               −
             </button>
-            <span aria-live="polite" className="w-[32px] text-center font-body text-sm font-semibold text-ink">
+            <span aria-live="polite" className="w-[32px] text-center text-sm font-semibold text-ink">
               {line.qty}
             </span>
             <button
@@ -323,7 +323,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
             onClick={() => {
               void removeItem({ itemId: line.itemId });
             }}
-            className={cx("flex items-center gap-1.5 font-body text-[13px] text-ink-soft transition-colors hover:text-raspberry disabled:opacity-40", unavailable && "font-semibold text-raspberry", FOCUS_RING)}
+            className={cx("flex items-center gap-1.5 text-[13px] text-ink-soft transition-colors hover:text-raspberry disabled:opacity-40", unavailable && "font-semibold text-raspberry", FOCUS_RING)}
           >
             <TrashIcon />
             Remove
@@ -331,7 +331,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
         </div>
 
         {line.giftWrap || line.giftMessage !== null ? (
-          <p className="mt-3 truncate font-body text-[13px] text-ink-soft italic">
+          <p className="mt-3 truncate text-[13px] text-ink-soft italic">
             {line.giftWrap ? "Gift wrapped" : "Gift note"}
             {line.giftMessage !== null ? ` · “${line.giftMessage}”` : ""}
           </p>
@@ -348,7 +348,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
 
 function SummaryRow({ label, children }: { label: ReactNode; children: ReactNode }): ReactNode {
   return (
-    <div className="flex items-baseline justify-between font-body text-[14.5px] text-ink-soft">
+    <div className="flex items-baseline justify-between text-[14.5px] text-ink-soft">
       <span>{label}</span>
       <span className="font-semibold text-ink">{children}</span>
     </div>
@@ -364,7 +364,7 @@ function TrustLine(): ReactNode {
   return (
     <ul className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-5">
       {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-2.5 font-body text-[12.5px] text-ink-soft">
+        <li key={item.label} className="flex items-center gap-2.5 text-[12.5px] text-ink-soft">
           <span className="text-espresso" aria-hidden="true">
             {item.icon}
           </span>
@@ -406,14 +406,14 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
   return (
     <aside
       aria-label="Order summary"
-      className="sticky top-[98px] rounded-[18px] border border-line-soft bg-surface p-6 shadow-card max-[980px]:static sm:p-7"
+      className="sticky top-[98px] border border-[#683126]/25 bg-[#FEF6EB] p-6 max-[980px]:static sm:p-7"
     >
-      <h2 className="mb-5 font-display text-[22px] leading-none font-normal text-ink">Order summary</h2>
+      <h2 className="mb-5 text-[22px] leading-none font-medium text-[#000]">Order summary</h2>
 
       {/* Free-shipping progress (subtotal vs threshold). */}
       {threshold > 0 ? (
-        <div className="mb-5 rounded-[14px] bg-cream-2 p-4">
-          <div className="mb-2 font-body text-[12.5px] font-medium text-espresso">
+        <div className="mb-5 rounded-none bg-cream-2 p-4">
+          <div className="mb-2 text-[12.5px] font-medium text-espresso">
             {freeShipUnlocked ? (
               <span className="font-semibold text-pistachio-deep">You&rsquo;ve unlocked free shipping</span>
             ) : (
@@ -444,7 +444,7 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
           <SummaryRow label="Gift wrap">{formatPaise(cart.giftWrapTotalPaise)}</SummaryRow>
         ) : null}
         {cart.coupon !== null ? (
-          <div className="flex items-baseline justify-between font-body text-[14.5px] text-ink-soft">
+          <div className="flex items-baseline justify-between text-[14.5px] text-ink-soft">
             <span className="flex items-center gap-2">
               Coupon · {cart.coupon.code}
               <button
@@ -496,12 +496,12 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
               onBlur={(event) => {
                 setCode(event.target.value.trim().toUpperCase());
               }}
-              className={cx("min-w-0 flex-1 rounded-[12px] border border-line bg-cream-2 px-4 py-3 font-body text-sm font-medium text-ink placeholder:text-ink-muted", FOCUS_RING)}
+              className={cx("min-w-0 flex-1 rounded-none border border-[#683126] bg-[#FEF6EB] px-4 py-3 text-sm font-medium text-ink placeholder:text-ink-muted", FOCUS_RING)}
             />
             <button
               type="submit"
               disabled={pending || code.trim() === ""}
-              className={cx("rounded-[12px] bg-card px-[18px] font-body text-[13.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
+              className={cx("rounded-none bg-[#683126] text-[#FCF5E8] px-[18px] text-[13.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
             >
               Apply
             </button>
@@ -509,17 +509,17 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
         </form>
       ) : null}
       {couponError !== null ? (
-        <p role="alert" className="mt-2 font-body text-[12.5px] font-medium text-raspberry">
+        <p role="alert" className="mt-2 text-[12.5px] font-medium text-raspberry">
           {couponError}
         </p>
       ) : null}
 
       <div className="mt-5 flex items-baseline justify-between border-t border-line pt-5">
         <div>
-          <span className="font-body text-base font-semibold text-ink">Total</span>
-          <span className="mt-0.5 block font-body text-[11.5px] text-ink-soft">Inclusive of all taxes</span>
+          <span className="text-base font-semibold text-ink">Total</span>
+          <span className="mt-0.5 block text-[11.5px] text-ink-soft">Inclusive of all taxes</span>
         </div>
-        <span className="font-display text-[32px] leading-none text-ink">{formatPaise(totalPaise)}</span>
+        <span className="text-[32px] leading-none font-medium text-[#000]">{formatPaise(totalPaise)}</span>
       </div>
 
       <button
@@ -529,7 +529,7 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
           router.push("/checkout");
         }}
         className={cx(
-          "mt-5 flex w-full items-center justify-center gap-2 rounded-[14px] bg-ink px-6 py-[15px] font-body text-[15px] font-bold text-card shadow-lift transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 motion-reduce:transform-none",
+          "mt-5 flex w-full items-center justify-center gap-2 rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:cursor-not-allowed disabled:opacity-60",
           FOCUS_RING,
         )}
       >
@@ -537,7 +537,7 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
         Proceed to checkout
       </button>
       {hasUnavailable ? (
-        <p role="status" className="mt-2.5 text-center font-body text-[12.5px] font-medium text-raspberry">
+        <p role="status" className="mt-2.5 text-center text-[12.5px] font-medium text-raspberry">
           Remove unavailable items to check out.
         </p>
       ) : null}
@@ -594,7 +594,7 @@ export function CartPageClient(): ReactNode {
         <Link
           href="/shop"
           className={cx(
-            "mt-8 inline-flex items-center gap-2 rounded-[12px] border-[1.5px] border-line px-6 py-3 font-body text-[14px] font-bold text-ink no-underline transition-colors hover:border-ink hover:bg-card",
+            "mt-8 inline-flex items-center gap-2 rounded-none border border-[#683126] px-5 py-3 text-[14px] tracking-[1.4px] text-[#683126] uppercase no-underline transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
             FOCUS_RING,
           )}
         >

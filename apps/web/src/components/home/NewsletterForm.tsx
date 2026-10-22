@@ -8,8 +8,10 @@ export interface NewsletterFormProps {
   /**
    * `card` (default) — bordered dark panel used by the home Chocolate-Club CTA.
    * `bare` — no card chrome; a centered input + button row for the footer band.
+   * `square` — Valrhona-style: stacked bordered input over a solid cream
+   *   rectangular submit. Used by the footer.
    */
-  variant?: "card" | "bare";
+  variant?: "card" | "bare" | "square";
 }
 
 type Status = "idle" | "busy" | "success" | "error";
@@ -47,7 +49,8 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const emailId = useId();
   const msgId = useId();
-  const bare = variant === "bare";
+  const square = variant === "square";
+  const bare = variant === "bare" || square;
   const busy = status === "busy";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -107,24 +110,40 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
         </p>
       ) : (
         <>
-          <div className="flex gap-2">
+          <div
+            className={cx(
+              square
+                ? "flex max-w-[300px] flex-col items-stretch gap-3 max-[749px]:mx-auto"
+                : "flex gap-2",
+            )}
+          >
             <input
               id={emailId}
               name="email"
               type="email"
               required
               autoComplete="email"
-              placeholder="you@email.com"
+              placeholder={square ? "Email (example@domain.com)" : "you@email.com"}
               aria-invalid={status === "error"}
               aria-describedby={status === "error" ? msgId : undefined}
-              className="min-w-0 flex-1 rounded-pill border-none bg-cream px-[18px] py-3.5 font-body text-sm font-medium text-ink outline-none placeholder:text-espresso/60 focus-visible:ring-2 focus-visible:ring-gold"
+              className={cx(
+                "min-w-0 outline-none",
+                square
+                  ? "w-full border border-[#FCF5E8]/70 bg-transparent px-[15px] py-[10px] text-[13px] tracking-[0.4px] text-[#FCF5E8] placeholder:text-[#FCF5E8]/55 focus-visible:border-[#FCF5E8]"
+                  : "flex-1 rounded-pill border-none bg-cream px-[18px] py-3.5 font-body text-sm font-medium text-ink placeholder:text-espresso/60 focus-visible:ring-2 focus-visible:ring-gold",
+              )}
             />
             <button
               type="submit"
               disabled={busy}
-              className="rounded-pill bg-gold-soft px-[22px] py-3.5 font-body text-sm font-bold whitespace-nowrap text-ink transition-colors hover:bg-gold focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cocoa focus-visible:outline-none disabled:opacity-60"
+              className={cx(
+                "whitespace-nowrap transition-colors disabled:opacity-60",
+                square
+                  ? "w-fit border border-[#683126] bg-[#FCF5E8] px-5 py-[11px] text-[14px] tracking-[1.4px] text-[#683126] uppercase hover:bg-[#683126] hover:text-[#FCF5E8] focus-visible:ring-2 focus-visible:ring-[#FCF5E8] focus-visible:outline-none max-[749px]:mx-auto"
+                  : "rounded-pill bg-gold-soft px-[22px] py-3.5 font-body text-sm font-bold text-ink hover:bg-gold focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cocoa focus-visible:outline-none",
+              )}
             >
-              {busy ? "Joining…" : "Join"}
+              {busy ? (square ? "Subscribing…" : "Joining…") : square ? "Subscribe" : "Join"}
             </button>
           </div>
           {status === "error" ? (

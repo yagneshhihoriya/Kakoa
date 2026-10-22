@@ -17,10 +17,13 @@ export const metadata: Metadata = {
  */
 export default function CartPage() {
   return (
-    <main className="mx-auto max-w-[1240px] px-8 pt-7 pb-[72px] max-[680px]:px-4">
+    <main
+      style={{ fontFamily: "var(--font-ui)" }}
+      className="mx-auto max-w-[1240px] px-8 pt-7 pb-[72px] max-[680px]:px-4"
+    >
       <nav
         aria-label="Breadcrumb"
-        className="mb-[22px] font-body text-[13px] font-medium text-[#8a7a68]"
+        className="mb-[22px] text-[13px] font-light tracking-[0.4px] text-[#8a7a68]"
       >
         <Link
           href="/"
@@ -34,7 +37,7 @@ export default function CartPage() {
         </span>
       </nav>
 
-      <h1 className="mb-8 font-display text-[46px] leading-none font-normal text-ink">
+      <h1 className="mb-8 text-[46px] leading-none font-medium text-[#000]">
         Your bag
       </h1>
 

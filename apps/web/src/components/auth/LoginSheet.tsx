@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ClipboardEvent,
@@ -294,10 +293,6 @@ export function LoginSheet({
 
   /* ---- derived ---- */
 
-  const normalizedForDisplay = useMemo(
-    () => (phoneRaw.trim() === "" ? null : normalizePhoneE164(phoneRaw)),
-    [phoneRaw],
-  );
   const code = digits.join("");
   const otpComplete = code.length === OTP_LENGTH;
 
@@ -568,8 +563,9 @@ export function LoginSheet({
         aria-modal="true"
         aria-label="Sign in to KAKOA"
         tabIndex={-1}
+        style={{ fontFamily: "var(--font-ui)" }}
         className={cx(
-          "absolute flex flex-col bg-cream shadow-[0_30px_70px_rgba(42,29,18,.28)] focus-visible:outline-none",
+          "absolute flex flex-col bg-[#FEF6EB] shadow-[0_30px_70px_rgba(42,29,18,.28)] focus-visible:outline-none",
           // Desktop: right panel. Mobile: bottom sheet.
           "inset-y-0 right-0 w-full max-w-[440px]",
           "max-[560px]:inset-x-0 max-[560px]:inset-y-auto max-[560px]:bottom-0 max-[560px]:max-h-[92vh] max-[560px]:w-full max-[560px]:max-w-none max-[560px]:rounded-t-[26px]",
@@ -582,11 +578,8 @@ export function LoginSheet({
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line px-7 py-5">
-          <span
-            className="text-[22px] text-ink"
-            style={{ fontFamily: "var(--font-display), serif" }}
-          >
+        <div className="flex items-center justify-between border-b border-[#683126]/15 px-7 py-5">
+          <span className="text-[30px] font-medium text-[#000] leading-none">
             {step === "phone" ? "Sign in" : "Enter code"}
           </span>
           <button
@@ -607,7 +600,7 @@ export function LoginSheet({
         <div className="flex-1 overflow-y-auto px-7 py-7">
           {step === "phone" ? (
             <form onSubmit={submitPhone} noValidate>
-              <p className="mb-6 font-body text-[14.5px] leading-relaxed text-espresso">
+              <p className="mb-6 text-[14.5px] leading-relaxed text-espresso">
                 {reasonCopy ??
                   "We'll text you a one-time code — no password needed."}
               </p>
@@ -616,7 +609,7 @@ export function LoginSheet({
               {notice !== null ? (
                 <div
                   role="status"
-                  className="mb-4 rounded-xl border border-[#E8DBC6] bg-[#F5E3C4]/50 px-4 py-3 font-body text-[13.5px] text-[#7a5a1e]"
+                  className="mb-4 rounded-none bg-[#F7EAD9] px-4 py-3 text-[13.5px] font-light text-[#5a3a20]"
                 >
                   {notice}
                 </div>
@@ -624,17 +617,17 @@ export function LoginSheet({
 
               <label
                 htmlFor="login-phone"
-                className="mb-2 block font-body text-[13px] font-semibold text-[#5C4B3A]"
+                className="mb-2 block text-[13px] font-semibold text-[#5C4B3A]"
               >
                 Mobile number
               </label>
               <div
                 className={cx(
-                  "flex items-center overflow-hidden rounded-xl border bg-[#F9F3EA] transition-colors focus-within:ring-2 focus-within:ring-gold",
-                  phoneError !== null ? "border-danger" : "border-[#E8DBC6]",
+                  "flex items-center overflow-hidden rounded-none border bg-[#FEF6EB] transition-colors focus-within:ring-2 focus-within:ring-[#683126]",
+                  phoneError !== null ? "border-danger" : "border-[#683126]",
                 )}
               >
-                <span className="select-none border-r border-[#E8DBC6] px-4 py-[14px] font-body text-[15px] font-semibold text-espresso">
+                <span className="select-none border-r border-[#683126] px-4 py-[14px] text-[15px] font-normal text-[#683126]">
                   +91
                 </span>
                 <input
@@ -653,23 +646,16 @@ export function LoginSheet({
                   aria-describedby={
                     phoneError !== null ? "login-phone-error" : undefined
                   }
-                  className="w-full bg-transparent px-4 py-[14px] font-body text-[15px] text-ink outline-none placeholder:text-[#b3a288]"
+                  className="w-full bg-transparent px-4 py-[14px] text-[15px] text-ink outline-none placeholder:text-[#b3a288]"
                 />
               </div>
-
-              {/* Live normalized preview (partial state) */}
-              {normalizedForDisplay !== null && phoneError === null ? (
-                <p className="mt-2 font-body text-[12.5px] text-[#8a7a68]">
-                  We'll send the code to {maskPhone(normalizedForDisplay)}
-                </p>
-              ) : null}
 
               {/* Inline field error */}
               {phoneError !== null ? (
                 <p
                   id="login-phone-error"
                   role="alert"
-                  className="mt-2 font-body text-[12.5px] font-medium text-danger"
+                  className="mt-2 text-[12.5px] font-medium text-danger"
                 >
                   {phoneError}
                 </p>
@@ -679,7 +665,7 @@ export function LoginSheet({
               {rateLimited && rateCountdown.remaining > 0 ? (
                 <p
                   role="alert"
-                  className="mt-3 rounded-xl border border-[#E8DBC6] bg-[#F5E3C4]/50 px-4 py-3 font-body text-[13px] text-[#7a5a1e]"
+                  className="mt-3 rounded-none bg-[#F7EAD9] px-4 py-3 text-[13px] font-light text-[#5a3a20]"
                 >
                   Too many requests — try again in{" "}
                   <span className="font-semibold tabular-nums">
@@ -695,14 +681,14 @@ export function LoginSheet({
                   role="alert"
                   className="mt-3 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3"
                 >
-                  <p className="font-body text-[13px] text-danger">
+                  <p className="text-[13px] text-danger">
                     Couldn't send the code — try again shortly.
                   </p>
                   <button
                     type="button"
                     onClick={() => void submitPhone()}
                     className={cx(
-                      "mt-2 font-body text-[13px] font-semibold text-espresso underline",
+                      "mt-2 text-[13px] font-semibold text-espresso underline",
                       FOCUS_RING,
                     )}
                   >
@@ -715,7 +701,7 @@ export function LoginSheet({
                 type="submit"
                 disabled={requesting || rateCountdown.remaining > 0}
                 className={cx(
-                  "mt-6 flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 py-[15px] font-body text-[15.5px] font-bold text-card transition-colors hover:bg-[#3f2c1b] disabled:cursor-not-allowed disabled:opacity-60",
+                  "mt-6 flex w-full items-center justify-center gap-2 rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:cursor-not-allowed disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >
@@ -735,16 +721,16 @@ export function LoginSheet({
                 </p>
               ) : null}
 
-              <p className="mt-5 text-center font-body text-[12px] leading-relaxed text-[#8a7a68]">
+              <p className="mt-5 text-center text-[12px] leading-relaxed text-[#8a7a68]">
                 By continuing you agree to KAKOA's Terms &amp; Privacy Policy.
               </p>
             </form>
           ) : (
             <div>
-              <p className="mb-1 font-body text-[14.5px] text-espresso">
+              <p className="mb-1 text-[14.5px] text-espresso">
                 Enter the 6-digit code sent to
               </p>
-              <p className="mb-6 font-body text-[15px] font-semibold text-ink">
+              <p className="mb-6 text-[15px] font-semibold text-ink">
                 {maskedDestination}
               </p>
 
@@ -774,8 +760,8 @@ export function LoginSheet({
                     onKeyDown={(event) => handleBoxKeyDown(index, event)}
                     onPaste={handlePaste}
                     className={cx(
-                      "h-[54px] w-full rounded-xl border bg-[#F9F3EA] text-center font-body text-[22px] font-semibold text-ink outline-none transition-colors focus:ring-2 focus:ring-gold disabled:opacity-60",
-                      otpError !== null ? "border-danger" : "border-[#E8DBC6]",
+                      "h-[54px] w-full rounded-none border bg-[#FEF6EB] text-center text-[22px] font-medium text-[#000] outline-none transition-colors focus:ring-2 focus:ring-[#683126] disabled:opacity-60",
+                      otpError !== null ? "border-danger" : "border-[#683126]",
                     )}
                   />
                 ))}
@@ -785,7 +771,7 @@ export function LoginSheet({
               {otpError !== null ? (
                 <p
                   role="alert"
-                  className="mt-3 font-body text-[13px] font-medium text-danger"
+                  className="mt-3 text-[13px] font-medium text-danger"
                 >
                   {otpError}
                 </p>
@@ -793,7 +779,7 @@ export function LoginSheet({
 
               {/* Verifying (success-in-progress) state */}
               {verifying ? (
-                <p className="mt-3 flex items-center gap-2 font-body text-[13px] text-espresso">
+                <p className="mt-3 flex items-center gap-2 text-[13px] text-espresso">
                   <Spinner />
                   Verifying…
                 </p>
@@ -804,7 +790,7 @@ export function LoginSheet({
                 onClick={() => void submitOtp(code)}
                 disabled={verifying || !otpComplete}
                 className={cx(
-                  "mt-6 flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 py-[15px] font-body text-[15.5px] font-bold text-card transition-colors hover:bg-[#3f2c1b] disabled:cursor-not-allowed disabled:opacity-60",
+                  "mt-6 flex w-full items-center justify-center gap-2 rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:cursor-not-allowed disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >
@@ -812,7 +798,7 @@ export function LoginSheet({
               </button>
 
               {/* Resend countdown */}
-              <div className="mt-5 text-center font-body text-[13px] text-[#8a7a68]">
+              <div className="mt-5 text-center text-[13px] text-[#8a7a68]">
                 {resendCountdown.remaining > 0 ? (
                   <span>
                     Resend code in{" "}
@@ -839,7 +825,7 @@ export function LoginSheet({
                 type="button"
                 onClick={() => gateBackToPhone("")}
                 className={cx(
-                  "mt-4 w-full text-center font-body text-[13.5px] font-semibold text-[#6B5A49]",
+                  "mt-4 w-full text-center text-[13.5px] font-semibold text-[#6B5A49]",
                   FOCUS_RING,
                 )}
               >

@@ -101,10 +101,11 @@ export function CartDrawer(): ReactNode {
         aria-modal="true"
         aria-label="Your bag"
         tabIndex={-1}
-        className="fixed inset-y-0 right-0 z-[61] flex w-[420px] max-w-[92vw] flex-col bg-cream shadow-[-24px_0_60px_rgba(42,29,18,.24)] animate-[kk-drawer_.34s_cubic-bezier(.2,.7,.3,1)] motion-reduce:animate-none focus-visible:outline-none"
+        style={{ fontFamily: "var(--font-ui)" }}
+        className="fixed inset-y-0 right-0 z-[61] flex w-[420px] max-w-[92vw] flex-col bg-[#FCF5E8] shadow-[-24px_0_60px_rgba(42,29,18,.24)] animate-[kk-drawer_.34s_cubic-bezier(.2,.7,.3,1)] motion-reduce:animate-none focus-visible:outline-none"
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-[22px]">
-          <span className="font-display text-[22px] text-ink">Your bag</span>
+          <span className="text-[30px] font-medium leading-none text-[#000]">Your bag</span>
           <button
             type="button"
             onClick={close}
@@ -124,7 +125,7 @@ export function CartDrawer(): ReactNode {
               <BagIcon size={30} />
             </div>
             <div>
-              <div className="mb-1 font-display text-xl text-ink">
+              <div className="mb-1 text-[22px] font-medium text-[#000]">
                 Your bag is empty
               </div>
               <div className="text-sm text-ink-soft">
@@ -137,7 +138,7 @@ export function CartDrawer(): ReactNode {
                 goTo("/shop");
               }}
               className={cx(
-                "rounded-pill bg-ink px-[26px] py-[13px] font-body text-[14.5px] font-semibold text-card transition-colors hover:bg-ink-hover",
+                "rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]",
                 FOCUS_RING,
               )}
             >
@@ -170,7 +171,7 @@ export function CartDrawer(): ReactNode {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex justify-between gap-2">
-                      <span className="font-body text-[15px] font-semibold text-ink">
+                      <span className="text-[15px] font-semibold text-ink">
                         {line.name}
                       </span>
                       <button
@@ -203,7 +204,7 @@ export function CartDrawer(): ReactNode {
                       <div
                         role="group"
                         aria-label={`Quantity for ${line.name}`}
-                        className="flex items-center overflow-hidden rounded-pill border border-line"
+                        className="flex items-center overflow-hidden rounded-none border border-[#683126]"
                       >
                         <button
                           type="button"
@@ -221,7 +222,7 @@ export function CartDrawer(): ReactNode {
                         </button>
                         <span
                           aria-live="polite"
-                          className="w-[26px] text-center font-body text-[13px] font-semibold text-ink"
+                          className="w-[26px] text-center text-[13px] font-semibold text-ink"
                         >
                           {line.qty}
                         </span>
@@ -244,7 +245,7 @@ export function CartDrawer(): ReactNode {
                           +
                         </button>
                       </div>
-                      <span className="font-body text-[15px] font-semibold text-ink">
+                      <span className="text-[15px] font-semibold text-ink">
                         {formatPaise(line.lineTotalPaise)}
                       </span>
                     </div>
@@ -317,7 +318,7 @@ export function CartDrawer(): ReactNode {
                   goTo("/checkout");
                 }}
                 className={cx(
-                  "w-full rounded-pill bg-ink py-[15px] font-body text-[15px] font-bold text-card transition-colors hover:bg-ink-hover disabled:opacity-60",
+                  "w-full rounded-none bg-[#683126] py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >
@@ -327,7 +328,7 @@ export function CartDrawer(): ReactNode {
                 href="/cart"
                 onClick={close}
                 className={cx(
-                  "mt-2.5 block w-full text-center font-body text-[13.5px] font-semibold text-ink-soft no-underline transition-colors hover:text-ink",
+                  "mt-2.5 block w-full text-center text-[13.5px] font-semibold text-ink-soft no-underline transition-colors hover:text-ink",
                   FOCUS_RING,
                 )}
               >

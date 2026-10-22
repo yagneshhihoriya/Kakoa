@@ -53,9 +53,12 @@ const MOBILE_SECONDARY = [
 ] as const;
 
 const ICON_BUTTON_CLASSES = cx(
-  "grid h-10 w-10 place-items-center rounded-pill text-ink transition-colors hover:bg-cream-2",
+  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-[#683126]",
   FOCUS_RING,
 );
+
+/** Small label sitting under each utility icon (Valrhona header pattern). */
+const ICON_LABEL_CLASSES = "text-[11px] font-light leading-none tracking-[0.2px]";
 
 function SearchIcon(): ReactNode {
   return (
@@ -72,6 +75,27 @@ function SearchIcon(): ReactNode {
     >
       <circle cx="11" cy="11" r="7" />
       <path d="M20 20l-3.2-3.2" />
+    </svg>
+  );
+}
+
+/** Shopping bag — same 19px / 1.8 stroke / currentColor spec as Search + Person
+ *  so the three header utilities read as one set. */
+function BagIcon(): ReactNode {
+  return (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 7.5h14l-1.05 11.6a2.2 2.2 0 0 1-2.19 2H8.24a2.2 2.2 0 0 1-2.19-2L5 7.5Z" />
+      <path d="M8.7 7.5V6.6a3.3 3.3 0 0 1 6.6 0v.9" />
     </svg>
   );
 }
@@ -276,6 +300,7 @@ export function Header(): ReactNode {
       className={ICON_BUTTON_CLASSES}
     >
       <SearchIcon />
+      <span className={ICON_LABEL_CLASSES}>Search</span>
     </button>
   );
 
@@ -286,40 +311,24 @@ export function Header(): ReactNode {
       aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
       onClick={openCart}
       className={cx(
-        "relative flex h-10 items-center gap-1.5 rounded-pill px-3 font-body text-sm font-semibold text-ink transition-colors hover:bg-cream-2",
+        "relative flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-[#683126]",
         FOCUS_RING,
       )}
     >
-      <span className="inline-flex [perspective:360px]">
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="origin-center animate-[kk-flip-y_2.6s_linear_infinite] [transform-style:preserve-3d] drop-shadow-[0_1.5px_1.5px_rgba(42,29,18,0.35)] motion-reduce:animate-none"
-        >
-          <defs>
-            <linearGradient id="kk-bag-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d9ac5e" />
-              <stop offset="100%" stopColor="#8a5a34" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M5 7.5h14l-1.05 11.6a2.2 2.2 0 0 1-2.19 2H8.24a2.2 2.2 0 0 1-2.19-2L5 7.5Z"
-            fill="url(#kk-bag-grad)"
-          />
-          <path
-            d="M8.7 7.5V6.6a3.3 3.3 0 0 1 6.6 0v.9"
-            fill="none"
-            stroke="#6b4423"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-          />
-        </svg>
+      <span className="relative inline-flex">
+        <BagIcon />
+        {count > 0 ? (
+          <span
+            className={cx(
+              "absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-pill bg-[#683126] px-1 text-[10px] font-medium text-[#FCF5E8]",
+              pop && "animate-[kk-pop_.45s_ease]",
+            )}
+          >
+            {count}
+          </span>
+        ) : null}
       </span>
-      <span className={pop ? "animate-[kk-pop_.45s_ease]" : undefined}>
-        {count}
-      </span>
+      <span className={ICON_LABEL_CLASSES}>Cart</span>
     </button>
   );
 
@@ -327,9 +336,10 @@ export function Header(): ReactNode {
     <>
       <header
         className={cx(
-          "sticky top-0 z-40 border-b border-line bg-cream/80 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-300 supports-[backdrop-filter]:bg-cream/70",
-          scrolled ? "shadow-[0_6px_24px_rgba(42,29,18,0.13)]" : "shadow-soft",
+          "sticky top-0 z-40 bg-[#FEF6EB] transition-shadow duration-300",
+          scrolled ? "shadow-[0_4px_16px_rgba(42,29,18,0.10)]" : "shadow-none",
         )}
+        style={{ fontFamily: "var(--font-ui)" }}
       >
         <div
           className={cx(
@@ -364,9 +374,8 @@ export function Header(): ReactNode {
                     aria-current={active ? "page" : undefined}
                     {...megaProps}
                     className={cx(
-                      "relative flex items-center p-0 font-body text-[14.5px] font-semibold text-ink no-underline transition-colors hover:text-espresso",
-                      "after:absolute after:-bottom-[7px] after:left-0 after:right-0 after:h-[1.5px] after:origin-left after:bg-espresso after:transition-transform after:duration-300 after:ease-[cubic-bezier(.2,.7,.3,1)] after:content-['']",
-                      active ? "after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100",
+                      "relative flex items-center p-[10px] text-[14px] font-medium tracking-normal uppercase no-underline transition-colors",
+                      active ? "text-[#683126]" : "text-[#000] hover:text-[#683126]",
                       FOCUS_RING,
                     )}
                   >
@@ -383,7 +392,7 @@ export function Header(): ReactNode {
                         strokeLinejoin="round"
                         aria-hidden="true"
                         className={cx(
-                          "ml-1 text-espresso/70 transition-transform duration-[var(--duration-base)] ease-brand motion-reduce:transition-none",
+                          "ml-1 transition-transform duration-[var(--duration-base)] ease-brand motion-reduce:transition-none",
                           megaOpen && "rotate-180",
                         )}
                       >
@@ -457,10 +466,11 @@ export function Header(): ReactNode {
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
+          style={{ fontFamily: "var(--font-ui)" }}
           className="fixed inset-0 z-50 flex flex-col bg-cream animate-[kk-overlay_.25s_ease] min-[1000px]:hidden"
         >
           {/* Menu's own top bar — mirrors the header: close · logo · cart. */}
-          <div className="flex h-[72px] shrink-0 items-center justify-between gap-2 border-b border-line px-5 sm:px-8">
+          <div className="flex h-[72px] shrink-0 items-center justify-between gap-2 border-b border-black/10 px-5 sm:px-8">
             <button
               type="button"
               aria-label="Close menu"
@@ -500,7 +510,7 @@ export function Header(): ReactNode {
                 setSearchOpen(true);
               }}
               className={cx(
-                "mb-6 flex w-full items-center gap-3 rounded-2xl border border-line-soft bg-surface px-4 py-3.5 text-left font-body text-[15px] font-medium text-ink-muted shadow-soft transition-colors hover:bg-card",
+                "mb-6 flex w-full items-center gap-3 rounded-none border border-[#683126] bg-transparent px-4 py-3 text-left text-[13px] font-light tracking-[0.4px] text-[#000]/60 transition-colors hover:border-[#000]",
                 FOCUS_RING,
               )}
             >
@@ -509,12 +519,12 @@ export function Header(): ReactNode {
             </button>
 
             {/* Primary — serif list, hairline dividers, collections accordion. */}
-            <nav aria-label="Primary" className="border-t border-line">
+            <nav aria-label="Primary" className="border-t border-black/10">
               {MOBILE_PRIMARY.map((item) => {
                 const kids = "children" in item ? item.children : null;
                 const expanded = openSection === item.label;
                 return (
-                  <div key={item.label} className="border-b border-line">
+                  <div key={item.label} className="border-b border-black/10">
                     <div className="flex items-center">
                       <Link
                         href={item.href}
@@ -523,7 +533,7 @@ export function Header(): ReactNode {
                         }}
                         aria-current={isActive([item.href]) ? "page" : undefined}
                         className={cx(
-                          "flex-1 py-[18px] font-display text-[26px] leading-none text-ink no-underline transition-colors hover:text-espresso",
+                          "flex-1 py-5 text-[14px] font-medium tracking-[0.42px] text-[#000] uppercase no-underline transition-colors hover:text-[#683126]",
                           FOCUS_RING,
                         )}
                       >
@@ -538,7 +548,7 @@ export function Header(): ReactNode {
                             setOpenSection(expanded ? null : item.label);
                           }}
                           className={cx(
-                            "-mr-1.5 grid h-12 w-12 place-items-center rounded-pill text-espresso transition-colors hover:bg-card",
+                            "-mr-1.5 grid h-12 w-12 place-items-center text-[#000] transition-colors hover:text-[#683126]",
                             FOCUS_RING,
                           )}
                         >
@@ -556,7 +566,7 @@ export function Header(): ReactNode {
                                 setMenuOpen(false);
                               }}
                               className={cx(
-                                "block py-2.5 font-body text-[15px] font-medium text-ink-soft no-underline transition-colors hover:text-espresso",
+                                "block py-2.5 text-[13px] font-light tracking-[0.4px] text-[#000]/70 no-underline transition-colors hover:text-[#683126]",
                                 FOCUS_RING,
                               )}
                             >
@@ -581,7 +591,7 @@ export function Header(): ReactNode {
                     setMenuOpen(false);
                   }}
                   className={cx(
-                    "rounded-sm py-1.5 font-body text-[14.5px] font-semibold text-espresso no-underline transition-colors hover:text-ink",
+                    "py-1.5 text-[13px] font-light tracking-[0.4px] text-[#683126] underline underline-offset-[3px] transition-colors hover:text-[#000]",
                     FOCUS_RING,
                   )}
                 >
@@ -667,9 +677,10 @@ function AccountControl({
         href="/account"
         title="Account"
         aria-label="Account"
-        className={cx("max-[680px]:hidden", ICON_BUTTON_CLASSES)}
+        className={cx("max-[680px]:hidden no-underline", ICON_BUTTON_CLASSES)}
       >
         <PersonIcon />
+        <span className={ICON_LABEL_CLASSES}>Log in</span>
       </Link>
     );
   }
@@ -706,6 +717,7 @@ function AccountControl({
       className={cx("max-[680px]:hidden", ICON_BUTTON_CLASSES)}
     >
       <PersonIcon />
+      <span className={ICON_LABEL_CLASSES}>Log in</span>
     </button>
   );
 }

@@ -145,12 +145,6 @@ a {
     transform: scale(1);
   }
 }
-/* Continuous 3D coin-flip around the vertical axis (left↔right). */
-@keyframes kk-flip-y {
-  to {
-    transform: rotateY(360deg);
-  }
-}
 /* Bag icon "add to bag" reaction: a quick rotate swing + slight pop. */
 @keyframes kk-bag {
   0% {

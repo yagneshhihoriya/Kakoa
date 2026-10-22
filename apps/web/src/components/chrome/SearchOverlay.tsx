@@ -279,6 +279,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
       <div
         ref={panelRef}
         role="dialog"
+        style={{ fontFamily: "var(--font-ui)" }}
         aria-modal="true"
         aria-label="Search products"
         tabIndex={-1}
@@ -286,7 +287,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
           if (closing && event.target === event.currentTarget) finishClose();
         }}
         className={cx(
-          "fixed inset-x-0 top-0 z-[71] flex max-h-[90vh] flex-col bg-cream shadow-[0_24px_60px_rgba(42,29,18,.26)] focus-visible:outline-none",
+          "fixed inset-x-0 top-0 z-[71] flex max-h-[90vh] flex-col bg-[#FEF6EB] shadow-[0_24px_60px_rgba(42,29,18,.26)] focus-visible:outline-none",
           panelClass,
         )}
       >
@@ -320,7 +321,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
               aria-expanded={hasResults}
               aria-controls={hasResults ? "kk-search-results" : undefined}
               aria-activedescendant={activeDescendant}
-              className="min-w-0 flex-1 border-none bg-transparent font-display text-[clamp(20px,3.4vw,28px)] text-ink outline-none placeholder:text-ink/40"
+              className="min-w-0 flex-1 border-none bg-transparent text-[clamp(18px,2.6vw,24px)] font-light tracking-[0.2px] text-[#000] outline-none placeholder:text-[#000]/35"
             />
             <button
               type="button"
@@ -349,7 +350,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                       setQuery(label);
                     }}
                     className={cx(
-                      "rounded-pill border border-line bg-card px-[18px] py-2.5 font-body text-sm font-semibold text-ink transition-colors hover:bg-line",
+                      "rounded-none border border-[#683126] bg-transparent px-[18px] py-2.5 text-[13px] tracking-[0.4px] text-[#683126] transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
                       FOCUS_RING,
                     )}
                   >
@@ -375,10 +376,10 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                           <ChocoPlaceholder tone={product.tone} ratio="6 / 7" />
                         </div>
                         <div className="min-w-0">
-                          <div className="truncate font-body text-sm font-semibold text-ink">
+                          <div className="truncate text-sm font-semibold text-ink">
                             {product.name}
                           </div>
-                          <div className="font-body text-[13px] font-semibold text-espresso">
+                          <div className="text-[13px] font-semibold text-espresso">
                             {formatPaise(product.fromPricePaise)}
                           </div>
                         </div>
@@ -429,7 +430,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                         <ChocoPlaceholder tone={hit.tone} ratio="13 / 15" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-body text-base font-semibold text-ink">
+                        <div className="text-base font-semibold text-ink">
                           {hit.name}
                         </div>
                         <div className="truncate text-[13px] text-ink-soft">
@@ -437,7 +438,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                         </div>
                       </div>
                       <div className="flex-none text-right">
-                        <div className="font-body text-[15px] font-semibold text-ink">
+                        <div className="text-[15px] font-semibold text-ink">
                           {formatPaise(hit.fromPricePaise)}
                         </div>
                         <div className="font-mono text-xs font-medium text-ink-muted">
@@ -452,7 +453,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                 type="button"
                 onClick={goToShop}
                 className={cx(
-                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-[14px] border border-line-soft bg-card px-4 py-3 font-body text-[14px] font-semibold text-ink transition-colors hover:bg-line",
+                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-[#683126] bg-transparent px-4 py-3 text-[13px] tracking-[0.4px] text-[#683126] uppercase transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
                   FOCUS_RING,
                 )}
               >
@@ -469,7 +470,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
 
           {noResults ? (
             <div className="px-5 py-12 text-center">
-              <div className="mb-2 font-display text-2xl text-ink">
+              <div className="mb-2 text-2xl font-medium text-[#000]">
                 No matches for “{trimmed}”
               </div>
               <div className="mb-[22px] text-[14.5px] text-ink-soft">
@@ -479,7 +480,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                 href="/shop"
                 onClick={onClose}
                 className={cx(
-                  "inline-block rounded-pill bg-ink px-[26px] py-[13px] font-body text-[14.5px] font-semibold text-card no-underline transition-colors hover:bg-ink-hover",
+                  "inline-block rounded-none border border-[#683126] bg-[#683126] px-5 py-3 text-[14px] tracking-[1.4px] text-[#FCF5E8] uppercase no-underline transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]",
                   FOCUS_RING,
                 )}
               >

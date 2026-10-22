@@ -43,11 +43,20 @@ const LEGAL_LINKS: FooterLink[] = [
 ];
 
 /**
- * Global storefront footer (LCC-inspired two-tone). A centered dark cocoa
- * newsletter band sits above a light cream body: brand + contact, three link
- * columns, and a centered legal bar carrying the India-compliance line (FSSAI /
- * MRP). Server component; the only client island is the newsletter form. All
- * routes preserved — UI only.
+ * Global storefront footer — styled to match the Valrhona reference 1:1:
+ * flat #683126 field, #FCF5E8 text, Poppins (via --font-footer), underlined
+ * links at 75% opacity that brighten on hover, square bordered email input and
+ * a solid cream rectangular submit. Mobile centres the brand, socials and
+ * signup, as the reference does below 750px.
+ *
+ * ONE dark band, replacing
+ * the previous dark-newsletter-over-cream-body split. Layout: brand + contact
+ * + social, three link columns, and the newsletter pulled inline as the final
+ * column; a single rule above the legal bar carrying the India-compliance line
+ * (FSSAI / MRP) and the accepted payment methods.
+ *
+ * Server component; the only client island is the newsletter form. All routes
+ * and compliance content preserved — presentation only.
  */
 export async function Footer(): Promise<ReactNode> {
   const [fssai, company] = await Promise.all([
@@ -56,97 +65,49 @@ export async function Footer(): Promise<ReactNode> {
   ]);
   const year = new Date().getFullYear();
 
+  const payments = ["UPI", "Cards", "Netbanking", ...(company.codEnabled ? ["Cash on delivery"] : [])];
+
   return (
-    <footer>
-      {/* ============ Newsletter band — dark, centered (LCC top) ============ */}
-      <section className="relative overflow-hidden bg-ink text-cream kk-grain">
-        <div className="relative mx-auto max-w-[680px] px-5 py-10 text-center sm:py-12">
-          <div className="mb-2.5 font-mono text-eyebrow font-medium tracking-[0.2em] text-gold-soft uppercase">
-            The KAKOA Club
-          </div>
-          <h2 className="font-display text-h2 font-normal text-cream">
-            Sweeten your inbox
-          </h2>
-          <p className="mx-auto mt-2.5 max-w-[460px] font-body text-[15px] leading-[1.5] text-cream/75">
-            15% off your first box, plus first access to seasonal drops.
-          </p>
-          <div className="mx-auto mt-6 max-w-[520px]">
-            <NewsletterForm variant="bare" />
-          </div>
-        </div>
-      </section>
+    <footer
+      className="relative overflow-hidden bg-[#683126] text-[#FCF5E8]"
+      style={{ fontFamily: "var(--font-ui)" }}
+    >
+      <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8">
+        {/* ---- Brand · link columns · newsletter ---- */}
+        <div className="grid gap-x-8 gap-y-10 py-12 sm:py-14 max-[680px]:grid-cols-1 max-[1023px]:grid-cols-2 lg:grid-cols-[1.55fr_.85fr_.85fr_.85fr_1.3fr]">
+          {/* Brand · about · contact · social */}
+          <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:flex max-[749px]:flex-col max-[749px]:items-center max-[749px]:text-center">
+            <BrandLockup size="footer" />
+            <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-[#FCF5E8]">
+              Chocolate that tastes of somewhere.
+            </p>
+            <p className="mt-2 max-w-[320px] text-[13px] leading-[19.5px] tracking-[0.4px] text-[#FCF5E8]/75">
+              Small-batch, single-origin chocolate, roasted and hand-finished in
+              our own kitchen.
+            </p>
 
-      {/* ==================== Main body — light cream ==================== */}
-      <div className="border-t border-line bg-cream-2 text-ink">
-        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
-          {/* ---- Brand + link columns ---- */}
-          <div className="grid gap-x-8 gap-y-8 py-10 max-[680px]:grid-cols-1 max-[1000px]:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1fr]">
-            {/* Brand · about · contact · social */}
-            <div className="max-[1000px]:col-span-2 max-[680px]:col-span-1">
-              <BrandLockup size="header" />
-              <p className="mt-3.5 max-w-[300px] font-display text-[19px] leading-[1.2] text-ink">
-                Chocolate that tastes of somewhere.
-              </p>
-              <p className="mt-2 max-w-[300px] font-body text-[14px] leading-[1.5] text-ink-muted">
-                Small-batch, single-origin chocolate, roasted and hand-finished in
-                our own kitchen.
-              </p>
-
-              <address className="mt-5 flex flex-col gap-1 font-body text-[15px] font-medium not-italic">
-                <a
-                  href={`mailto:${company.supportEmail}`}
-                  className="w-fit text-ink-soft no-underline transition-colors hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-                >
-                  {company.supportEmail}
-                </a>
-                <a
-                  href={`tel:${company.supportPhone.replace(/\s/g, "")}`}
-                  className="w-fit text-ink-soft no-underline transition-colors hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-                >
-                  {company.supportPhone}
-                </a>
-                <span className="mt-2 text-[13px] font-normal leading-[1.55] text-ink-muted">
-                  <span className="block font-medium text-ink-soft">
-                    {company.legalName}
-                  </span>
-                  {company.address}
+            <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic max-[749px]:items-center">
+              <a
+                href={`mailto:${company.supportEmail}`}
+                className="w-fit tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+              >
+                {company.supportEmail}
+              </a>
+              <a
+                href={`tel:${company.supportPhone.replace(/\s/g, "")}`}
+                className="w-fit tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+              >
+                {company.supportPhone}
+              </a>
+              <span className="mt-2 text-[13px] font-light leading-[19.5px] text-[#FCF5E8]/60">
+                <span className="block font-normal text-[#FCF5E8]/80">
+                  {company.legalName}
                 </span>
-              </address>
-            </div>
-
-            <FooterColumn heading="Shop" links={SHOP_LINKS} />
-            <FooterColumn heading="Company" links={COMPANY_LINKS} />
-            <FooterColumn heading="Support" links={SUPPORT_LINKS} />
-          </div>
-
-          {/* ---- Legal bar — legal left · social right (same row) ---- */}
-          <div className="flex flex-col gap-4 border-t border-line py-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-body text-[13px] text-ink-muted">
-              <span>© {year} KAKOA Chocolates. All rights reserved.</span>
-              {LEGAL_LINKS.map((link) => (
-                <span key={link.label} className="flex items-center gap-x-2.5">
-                  <span aria-hidden="true" className="text-line">
-                    ·
-                  </span>
-                  <Link
-                    href={link.href}
-                    className="font-medium text-ink-muted no-underline transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-                  >
-                    {link.label}
-                  </Link>
-                </span>
-              ))}
-              <span aria-hidden="true" className="text-line">
-                ·
+                {company.address}
               </span>
-              <span>
-                {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
-                inclusive of all taxes
-              </span>
-            </div>
+            </address>
 
-            {/* Social — right side */}
-            <div className="flex shrink-0 items-center gap-2.5">
+            <div className="mt-6 flex items-center gap-1 max-[749px]:justify-center">
               <SocialLink label="KAKOA on Instagram" href="https://instagram.com">
                 <InstagramIcon />
               </SocialLink>
@@ -160,6 +121,64 @@ export async function Footer(): Promise<ReactNode> {
                 <YouTubeIcon />
               </SocialLink>
             </div>
+          </div>
+
+          <FooterColumn heading="Shop" links={SHOP_LINKS} />
+          <FooterColumn heading="Company" links={COMPANY_LINKS} />
+          <FooterColumn heading="Support" links={SUPPORT_LINKS} />
+
+          {/* Newsletter — inline final column */}
+          <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:text-center">
+            <p className="text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase">
+              The KAKOA Club
+            </p>
+            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase max-[749px]:mx-auto">
+              15% off your first box
+            </p>
+            <div className="mt-4">
+              <NewsletterForm variant="square" />
+            </div>
+          </div>
+        </div>
+
+        {/* ---- Legal bar ---- */}
+        <div className="flex flex-col gap-3 border-t border-[#FCF5E8]/15 py-6 max-[749px]:items-center max-[749px]:text-center sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light tracking-[0.4px] text-[#FCF5E8]/60 max-[749px]:justify-center">
+            <span>© {year} KAKOA Chocolates. All rights reserved.</span>
+            {LEGAL_LINKS.map((link) => (
+              <span key={link.label} className="flex items-center gap-x-2.5">
+                <span aria-hidden="true" className="text-[#FCF5E8]/25">
+                  ·
+                </span>
+                <Link
+                  href={link.href}
+                  className="tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                >
+                  {link.label}
+                </Link>
+              </span>
+            ))}
+            <span aria-hidden="true" className="text-[#FCF5E8]/25">
+              ·
+            </span>
+            <span>
+              {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
+              inclusive of all taxes
+            </span>
+          </div>
+
+          {/* Accepted payment methods — text, not vendor logos */}
+          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-[#FCF5E8]/55 max-[749px]:justify-center">
+            {payments.map((method, i) => (
+              <span key={method} className="flex items-center gap-x-2">
+                {i > 0 && (
+                  <span aria-hidden="true" className="text-[#FCF5E8]/25">
+                    ·
+                  </span>
+                )}
+                {method}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -179,21 +198,17 @@ function FooterColumn({
   links: FooterLink[];
 }): ReactNode {
   return (
-    <nav aria-label={heading}>
-      <div className="mb-4 font-mono text-[11.5px] font-medium tracking-[0.16em] text-espresso uppercase">
+    <nav aria-label={heading} className="max-[749px]:text-center">
+      <div className="mb-4 text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase">
         {heading}
       </div>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-1">
         {links.map((link) => (
           <li key={link.label}>
             <Link
               href={link.href}
-              className="group inline-flex w-fit items-center font-body text-[15px] font-medium text-ink-soft no-underline transition-colors hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              className="inline-block w-fit py-[5px] text-[13px] font-light leading-[19.5px] tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
             >
-              <span
-                aria-hidden="true"
-                className="mr-0 inline-block h-px w-0 bg-espresso transition-[width,margin] duration-[var(--duration-base)] ease-brand group-hover:mr-2 group-hover:w-3 motion-reduce:transition-none"
-              />
               {link.label}
             </Link>
           </li>
@@ -218,7 +233,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="grid h-9 w-9 place-items-center rounded-pill border border-line bg-surface text-espresso transition-all duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:border-espresso hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold motion-reduce:transform-none motion-reduce:transition-none"
+      className="grid h-11 w-11 place-items-center text-[#FCF5E8]/75 transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
     >
       {children}
     </a>
