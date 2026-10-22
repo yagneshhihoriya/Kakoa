@@ -41,7 +41,19 @@ export class S3MediaProvider implements MediaProvider {
         accessKeyId: cfg.accessKeyId,
         secretAccessKey: cfg.secretAccessKey,
       },
-      ...(cfg.endpoint ? { endpoint: cfg.endpoint, forcePathStyle: true } : {}),
+      // S3-compatible stores (R2/MinIO): recent @aws-sdk/client-s3 sends CRC32
+      // flexible checksums by default, which R2 rejects ("Header
+      // 'x-amz-checksum-algorithm' with value 'CRC32' not implemented").
+      // WHEN_REQUIRED restricts checksums to operations that mandate them.
+      // Scoped to the endpoint branch so real AWS S3 behaviour is unchanged.
+      ...(cfg.endpoint
+        ? {
+            endpoint: cfg.endpoint,
+            forcePathStyle: true,
+            requestChecksumCalculation: "WHEN_REQUIRED" as const,
+            responseChecksumValidation: "WHEN_REQUIRED" as const,
+          }
+        : {}),
     });
   }
 
