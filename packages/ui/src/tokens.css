@@ -8,7 +8,7 @@
  * app (`apps/web/app/layout.tsx`); `packages/ui` never imports `next/font`.
  * The app must expose:
  *   --font-dm-serif-display  (DM Serif Display — headlines only)
- *   --font-hanken-grotesque  (Hanken Grotesque — body / UI default)
+ *   --font-body              (Infini — body / UI default, self-hosted)
  *   --font-dm-mono           (DM Mono — eyebrow labels, uppercase, 0.14em)
  */
 @theme {
@@ -16,7 +16,7 @@
   --color-ink: #2a1d12;
   --color-cocoa: #4a2e1c;
   --color-espresso: #8a5a34;
-  --color-cream: #fbf6ef;
+  --color-cream: #fef6eb; /* matches the Valrhona page field (#FEF6EB) */
   --color-card: #f3e7d5;
   --color-line: #eadbc6;
   --color-gold: #c69a4c;
@@ -32,7 +32,7 @@
 
   /* ---- Typography (vars provided by next/font in the app) ---- */
   --font-display: var(--font-dm-serif-display, 'DM Serif Display', Georgia, serif);
-  --font-body: var(--font-hanken-grotesque, 'Hanken Grotesque', system-ui, sans-serif);
+  --font-body: 'Infini', system-ui, sans-serif;
   --font-mono: var(--font-dm-mono, 'DM Mono', ui-monospace, 'SFMono-Regular', monospace);
 
   /* ---- Spacing scale (4px base) ---- */
