@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { ProductTone } from "@kakoa/core";
@@ -8,7 +11,6 @@ import { getDefaultVariantIds } from "./shop/default-variants";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ChocoScene } from "@/components/home/ChocoScene";
-import { HeroShowcase } from "@/components/home/HeroShowcase";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
 import { SectionReveal } from "@/components/home/SectionReveal";
 
@@ -246,74 +248,78 @@ export default async function HomePage() {
     featured.map((product) => product.id),
   );
 
+  /**
+   * Hero photography — two art-directed crops: a 2.51:1 frame for the overlay
+   * layout and a 1:1 frame for the stacked mobile band. Checked server-side so
+   * missing files degrade silently to the cocoa gradient below.
+   */
+  const heroPhoto =
+    existsSync(path.join(process.cwd(), "public", "hero.jpg")) &&
+    existsSync(path.join(process.cwd(), "public", "hero-mobile.jpg"));
+
   return (
     <main>
       <SectionReveal />
 
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden">
-        {/* Warm, layered backdrop — never a flat cream slab. */}
-        <div aria-hidden="true" className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,var(--color-cream)_0%,var(--color-cream-2)_100%)]" />
-          <div className="absolute -top-[12%] right-[-6%] h-[62%] w-[52%] rounded-pill bg-[#EAC7A2] opacity-40 blur-[90px]" />
-          <div className="absolute bottom-[-14%] left-[-8%] h-[46%] w-[40%] rounded-pill bg-[#C7D0A6] opacity-30 blur-[80px]" />
+      <section
+        className="relative isolate overflow-hidden bg-[#683126] text-[#FCF5E8] md:flex md:aspect-[1989/791] md:items-center"
+        style={{ fontFamily: "var(--font-ui)" }}
+      >
+
+        {/* Full-bleed visual field (their geometry: one cover image, text
+            overlaid at 3% left across 50% width). Real photography drops into
+            the first layer; the cocoa gradient stands in until it exists. */}
+        <div
+          aria-hidden="true"
+          className="relative aspect-square w-full sm:aspect-[1989/791] md:absolute md:inset-0 md:-z-10 md:aspect-auto"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_74%_38%,#8a4a33_0%,#683126_46%,#3c1c12_100%)]" />
+          {heroPhoto ? (
+            /* <picture> rather than next/image: the two crops are art direction,
+               not resolution switching, and <source media> downloads exactly one
+               — two next/image elements would both fetch (~600 KB wasted on phones).
+               Files are pre-compressed to ~300 KB each, so we give up little.
+               No scrim: the photo's own left field measures 7.3:1 against the
+               cream copy (AA body text needs 4.5). */
+            <picture>
+              <source media="(min-width: 640px)" srcSet="/hero.jpg" />
+              <img
+                src="/hero-mobile.jpg"
+                alt=""
+                fetchPriority="high"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </picture>
+          ) : null}
         </div>
 
-        <div className="mx-auto grid max-w-[1240px] items-center gap-9 px-5 pt-12 pb-14 sm:px-8 sm:pt-14 sm:pb-16 lg:min-h-[80vh] lg:grid-cols-[1.05fr_.95fr] lg:gap-16 lg:pt-16">
-          <div>
+        <div className="w-full px-[3%] py-12 md:py-0 lg:py-20">
+          <div className="w-full md:max-w-[65%] lg:max-w-[50%]">
             <div className="mb-6">
-              <Eyebrow>Small-batch · Single origin</Eyebrow>
+              <Eyebrow tone="gold">Small-batch · Single origin</Eyebrow>
             </div>
-            <h1 className="mb-6 font-display text-hero font-normal leading-[1.02] text-balance">
-              Chocolate worth
-              <br />
-              slowing down
-              <br />
-              <span className="text-espresso italic">for.</span>
+            <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance text-[#FCF5E8] md:text-[34px] md:leading-[1.15]">
+              {heroProduct !== null
+                ? `${heroProduct.name}: our house dark.`
+                : "Chocolate worth slowing down for."}
             </h1>
-            <p className="mb-8 max-w-[48ch] font-body text-lead text-ink-soft">
-              Ethically sourced cacao, roasted in-house and finished by hand.
-              Tasting notes you can actually taste — no shortcuts, no fillers.
+            <p className="mb-8 max-w-[52ch] text-[14px] leading-[21px] font-light tracking-[0.7px] text-[#FCF5E8]/85">
+              {heroProduct?.blurb ??
+                "Ethically sourced cacao, roasted in-house and finished by hand. Tasting notes you can actually taste — no shortcuts, no fillers."}
             </p>
             <div className="mb-9 flex flex-wrap gap-3.5">
-              <Link href="/shop" className={PRIMARY_CTA}>
-                Shop the collection
+              <Link
+                href={heroProduct !== null ? `/product/${heroProduct.slug}` : "/shop"}
+                className={`rounded-none border border-[#FCF5E8] bg-[#FCF5E8] px-5 py-3 text-[14px] tracking-[1.4px] text-[#683126] uppercase no-underline transition-colors hover:bg-transparent hover:text-[#FCF5E8] ${FOCUS_RING}`}
+              >
+                {heroProduct !== null
+                  ? `Discover ${heroProduct.name}`
+                  : "Shop the collection"}
               </Link>
-              <Link href="/about" className={SECONDARY_CTA}>
-                Our story
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center gap-[22px] font-body text-[13.5px] text-ink-soft">
-              <div className="flex items-center gap-[7px]">
-                <span aria-hidden="true" className="text-gold">
-                  ✦
-                </span>
-                <span>
-                  <strong className="font-bold text-ink">Small-batch</strong> ·
-                  bean-to-bar
-                </span>
-              </div>
-              <span aria-hidden="true" className="h-4 w-px bg-line" />
-              <span className="inline-flex items-center gap-[7px]">
-                <svg
-                  aria-hidden="true"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#7C8A4E"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M11 20A7 7 0 0 1 4 13C4 8 8 4 13 3c2 8-2 14-2 17z" />
-                  <path d="M11 20c0-5 2.5-9 6.5-12" />
-                </svg>
-                Ethically sourced cacao
-              </span>
             </div>
           </div>
-          <HeroShowcase product={heroProduct} />
         </div>
       </section>
 
