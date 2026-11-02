@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { getCompanyInfo, getFssaiLicense } from "@/lib/catalog/queries";
+import { brand } from "@/lib/brand";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { BrandLockup } from "./BrandMark";
 
@@ -56,7 +57,9 @@ const LEGAL_LINKS: FooterLink[] = [
  * (FSSAI / MRP) and the accepted payment methods.
  *
  * Server component; the only client island is the newsletter form. All routes
- * and compliance content preserved — presentation only.
+ * and compliance content preserved — presentation only. The legal bar also
+ * carries the brand pack's font attribution when its typeface licence requires
+ * one (KAKOA's Infini is CC BY-ND).
  */
 export async function Footer(): Promise<ReactNode> {
   const [fssai, company] = await Promise.all([
@@ -66,6 +69,7 @@ export async function Footer(): Promise<ReactNode> {
   const year = new Date().getFullYear();
 
   const payments = ["UPI", "Cards", "Netbanking", ...(company.codEnabled ? ["Cash on delivery"] : [])];
+  const { fontAttribution } = brand;
 
   return (
     <footer
@@ -165,6 +169,21 @@ export async function Footer(): Promise<ReactNode> {
               {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
               inclusive of all taxes
             </span>
+            {fontAttribution !== null ? (
+              <>
+                <span aria-hidden="true" className="text-[#FCF5E8]/25">
+                  ·
+                </span>
+                <a
+                  href={fontAttribution.href}
+                  target="_blank"
+                  rel="license noopener noreferrer"
+                  className="tracking-[0.4px] text-[#FCF5E8]/60 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                >
+                  {fontAttribution.text}
+                </a>
+              </>
+            ) : null}
           </div>
 
           {/* Accepted payment methods — text, not vendor logos */}

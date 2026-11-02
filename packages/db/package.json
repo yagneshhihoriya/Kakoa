@@ -19,6 +19,7 @@
     "db:migrate-media": "tsx src/migrate-media-s3-to-r2.ts"
   },
   "dependencies": {
+    "@kakoa/brands": "workspace:*",
     "@kakoa/core": "workspace:*",
     "@platform/kernel": "workspace:*",
     "drizzle-orm": "^0.44.0",

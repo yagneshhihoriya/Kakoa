@@ -52,13 +52,14 @@ export interface BusinessContext {
 /**
  * Resolve the effective capability set: the preset's defaults, plus any
  * per-business `capability.<key>.enabled` overrides. Pure — the overrides map
- * is whatever the caller loaded from settings.
+ * is whatever the caller loaded from settings. Accepts either a vertical key
+ * (the shipped preset) or an already-resolved preset (see `resolvePreset`).
  */
 export function resolveCapabilities(
-  vertical: PresetKey,
+  vertical: PresetKey | VerticalPreset,
   overrides?: Partial<Record<Capability, boolean>>,
 ): Set<Capability> {
-  const preset = getPreset(vertical);
+  const preset = typeof vertical === 'string' ? getPreset(vertical) : vertical;
   const set = new Set<Capability>(preset.capabilities);
   if (overrides) {
     for (const [cap, enabled] of Object.entries(overrides)) {
@@ -82,12 +83,14 @@ export function createBusinessContext(input: {
   settings: SettingsReader;
   /** The acting admin's expanded permission grants (or `['*']` for Owner). */
   grants: readonly PermissionGrant[];
+  /** The business's resolved preset; defaults to the shipped one for its vertical. */
+  preset?: VerticalPreset;
 }): BusinessContext {
   const { profile, capabilities, enabledModules, settings, grants } = input;
   return {
     businessId: profile.businessId,
     profile,
-    preset: getPreset(profile.vertical),
+    preset: input.preset ?? getPreset(profile.vertical),
     capabilities,
     enabledModules,
     settings,

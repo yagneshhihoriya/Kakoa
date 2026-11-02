@@ -1,11 +1,9 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
-
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { ProductTone } from "@kakoa/core";
 import { PRODUCT_TONES } from "@kakoa/core";
 import { EmptyState } from "@kakoa/ui";
+import { assets } from "@brand/assets";
 import { getCategories, getProducts } from "@/lib/catalog/queries";
 import { getDefaultVariantIds } from "./shop/default-variants";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
@@ -250,12 +248,10 @@ export default async function HomePage() {
 
   /**
    * Hero photography — two art-directed crops: a 2.51:1 frame for the overlay
-   * layout and a 1:1 frame for the stacked mobile band. Checked server-side so
-   * missing files degrade silently to the cocoa gradient below.
+   * layout and a 1:1 frame for the stacked mobile band. Bundled with the brand
+   * pack; a pack without photography degrades to the cocoa gradient below.
    */
-  const heroPhoto =
-    existsSync(path.join(process.cwd(), "public", "hero.jpg")) &&
-    existsSync(path.join(process.cwd(), "public", "hero-mobile.jpg"));
+  const heroPhoto = assets.heroPhoto;
 
   return (
     <main>
@@ -275,7 +271,7 @@ export default async function HomePage() {
           className="relative aspect-square w-full sm:aspect-[1989/791] md:absolute md:inset-0 md:-z-10 md:aspect-auto"
         >
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_74%_38%,#8a4a33_0%,#683126_46%,#3c1c12_100%)]" />
-          {heroPhoto ? (
+          {heroPhoto !== null ? (
             /* <picture> rather than next/image: the two crops are art direction,
                not resolution switching, and <source media> downloads exactly one
                — two next/image elements would both fetch (~600 KB wasted on phones).
@@ -283,9 +279,9 @@ export default async function HomePage() {
                No scrim: the photo's own left field measures 7.3:1 against the
                cream copy (AA body text needs 4.5). */
             <picture>
-              <source media="(min-width: 640px)" srcSet="/hero.jpg" />
+              <source media="(min-width: 640px)" srcSet={heroPhoto.desktop.src} />
               <img
-                src="/hero-mobile.jpg"
+                src={heroPhoto.mobile.src}
                 alt=""
                 fetchPriority="high"
                 decoding="async"

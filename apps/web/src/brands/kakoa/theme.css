@@ -1,0 +1,10 @@
+/*
+ * KAKOA palette override. Imported by the root layout AFTER globals.css: Tailwind
+ * v4 emits @theme variables inside @layer theme, so this unlayered :root rule
+ * wins and re-skins every token-backed utility without touching
+ * packages/ui/src/tokens.css. Token NAMES stay shared across brands; only
+ * VALUES move here. KAKOA is the palette the shared tokens already describe, so
+ * there is nothing to override yet — the tokenisation increment fills this in.
+ */
+:root {
+}

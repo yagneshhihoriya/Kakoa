@@ -42,18 +42,22 @@ export interface CategorySeed {
   readonly description: string;
 }
 
-export type PresetKey =
-  | 'chocolate'
-  | 'bakery'
-  | 'coffee'
-  | 'tea'
-  | 'snacks'
-  | 'grocery'
-  | 'restaurant'
-  | 'food-delivery'
-  | 'organic'
-  | 'gifts'
-  | 'general';
+/** Every shipped vertical, as a tuple so config layers can build an enum from it. */
+export const PRESET_KEYS = [
+  'chocolate',
+  'bakery',
+  'coffee',
+  'tea',
+  'snacks',
+  'grocery',
+  'restaurant',
+  'food-delivery',
+  'organic',
+  'gifts',
+  'general',
+] as const;
+
+export type PresetKey = (typeof PRESET_KEYS)[number];
 
 export interface VerticalPreset {
   readonly key: PresetKey;
@@ -210,4 +214,72 @@ export const PRESETS: Record<PresetKey, VerticalPreset> = {
 
 export function getPreset(key: PresetKey): VerticalPreset {
   return PRESETS[key] ?? GENERAL;
+}
+
+/* ------------------------------------------------------------------ */
+/* Per-business overrides                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The slice of a preset a business profile may tune without forking the
+ * kernel. Merge rules (see `resolvePreset`): scalars and `taxDefaults` fields
+ * override individually; `capabilities` and `categoryTaxonomy` REPLACE the
+ * preset's list wholesale; `attributeSchema` merges BY KEY — a matching key
+ * patches that attribute in place, a new key is appended.
+ */
+export interface PresetOverrides {
+  readonly label?: string;
+  readonly capabilities?: readonly Capability[];
+  readonly attributeSchema?: readonly AttributeDef[];
+  readonly taxDefaults?: Partial<TaxDefault>;
+  readonly categoryTaxonomy?: readonly CategorySeed[];
+  readonly units?: VerticalPreset['units'];
+}
+
+/** Anything that names a vertical and optionally tunes it (a brand profile). */
+export interface PresetSource {
+  readonly vertical: PresetKey;
+  readonly presetOverrides?: PresetOverrides;
+}
+
+/** Drop `undefined` values so a `Partial` can never blank out a base field. */
+function definedEntries<T extends object>(value: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, v]) => v !== undefined),
+  ) as Partial<T>;
+}
+
+function mergeAttributeSchema(
+  base: readonly AttributeDef[],
+  overrides: readonly AttributeDef[] | undefined,
+): readonly AttributeDef[] {
+  if (overrides === undefined) return base;
+  const merged = base.map((attr) => {
+    const patch = overrides.find((o) => o.key === attr.key);
+    return patch === undefined ? attr : { ...attr, ...definedEntries(patch) };
+  });
+  const baseKeys = new Set(base.map((a) => a.key));
+  return [...merged, ...overrides.filter((o) => !baseKeys.has(o.key))];
+}
+
+/**
+ * The effective preset for a business: `getPreset(vertical)` deep-merged with
+ * the profile's `presetOverrides`. Pure; returns the shipped preset object
+ * itself when there is nothing to override. The `key` is never overridable —
+ * it names the vertical the business IS, not how it is tuned.
+ */
+export function resolvePreset(source: PresetSource): VerticalPreset {
+  const base = getPreset(source.vertical);
+  const o = source.presetOverrides;
+  if (o === undefined) return base;
+  const categoryTaxonomy = o.categoryTaxonomy ?? base.categoryTaxonomy;
+  return {
+    key: base.key,
+    label: o.label ?? base.label,
+    capabilities: o.capabilities ?? base.capabilities,
+    attributeSchema: mergeAttributeSchema(base.attributeSchema, o.attributeSchema),
+    taxDefaults: { ...base.taxDefaults, ...definedEntries(o.taxDefaults ?? {}) },
+    ...(categoryTaxonomy === undefined ? {} : { categoryTaxonomy }),
+    units: o.units ?? base.units,
+  };
 }

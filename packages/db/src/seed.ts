@@ -6,6 +6,7 @@
  * Idempotent: exits early if store_settings is already populated.
  */
 import { randomUUID } from 'node:crypto';
+import { KAKOA } from '@kakoa/brands';
 import { db, queryClient } from './client';
 import { seedSystemRoles } from './seed-roles';
 import {
@@ -19,26 +20,31 @@ import {
 } from './schema/index';
 
 // ---------------------------------------------------------------------------
-// store_settings — Contract §1.1 v1 policy values (paise integers).
+// store_settings — Contract §1.1 v1 policy values (paise integers), sourced
+// from the brand profile's defaults so the seed and the admin catalog can never
+// disagree. Same key set as before the move; a per-brand seed split is Phase 2.
 // ---------------------------------------------------------------------------
-const SETTINGS: Record<string, string | number | boolean> = {
-  fssai_license_number: '11525023000841',
-  seller_gstin: '27AABCK4321M1Z5',
-  seller_state_code: '27',
-  seller_legal_name: 'Kakao Chocolates Private Limited',
-  seller_address:
-    'Unit 12, Veera Desai Industrial Estate, Andheri West, Mumbai 400053, Maharashtra, India',
-  origin_pincode: '400053',
-  shipping_fee_standard_paise: 4900, // ₹49; free ≥ threshold
-  shipping_fee_express_paise: 14900, // ₹149 flat
-  free_shipping_threshold_paise: 99900, // ₹999
-  cod_fee_paise: 4900, // ₹49
-  cod_enabled: false, // prepaid/online-only launch; flip to true to enable COD
-  gift_wrap_fee_paise: 4900, // ₹49 per line
-  payment_expiry_minutes: 30,
-  support_phone: '+919820012345',
-  support_email: 'support@kakoa.in',
-};
+const SETTING_KEYS = [
+  'fssai_license_number',
+  'seller_gstin',
+  'seller_state_code',
+  'seller_legal_name',
+  'seller_address',
+  'origin_pincode',
+  'shipping_fee_standard_paise',
+  'shipping_fee_express_paise',
+  'free_shipping_threshold_paise',
+  'cod_fee_paise',
+  'cod_enabled',
+  'gift_wrap_fee_paise',
+  'payment_expiry_minutes',
+  'support_phone',
+  'support_email',
+] as const satisfies readonly (keyof typeof KAKOA.defaults)[];
+
+const SETTINGS: Record<string, string | number | boolean> = Object.fromEntries(
+  SETTING_KEYS.map((key) => [key, KAKOA.defaults[key]]),
+);
 
 // ---------------------------------------------------------------------------
 // Catalog — 10 prototype products across Bars / Pralines / Signature / Gifts.

@@ -38,15 +38,16 @@ import {
 } from '@kakoa/db';
 import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { getPreset } from '@platform/kernel';
+import { resolvePreset } from '@platform/kernel';
 import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
 import { displayReviewerName } from '@/lib/admin/review-format';
+import { brand } from '@/lib/brand';
 
 /**
- * Active business vertical (mirrors admin `lib/admin/context.ts` VERTICAL —
- * config-driven later). Drives which product attributes surface on the PDP.
+ * The brand's vertical preset (same resolution the admin BusinessContext uses).
+ * Drives which product attributes surface on the PDP.
  */
-const VERTICAL = 'chocolate' as const;
+const PRESET = resolvePreset(brand.profile);
 
 /** Present a stored attribute value (array/number/string) as display text. */
 function formatAttrValue(v: unknown): string {
@@ -68,8 +69,8 @@ function buildPdpAttributes(
   attributes: unknown,
 ): { label: string; value: string; unit: string | null }[] {
   const attrs = (attributes !== null && typeof attributes === 'object' ? attributes : {}) as Record<string, unknown>;
-  return getPreset(VERTICAL)
-    .attributeSchema.filter((d) => d.showOnPdp === true)
+  return PRESET.attributeSchema
+    .filter((d) => d.showOnPdp === true)
     .map((d) => ({ label: d.label, value: formatAttrValue(attrs[d.key]), unit: d.unit ?? null }))
     .filter((a) => a.value !== '');
 }

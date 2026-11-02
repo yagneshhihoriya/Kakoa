@@ -180,6 +180,7 @@ describe('getEmailProvider', () => {
   const saved = { ...process.env };
 
   beforeEach(() => {
+    process.env.BRAND_KEY = 'kakoa';
     process.env.DATABASE_URL = 'postgres://u:p@localhost:5432/db';
     process.env.NEXT_PUBLIC_SITE_URL = 'https://kakao.example';
     process.env.OTP_PEPPER = 'x'.repeat(32);

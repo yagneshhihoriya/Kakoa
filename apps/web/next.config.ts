@@ -1,4 +1,36 @@
+import { existsSync, readdirSync } from "node:fs";
+import path from "node:path";
 import type { NextConfig } from "next";
+
+/**
+ * The brand pack this build bundles: src/brands/<BRAND_KEY>, wired to the
+ * `@brand` import alias. REQUIRED — a build that does not say which brand it is
+ * fails here rather than silently shipping one brand's storefront as another.
+ * (For type-checking, tsconfig `paths` points `@brand` at the kakoa pack; every
+ * pack ends with `satisfies`, so one typecheck proves them all.)
+ */
+function brandPackKey(): string {
+  const root = path.join(__dirname, "src", "brands");
+  const packs = readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+  const key = process.env.BRAND_KEY;
+  if (key == null || key === "") {
+    throw new Error(
+      `BRAND_KEY is not set. Set it to the brand this build is for (one of: ${packs.join(", ")}).`,
+    );
+  }
+  if (!/^[a-z][a-z0-9-]*$/.test(key) || !existsSync(path.join(root, key, "index.ts"))) {
+    throw new Error(
+      `BRAND_KEY=${JSON.stringify(key)} has no pack at src/brands/${key}/index.ts (known: ${packs.join(", ")}).`,
+    );
+  }
+  return key;
+}
+
+const BRAND_KEY = brandPackKey();
+/** Project-relative (Turbopack rejects absolute alias targets as "server relative"). */
+const BRAND_PACK = `./src/brands/${BRAND_KEY}`;
 
 /** Host of an optional CDN in front of the media bucket (S3_PUBLIC_BASE_URL). */
 function cdnHost(): string | null {
@@ -65,12 +97,28 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: [
+    "@kakoa/brands",
     "@kakoa/core",
     "@kakoa/db",
     "@kakoa/ui",
     "@kakoa/config",
     "@platform/kernel",
   ],
+  // `@brand` → the selected pack, for both bundlers. Turbopack is the default;
+  // the webpack alias keeps `next build --webpack` honest.
+  turbopack: {
+    resolveAlias: {
+      "@brand": BRAND_PACK,
+      "@brand/*": `${BRAND_PACK}/*`,
+    },
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@brand": path.join(__dirname, "src", "brands", BRAND_KEY),
+    };
+    return config;
+  },
 };
 
 export default nextConfig;

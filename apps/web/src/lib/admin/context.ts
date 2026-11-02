@@ -7,7 +7,8 @@
  * and permission check flows through this — the seam that lets us add shared
  * multi-tenancy later without touching module code.
  *
- * Today it resolves the single 'default' business (Kakao). `business_settings`
+ * Today it resolves the single 'default' business — the brand this build was
+ * made for (`brand.profile`, selected by BRAND_KEY). `business_settings`
  * (namespaced) will supersede `store_settings` in a later increment; the reader
  * already accepts a `(namespace, key)` shape and degrades to the flat key.
  *
@@ -15,18 +16,17 @@
  */
 import { db, storeSettings } from '@kakoa/db';
 import {
+  CAPABILITY_KEYS,
   createBusinessContext,
   resolveCapabilities,
+  resolvePreset,
   type BusinessContext,
   type BusinessProfile,
   type Capability,
   type SettingsReader,
 } from '@platform/kernel';
-import { BRAND } from '@/lib/seo/site';
+import { assertBrandMatchesEnv, brand } from '@/lib/brand';
 import { resolveAdminSession, type AdminIdentity } from './session';
-
-/** The current business vertical. Config-driven later; 'chocolate' for Kakao. */
-const VERTICAL = 'chocolate' as const;
 
 function toBool(value: unknown): boolean | null {
   if (typeof value === 'boolean') return value;
@@ -70,27 +70,50 @@ async function loadSettings(): Promise<Map<string, unknown>> {
   return new Map(rows.map((r) => [r.key, r.value]));
 }
 
+/**
+ * Per-business capability overrides: a `capability.<key>.enabled` setting row
+ * (jsonb boolean, or "true"/"false"/1/0) turns a capability on or off over the
+ * preset's defaults. Unset or unparsable rows leave the default alone.
+ */
+function loadCapabilityOverrides(
+  settings: SettingsReader,
+): Partial<Record<Capability, boolean>> {
+  const overrides: Partial<Record<Capability, boolean>> = {};
+  for (const cap of CAPABILITY_KEYS) {
+    const enabled = toBool(settings.get('capability', `${cap}.enabled`));
+    if (enabled !== null) overrides[cap] = enabled;
+  }
+  return overrides;
+}
+
 /** Build the BusinessContext for the acting admin (grants drive `can()`). */
 export async function buildBusinessContext(
   admin: AdminIdentity,
 ): Promise<BusinessContext> {
+  assertBrandMatchesEnv();
   const map = await loadSettings();
   const settings = makeSettingsReader(map);
+  const { profile: brandProfile } = brand;
 
   const profile: BusinessProfile = {
     businessId: 'default',
-    name: BRAND.name,
-    legalName: settings.getString('legal', 'seller_legal_name', BRAND.name),
-    currency: 'INR',
-    country: 'IN',
-    locale: 'en-IN',
-    identifierPrefix: 'KK',
-    vertical: VERTICAL,
+    name: brandProfile.name,
+    legalName: settings.getString(
+      'legal',
+      'seller_legal_name',
+      brandProfile.defaults.seller_legal_name,
+    ),
+    currency: brandProfile.currency,
+    country: brandProfile.country,
+    locale: brandProfile.locale,
+    identifierPrefix: brandProfile.identifierPrefix,
+    vertical: brandProfile.vertical,
   };
 
-  // Capability overrides from settings (`capability.<key>.enabled`).
-  const overrides: Partial<Record<Capability, boolean>> = {};
-  const capabilities = resolveCapabilities(VERTICAL, overrides);
+  // The brand's vertical preset (tuned by its presetOverrides), then the
+  // per-business capability overrides from settings on top.
+  const preset = resolvePreset(brandProfile);
+  const capabilities = resolveCapabilities(preset, loadCapabilityOverrides(settings));
 
   return createBusinessContext({
     profile,
@@ -98,6 +121,7 @@ export async function buildBusinessContext(
     enabledModules: new Set(),
     settings,
     grants: admin.grants,
+    preset,
   });
 }
 

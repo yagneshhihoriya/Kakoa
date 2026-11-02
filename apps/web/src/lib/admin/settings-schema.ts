@@ -8,7 +8,12 @@
  * as a JSON boolean, a string as a JSON string. `int-paise` fields are edited in
  * RUPEES in the UI and on the wire; this validator converts ₹→paise and stores an
  * integer paise NUMBER (never a string — the checkout reader uses `getInt`).
+ *
+ * `default:` values come from the brand profile (`brand.profile.defaults`), so
+ * a missing row falls back to THIS brand's identity and policy, never another's.
  */
+
+import { brand } from '@/lib/brand';
 
 /** Every setting value is one of these JSON primitive types. */
 export type JsonValue = string | number | boolean;
@@ -56,6 +61,8 @@ export type SettingGroup = (typeof SETTING_GROUPS)[number];
  */
 export const MAX_PAISE = 100_000_000;
 
+const DEFAULTS = brand.profile.defaults;
+
 export const SETTINGS_CATALOG: readonly SettingField[] = [
   // ── Business identity ──────────────────────────────────────────────
   {
@@ -66,7 +73,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     minLen: 2,
     maxLen: 120,
     hint: 'Printed on GST invoices.',
-    default: 'Kakao Chocolates Private Limited',
+    default: DEFAULTS.seller_legal_name,
   },
   {
     key: 'seller_gstin',
@@ -74,7 +81,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'GSTIN',
     type: 'gstin',
     hint: '15-character GST identification number.',
-    default: '27AABCK4321M1Z5',
+    default: DEFAULTS.seller_gstin,
   },
   {
     key: 'seller_state_code',
@@ -82,7 +89,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'GST state code',
     type: 'state-code',
     hint: 'Two digits (01–37); drives CGST/SGST vs IGST.',
-    default: '27',
+    default: DEFAULTS.seller_state_code,
   },
   {
     key: 'seller_address',
@@ -91,8 +98,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     type: 'string',
     minLen: 5,
     maxLen: 300,
-    default:
-      'Unit 12, Veera Desai Industrial Estate, Andheri West, Mumbai 400053, Maharashtra, India',
+    default: DEFAULTS.seller_address,
   },
   {
     key: 'origin_pincode',
@@ -100,7 +106,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'Dispatch origin PIN code',
     type: 'pincode',
     hint: '6-digit origin PIN for shipping.',
-    default: '400053',
+    default: DEFAULTS.origin_pincode,
   },
   // ── Legal ──────────────────────────────────────────────────────────
   {
@@ -109,7 +115,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'FSSAI license number',
     type: 'fssai',
     hint: '14-digit FSSAI license.',
-    default: '11525023000841',
+    default: DEFAULTS.fssai_license_number,
   },
   {
     key: 'grievance_officer_name',
@@ -119,7 +125,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     minLen: 2,
     maxLen: 80,
     hint: 'Named officer shown on Contact/Legal pages (Consumer Protection E-Commerce Rules, 2020).',
-    default: 'Grievance Officer',
+    default: DEFAULTS.grievance_officer_name,
   },
   {
     key: 'country_of_origin',
@@ -129,7 +135,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     minLen: 2,
     maxLen: 60,
     hint: 'Shown on product pages (Legal Metrology / E-Commerce Rules).',
-    default: 'India',
+    default: DEFAULTS.country_of_origin,
   },
   // ── Fees & shipping (NOT retroactive — snapshotted at placement) ─────
   {
@@ -139,7 +145,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     type: 'int-paise',
     min: 0,
     max: MAX_PAISE,
-    default: 4900,
+    default: DEFAULTS.shipping_fee_standard_paise,
   },
   {
     key: 'shipping_fee_express_paise',
@@ -148,7 +154,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     type: 'int-paise',
     min: 0,
     max: MAX_PAISE,
-    default: 14900,
+    default: DEFAULTS.shipping_fee_express_paise,
   },
   {
     key: 'free_shipping_threshold_paise',
@@ -158,7 +164,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     min: 0,
     max: MAX_PAISE,
     hint: 'Order subtotal at/above this ships free. ₹0 = always free.',
-    default: 99900,
+    default: DEFAULTS.free_shipping_threshold_paise,
   },
   {
     key: 'gift_wrap_fee_paise',
@@ -167,7 +173,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     type: 'int-paise',
     min: 0,
     max: MAX_PAISE,
-    default: 4900,
+    default: DEFAULTS.gift_wrap_fee_paise,
   },
   // ── Payments ───────────────────────────────────────────────────────
   {
@@ -176,7 +182,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'Cash on Delivery enabled',
     type: 'bool',
     hint: 'Read live at checkout — turning this off immediately hides COD storefront-wide.',
-    default: false,
+    default: DEFAULTS.cod_enabled,
   },
   {
     key: 'cod_fee_paise',
@@ -185,7 +191,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     type: 'int-paise',
     min: 0,
     max: MAX_PAISE,
-    default: 4900,
+    default: DEFAULTS.cod_fee_paise,
   },
   {
     key: 'payment_expiry_minutes',
@@ -195,7 +201,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     min: 5,
     max: 1440,
     hint: 'How long a prepaid order holds stock before the sweep releases it.',
-    default: 30,
+    default: DEFAULTS.payment_expiry_minutes,
   },
   // ── Support ────────────────────────────────────────────────────────
   {
@@ -204,14 +210,14 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'Support phone',
     type: 'phone',
     hint: 'Indian mobile, e.g. +919820012345.',
-    default: '+919820012345',
+    default: DEFAULTS.support_phone,
   },
   {
     key: 'support_email',
     group: 'Support',
     label: 'Support email',
     type: 'email',
-    default: 'support@kakoa.in',
+    default: DEFAULTS.support_email,
   },
   {
     key: 'support_hours',
@@ -221,7 +227,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     minLen: 2,
     maxLen: 80,
     hint: 'e.g. Mon–Sat, 10:00–18:00 IST — shown on the Contact page.',
-    default: 'Monday to Saturday, 10:00–18:00 IST',
+    default: DEFAULTS.support_hours,
   },
 ];
 

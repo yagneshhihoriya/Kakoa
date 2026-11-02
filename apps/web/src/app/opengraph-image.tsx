@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
+import { brand } from "@/lib/brand";
 
-export const alt = "KAKOA — Small-Batch Chocolate";
+export const alt = brand.og.alt;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -20,14 +21,16 @@ export default function OpengraphImage(): ImageResponse {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #2A1D12 0%, #4A2E1C 100%)",
-          color: "#FBF6EF",
+          background: brand.og.background,
+          color: brand.og.ink,
           fontFamily: "serif",
         }}
       >
-        <div style={{ fontSize: 120, fontWeight: 800, letterSpacing: 12 }}>KAKAO</div>
-        <div style={{ marginTop: 8, fontSize: 34, color: "#E8C9A0", letterSpacing: 2 }}>
-          Small-batch bean-to-bar chocolate
+        <div style={{ fontSize: 120, fontWeight: 800, letterSpacing: 12 }}>
+          {brand.profile.name}
+        </div>
+        <div style={{ marginTop: 8, fontSize: 34, color: brand.og.accent, letterSpacing: 2 }}>
+          {brand.og.tagline}
         </div>
       </div>
     ),

@@ -5,6 +5,7 @@ import {
   type BusinessProfile,
   type SettingsReader,
 } from './business-context';
+import { PRESETS, resolvePreset } from './presets';
 
 const NULL_SETTINGS: SettingsReader = {
   get: () => undefined,
@@ -31,6 +32,14 @@ describe('resolveCapabilities', () => {
     expect(caps.has('menu')).toBe(false); // restaurant-only
   });
 
+  it('accepts an already-resolved preset in place of a vertical key', () => {
+    const caps = resolveCapabilities(
+      resolvePreset({ vertical: 'chocolate', presetOverrides: { capabilities: ['variants'] } }),
+      { 'veg-mark': true },
+    );
+    expect([...caps].sort()).toEqual(['variants', 'veg-mark']);
+  });
+
   it('applies per-business overrides (add and remove)', () => {
     const caps = resolveCapabilities('chocolate', {
       'cold-chain': false, // turn off
@@ -53,7 +62,22 @@ describe('createBusinessContext', () => {
 
   it('exposes the resolved preset for the profile vertical', () => {
     expect(ctx.preset.key).toBe('chocolate');
+    expect(ctx.preset).toBe(PRESETS.chocolate);
     expect(ctx.businessId).toBe('default');
+  });
+
+  it('uses an explicitly resolved preset when one is given', () => {
+    const preset = resolvePreset({ vertical: 'chocolate', presetOverrides: { label: 'Tuned' } });
+    const tuned = createBusinessContext({
+      profile: PROFILE,
+      capabilities: resolveCapabilities(preset),
+      enabledModules: new Set(),
+      settings: NULL_SETTINGS,
+      grants: [],
+      preset,
+    });
+    expect(tuned.preset.label).toBe('Tuned');
+    expect(tuned.preset.key).toBe('chocolate');
   });
 
   it('can() reflects the acting admin grants', () => {

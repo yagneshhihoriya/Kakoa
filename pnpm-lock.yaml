@@ -17,6 +17,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@kakoa/brands':
+        specifier: workspace:*
+        version: link:../../packages/brands
       '@kakoa/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -94,8 +97,27 @@ importers:
         specifier: ^3.0.0
         version: 3.2.6(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
+  packages/brands:
+    dependencies:
+      '@platform/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+
   packages/config:
     dependencies:
+      '@kakoa/brands':
+        specifier: workspace:*
+        version: link:../brands
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -122,6 +144,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@kakoa/brands':
+        specifier: workspace:*
+        version: link:../brands
       '@kakoa/core':
         specifier: workspace:*
         version: link:../core

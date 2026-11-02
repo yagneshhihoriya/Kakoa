@@ -1,34 +1,7 @@
 import type { ReactNode } from "react";
 import { cx } from "@kakoa/ui";
-
-/**
- * Cacao-pod line mark, verbatim from the prototype's `#mark` symbol
- * (00-global-header-drawers.html). The symbol is authored on a
- * 150×156 canvas and always consumed through the cropped
- * `viewBox="46 8 88 116"` window, exactly as the reference does.
- * Server-safe — pure SVG, colored via `currentColor`.
- */
-export function CacaoMark({ className }: { className?: string }): ReactNode {
-  return (
-    <svg viewBox="46 8 88 116" aria-hidden="true" className={className}>
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M62 48 C78 55 84 72 84 91 C84 112 75 127 62 137 C49 127 40 112 40 91 C40 72 46 55 62 48 Z" />
-        <path d="M62 55 L62 131" />
-        <path d="M51 60 C46 80 46 104 55 128" />
-        <path d="M73 60 C78 80 78 104 69 128" />
-        <path d="M62 48 C61 37 63 30 70 25" />
-        <path d="M70 25 C97 23 116 41 110 69 C91 66 74 47 70 25 Z" />
-        <path d="M76 32 C87 43 97 55 104 66" />
-      </g>
-    </svg>
-  );
-}
+import { Mark } from "@brand/Mark";
+import { brand } from "@/lib/brand";
 
 export interface BrandLockupProps {
   /** Header uses 40px square / 26px wordmark; footer 34px / 25px. */
@@ -39,6 +12,7 @@ export interface BrandLockupProps {
 /**
  * Gradient-square logo mark + serif wordmark, per the prototype header
  * (`linear-gradient(140deg,#8a5a34,#4a2e1c)` = espresso → cocoa tokens).
+ * The mark itself is the brand pack's `Mark`; the wordmark is the brand name.
  */
 export function BrandLockup({
   size = "header",
@@ -55,7 +29,7 @@ export function BrandLockup({
             : "h-[34px] w-[34px] rounded-[9px]",
         )}
       >
-        <CacaoMark
+        <Mark
           className={cx("h-auto text-[#e8c9a0]", isHeader ? "w-[22px]" : "w-[19px]")}
         />
       </span>
@@ -67,7 +41,7 @@ export function BrandLockup({
             : "text-[25px] text-card",
         )}
       >
-        KAKOA
+        {brand.profile.name}
       </span>
     </span>
   );

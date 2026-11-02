@@ -1,0 +1,87 @@
+/**
+ * Presentation-pack contract — the React / next-font / CSS half of a brand.
+ *
+ * Exactly ONE pack under src/brands/<key> is bundled per build, selected by the
+ * `@brand` alias in next.config.ts (from BRAND_KEY) and type-checked through
+ * the matching tsconfig `paths` entry. Every pack module ends with
+ * `satisfies <Type>` so a single typecheck proves each pack is complete.
+ *
+ * Pure data (identity, market, settings defaults) is NOT here — it is the
+ * BrandProfile from @kakoa/brands, re-exported by the pack so client components
+ * get it without any env read.
+ *
+ * Content (storefront copy, FAQ, legal clause variants, journal) joins this
+ * contract in the content-extraction increment; `StorefrontCopy` starts with
+ * the one string the root layout already needs.
+ */
+import type { ComponentType } from "react";
+import type { StaticImageData } from "next/image";
+import type { BrandProfile } from "@kakoa/brands";
+
+/** The `next/font` result shape the root layout consumes (className + CSS var). */
+export interface BrandFontFace {
+  readonly className: string;
+  readonly variable: string;
+}
+
+/**
+ * Fixed export shape of `@brand/fonts`: the display (headline) face, the body
+ * face, the chrome ("ui") face and a mono face, each bound to the CSS variable
+ * the tokens reference (--font-display / --font-body / --font-ui / --font-mono).
+ */
+export interface BrandFonts {
+  readonly display: BrandFontFace;
+  readonly body: BrandFontFace;
+  readonly ui: BrandFontFace;
+  readonly mono: BrandFontFace;
+}
+
+/** A licence obligation that must be rendered on-site (e.g. a CC BY-ND face). */
+export interface FontAttribution {
+  /** Short line rendered in the footer legal bar. */
+  readonly text: string;
+  /** Licence URL the line links to. */
+  readonly href: string;
+}
+
+/** Default social-share card (app/opengraph-image.tsx). */
+export interface BrandOg {
+  readonly alt: string;
+  readonly tagline: string;
+  /** CSS background for the card (gradient or colour). */
+  readonly background: string;
+  /** Wordmark colour. */
+  readonly ink: string;
+  /** Tagline colour. */
+  readonly accent: string;
+}
+
+/** Storefront copy owned by the brand. Grows in the content-extraction increment. */
+export interface StorefrontCopy {
+  /** Suffix of the home <title>: "<name> · <titleTagline>". */
+  readonly titleTagline: string;
+}
+
+/** Logo mark — pure SVG coloured via `currentColor`, server-safe. */
+export type BrandMark = ComponentType<{ className?: string }>;
+
+/**
+ * Static imagery bundled with the pack. `heroPhoto` is the fallback hero when
+ * no hero image setting is configured; `null` renders the gradient field.
+ */
+export interface BrandAssets {
+  readonly heroPhoto: {
+    /** 2.51:1 crop for the overlay layout (≥ 640px). */
+    readonly desktop: StaticImageData;
+    /** 1:1 crop for the stacked mobile band. */
+    readonly mobile: StaticImageData;
+  } | null;
+}
+
+/** What `import { brand } from "@brand"` resolves to. */
+export interface BrandPack {
+  readonly profile: BrandProfile;
+  readonly copy: StorefrontCopy;
+  readonly og: BrandOg;
+  readonly fontAttribution: FontAttribution | null;
+}
