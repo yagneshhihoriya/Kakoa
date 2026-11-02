@@ -153,7 +153,8 @@ export function coerceProductContent(input: unknown, palette: TonePalette): Prod
     const out: Record<string, string> = {};
     for (const [k, v] of Object.entries(b.nutritionFacts as Record<string, unknown>).slice(0, 20)) {
       const key = k.trim().slice(0, 60);
-      const val = (typeof v === 'string' ? v : String(v ?? '')).trim().slice(0, 60);
+      // Scalars only — a nested object must not be stored as "[object Object]".
+      const val = (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '').trim().slice(0, 60);
       if (key !== '' && val !== '') out[key] = val;
     }
     if (Object.keys(out).length > 0) nutritionFacts = out;

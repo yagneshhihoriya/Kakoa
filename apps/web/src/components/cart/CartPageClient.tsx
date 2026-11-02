@@ -360,8 +360,10 @@ function TrustLine(): ReactNode {
   const items: { icon: ReactNode; label: string }[] = [
     { icon: <LockIcon />, label: "Secure checkout" },
     { icon: <HeartIcon />, label: "Satisfaction promise" },
-    // Cold-chain claim only where the vertical ships cold.
-    ...(vocabulary.coldChain ? [{ icon: <SnowIcon />, label: "Ships cold & insulated" }] : []),
+    // The vertical's shipping claim (cold-chain verticals add one; others none).
+    ...(vocabulary.packaging.trustLabel === null
+      ? []
+      : [{ icon: <SnowIcon />, label: vocabulary.packaging.trustLabel }]),
   ];
   return (
     <ul className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-5">

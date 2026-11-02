@@ -4,7 +4,7 @@ import Image from "next/image";
 /**
  * Photo-ready presentational slot. When `src` is provided it renders a real
  * `next/image` (cover-fit, fills the positioned parent); otherwise it falls
- * back to `children` — typically a `ChocoScene`/`ProductPlaceholder` gradient.
+ * back to `children` — typically the pack's Story illustration or a `ProductPlaceholder` gradient.
  *
  * The caller owns the frame (aspect-ratio, radius, clip, positioning); this
  * component only decides "real photo or art-directed placeholder", so real

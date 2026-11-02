@@ -62,9 +62,9 @@ export interface ParcelCm {
 /**
  * Storefront vocabulary — the words and claims a vertical's storefront is
  * allowed to make. Page code interpolates `noun` / `unitNoun` instead of
- * hardcoding "chocolates" / "pieces", and renders every cold-chain claim
- * (ribbon, trust band, cart trust line, legal §6/§2/§5, invoice footer) ONLY
- * when `coldChain` is true.
+ * hardcoding "chocolates" / "pieces", reads its shipping claims from
+ * `packaging`, and renders every cold-chain policy clause (ribbon, legal
+ * §6/§2/§5, invoice footer) ONLY when `coldChain` is true.
  */
 export interface StorefrontVocabulary {
   readonly noun: NounForms;
@@ -72,6 +72,13 @@ export interface StorefrontVocabulary {
   readonly unitNoun: Pick<NounForms, 'one' | 'many'>;
   /** Temperature-controlled shipping is part of the offer (melt policy etc.). */
   readonly coldChain: boolean;
+  /**
+   * How the vertical says its parcels travel — the ONE place the storefront,
+   * checkout and admin read a shipping claim from, so a cold-chain vertical
+   * can promise ice packs while a shelf-stable one promises careful packing.
+   * `{unit}` in `pdpBullet` is replaced with `unitNoun.one`.
+   */
+  readonly packaging: PackagingClaims;
   readonly searchPlaceholder: string;
   /** Idle-state search chips. */
   readonly popularSearches: readonly string[];
@@ -82,6 +89,18 @@ export interface StorefrontVocabulary {
   readonly returnReasonLabels: Readonly<Record<string, string>>;
   /** Parcel dimensions used when no variant on the order carries its own. */
   readonly defaultParcelCm: ParcelCm;
+}
+
+/** The shipping claims a vertical's storefront makes (see `packaging`). */
+export interface PackagingClaims {
+  /** Cart trust-line label and admin shipping-copy hint; null adds none. */
+  readonly trustLabel: string | null;
+  /** Checkout: the one-line note under the standard delivery option. */
+  readonly standardDelivery: string;
+  /** PDP shipping accordion: the first bullet (`{unit}` → `unitNoun.one`). */
+  readonly pdpBullet: string;
+  /** PDP "What you'll get" default when the product carries no admin copy. */
+  readonly whatYoullGet: string;
 }
 
 /** A two-stop gradient swatch — the image placeholder art direction. */
@@ -147,11 +166,21 @@ const NEUTRAL_RETURN_REASON_LABELS = {
   other: 'Other',
 } as const satisfies Readonly<Record<string, string>>;
 
+/** Shipping claims any shelf-stable, packaged product can make. */
+const NEUTRAL_PACKAGING: PackagingClaims = {
+  trustLabel: null,
+  standardDelivery: 'Tracked, packed with care',
+  pdpBullet: 'Packed securely so every {unit} arrives in perfect condition.',
+  whatYoullGet:
+    'Freshly made in small batches and packed ready to enjoy or gift. Every order is packed securely so it arrives in perfect condition.',
+};
+
 /** Brand-neutral copy an unknown or generic vertical renders. */
 export const GENERAL_VOCABULARY: StorefrontVocabulary = {
   noun: { one: 'product', many: 'products', collective: 'products' },
   unitNoun: { one: 'item', many: 'items' },
   coldChain: false,
+  packaging: NEUTRAL_PACKAGING,
   searchPlaceholder: 'Search products, gifts, collections…',
   popularSearches: [],
   returnReasonLabels: NEUTRAL_RETURN_REASON_LABELS,
@@ -212,6 +241,13 @@ const CHOCOLATE: VerticalPreset = {
     noun: { one: 'chocolate', many: 'chocolates', collective: 'chocolate' },
     unitNoun: { one: 'piece', many: 'pieces' },
     coldChain: true,
+    packaging: {
+      trustLabel: 'Ships cold & insulated',
+      standardDelivery: 'Insulated, ships cold & safe',
+      pdpBullet: 'Ships cold & insulated — packed with ice packs so every {unit} arrives perfect.',
+      whatYoullGet:
+        'Freshly made in small batches and packed ready to enjoy or gift. Every order ships cold and insulated so it arrives in perfect condition.',
+    },
     searchPlaceholder: 'Search chocolates, gifts, collections…',
     popularSearches: ['Dark chocolate', 'Gift box', 'Truffles', 'Single origin', 'Sea salt'],
     returnReasonLabels: { ...NEUTRAL_RETURN_REASON_LABELS, damaged_or_melted: 'Damaged or melted' },
@@ -332,6 +368,7 @@ const SNACKS: VerticalPreset = {
     noun: { one: 'snack', many: 'snacks', collective: 'snacks' },
     unitNoun: { one: 'pack', many: 'packs' },
     coldChain: false,
+    packaging: NEUTRAL_PACKAGING,
     searchPlaceholder: 'Search snacks, flavours, gift packs…',
     popularSearches: ['Plain', 'Masala', 'Multigrain', 'Gift packs', 'Methi'],
     returnReasonLabels: { ...NEUTRAL_RETURN_REASON_LABELS, damaged_or_melted: 'Damaged or crushed' },

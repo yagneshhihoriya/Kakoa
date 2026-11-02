@@ -72,7 +72,7 @@ export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
             marginTop: -40,
             marginHorizontal: -40,
             marginBottom: 18,
-            backgroundColor: "#8a5a34",
+            backgroundColor: brand.email.theme.accent,
           }}
         />
         {/* Header */}

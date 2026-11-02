@@ -13,6 +13,7 @@ export const email = {
     muted: "#6b6b6b",
     line: "#e6ddd1",
     card: "#ffffff",
+    accent: "#8a5a34",
   },
   footerTagline: "Handcrafted in small batches",
   copy: {

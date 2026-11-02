@@ -280,14 +280,7 @@ export function PdpDetails({
           </p>
         ) : (
           <ul className="max-w-[62ch] space-y-2.5 font-body text-[15px] leading-[1.6] text-ink-soft">
-            {vocabulary.coldChain ? (
-              <li>
-                Ships cold &amp; insulated — packed with ice packs so every{" "}
-                {vocabulary.unitNoun.one} arrives perfect.
-              </li>
-            ) : (
-              <li>Packed securely so every {vocabulary.unitNoun.one} arrives in perfect condition.</li>
-            )}
+            <li>{vocabulary.packaging.pdpBullet.replace("{unit}", vocabulary.unitNoun.one)}</li>
             <li>
               {freeShippingThresholdPaise !== null
                 ? `Free shipping on orders over ${formatPaise(freeShippingThresholdPaise)}.`

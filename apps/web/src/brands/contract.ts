@@ -407,6 +407,8 @@ export interface BrandEmailTheme {
   readonly line: string;
   /** The centred card. */
   readonly card: string;
+  /** Brand accent — the invoice wordmark, accent bar and grand total (screen + PDF). */
+  readonly accent: string;
 }
 
 /**

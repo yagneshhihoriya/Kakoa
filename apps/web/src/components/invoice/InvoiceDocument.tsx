@@ -22,7 +22,7 @@ const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
 const LINE = "#e2ddd4";
 const HEAD_BG = "#faf7f2";
-const COCOA = "#8a5a34";
+const ACCENT = brand.email.theme.accent;
 
 const money = (paise: number): string => formatPaise(paise);
 
@@ -142,7 +142,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
         style={{
           height: 8,
           margin: "-16mm -14mm 22px",
-          background: `linear-gradient(90deg, #d9ac5e 0%, ${COCOA} 100%)`,
+          background: `linear-gradient(90deg, #d9ac5e 0%, ${ACCENT} 100%)`,
           WebkitPrintColorAdjust: "exact",
           printColorAdjust: "exact",
         }}
@@ -151,7 +151,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: COCOA }}>{BRAND_NAME}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: ACCENT }}>{BRAND_NAME}</div>
           <div style={{ fontSize: 10, letterSpacing: 2, color: MUTED, textTransform: "uppercase", marginTop: 1 }}>
             {brand.copy.invoiceTagline}
           </div>
@@ -277,7 +277,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
             }}
           >
             <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3 }}>Grand total</span>
-            <span style={{ fontSize: 17, fontWeight: 800, color: COCOA, fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 17, fontWeight: 800, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>
               {money(m.summary.grandTotalPaise)}
             </span>
           </div>

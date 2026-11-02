@@ -177,12 +177,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     .map((v) => `${v.weightGrams} g (${v.name})`)
     .join(" · ");
 
-  /** "What you'll get" — admin copy (attributes.whatYoullGet) or a graceful default. */
-  const whatYoullGet =
-    product.whatYoullGet ??
-    (vocabulary.coldChain
-      ? "Freshly made in small batches and packed ready to enjoy or gift. Every order ships cold and insulated so it arrives in perfect condition."
-      : "Freshly made in small batches and packed ready to enjoy or gift. Every order is packed securely so it arrives in perfect condition.");
+  /** "What you'll get" — admin copy (attributes.whatYoullGet) or the vertical's default. */
+  const whatYoullGet = product.whatYoullGet ?? vocabulary.packaging.whatYoullGet;
 
   /** FBT bundle math — default-variant price + the smallest size of each. */
   const defaultVariant =

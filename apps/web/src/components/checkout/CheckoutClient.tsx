@@ -1730,9 +1730,7 @@ function Step2Delivery({
                   <span className="block font-body text-[13px] text-ink-muted">
                     {opt.option === "express"
                       ? "Priority handling & tracking"
-                      : vocabulary.coldChain
-                        ? "Insulated, ships cold & safe"
-                        : "Tracked, packed with care"}
+                      : vocabulary.packaging.standardDelivery}
                   </span>
                 </span>
                 <span

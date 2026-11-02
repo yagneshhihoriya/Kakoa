@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AttributeDef, Capability } from '@platform/kernel';
-import { isUuid, slugify, validateAttributes, validateVariantInput } from './product-validation';
+import { coerceProductContent, isUuid, slugify, validateAttributes, validateVariantInput } from './product-validation';
 
 describe('isUuid', () => {
   it('accepts a well-formed uuid (any case)', () => {
@@ -132,5 +132,37 @@ describe('validateVariantInput (guards the product_variants check constraints)',
     const r = validateVariantInput({ ...good, isActive: false, isDefault: true });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.value).toMatchObject({ isActive: false, isDefault: true });
+  });
+});
+
+describe('coerceProductContent (PDP content from an untrusted admin body)', () => {
+  const palette = { options: ['dark', 'milk'], fallback: 'dark' } as const;
+
+  it('keeps scalar nutrition values and drops nested objects instead of stringifying them', () => {
+    const r = coerceProductContent(
+      {
+        nutritionFacts: {
+          Energy: ' 540 kcal ',
+          Protein: 8,
+          per100g: { energy: '540 kcal' }, // a nested object must never become "[object Object]"
+          Fat: null,
+          ' ': 'blank key',
+        },
+      },
+      palette,
+    );
+    expect(r.nutritionFacts).toEqual({ Energy: '540 kcal', Protein: '8' });
+    expect(JSON.stringify(r.nutritionFacts)).not.toContain('[object Object]');
+  });
+
+  it('returns null nutrition facts when nothing survives coercion', () => {
+    expect(coerceProductContent({ nutritionFacts: { per100g: { energy: 1 } } }, palette).nutritionFacts).toBeNull();
+    expect(coerceProductContent({ nutritionFacts: [] }, palette).nutritionFacts).toBeNull();
+    expect(coerceProductContent({}, palette).nutritionFacts).toBeNull();
+  });
+
+  it('validates the tone against the palette and falls back otherwise', () => {
+    expect(coerceProductContent({ tone: 'milk' }, palette).tone).toBe('milk');
+    expect(coerceProductContent({ tone: 'ruby' }, palette).tone).toBe('dark');
   });
 });

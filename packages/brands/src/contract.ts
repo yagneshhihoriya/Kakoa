@@ -51,6 +51,12 @@ const storefrontVocabularySchema = z.object({
   noun: nounFormsSchema,
   unitNoun: nounFormsSchema.pick({ one: true, many: true }),
   coldChain: z.boolean(),
+  packaging: z.object({
+    trustLabel: nonEmpty.nullable(),
+    standardDelivery: nonEmpty,
+    pdpBullet: nonEmpty,
+    whatYoullGet: nonEmpty,
+  }),
   searchPlaceholder: nonEmpty,
   popularSearches: z.array(nonEmpty).readonly(),
   returnReasonLabels: z.record(z.string(), nonEmpty),

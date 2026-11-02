@@ -38,7 +38,7 @@ const ID: EmailIdentityModel = {
   fssaiLicense: '10025023000841',
   footerTagline: 'Baked fresh weekly',
   unitNoun: { one: 'loaf', many: 'loaves' },
-  theme: { ink: '#111111', cream: '#fffdf7', muted: '#777777', line: '#dddddd', card: '#ffffff' },
+  theme: { ink: '#111111', cream: '#fffdf7', muted: '#777777', line: '#dddddd', card: '#ffffff', accent: '#b05a1a' },
   copy: {
     confirmation: {
       paidLede: 'Thank you — your payment is in and your order is confirmed.',

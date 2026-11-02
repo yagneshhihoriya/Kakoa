@@ -338,7 +338,10 @@ function toNutritionFacts(value: unknown): Record<string, string> | null {
   }
   const out: Record<string, string> = {};
   for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
-    out[key] = typeof raw === 'string' ? raw : String(raw);
+    // Scalars only, and never the junk a bad admin save once stored by
+    // stringifying a nested object — the PDP must not receive "[object Object]".
+    const text = typeof raw === 'string' ? raw.trim() : typeof raw === 'number' ? String(raw) : '';
+    if (text !== '' && text !== '[object Object]') out[key] = text;
   }
   return Object.keys(out).length > 0 ? out : null;
 }

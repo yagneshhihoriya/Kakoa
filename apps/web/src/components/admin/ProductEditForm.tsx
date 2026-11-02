@@ -254,7 +254,7 @@ export function ProductEditForm({
                 value={typeof attrs.shipping === "string" ? attrs.shipping : ""}
                 disabled={!canWrite}
                 placeholder={
-                  (vocabulary.coldChain ? "Ships cold & insulated. " : "") +
+                  (vocabulary.packaging.trustLabel === null ? "" : `${vocabulary.packaging.trustLabel}. `) +
                   "Free shipping over ₹999. Dispatched in 1–2 business days."
                 }
                 onChange={(e) => setAttr("shipping", e.target.value)} />

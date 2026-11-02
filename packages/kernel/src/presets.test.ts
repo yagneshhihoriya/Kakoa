@@ -61,6 +61,9 @@ describe('vertical presets', () => {
       expect(storefront.unitNoun.one).not.toBe('');
       expect(storefront.searchPlaceholder).not.toBe('');
       expect(typeof storefront.coldChain).toBe('boolean');
+      expect(storefront.packaging.standardDelivery).not.toBe('');
+      expect(storefront.packaging.pdpBullet).toContain('{unit}');
+      expect(storefront.packaging.whatYoullGet).not.toBe('');
       // Every fixed return_reason enum value has a label.
       for (const reason of ['damaged_or_melted', 'wrong_item', 'quality_issue', 'changed_mind', 'other']) {
         expect(storefront.returnReasonLabels[reason]).toBeTruthy();
@@ -90,6 +93,10 @@ describe('vertical presets', () => {
     expect(choc.storefront.noun).toEqual({ one: 'chocolate', many: 'chocolates', collective: 'chocolate' });
     expect(choc.storefront.unitNoun).toEqual({ one: 'piece', many: 'pieces' });
     expect(choc.storefront.returnReasonLabels.damaged_or_melted).toBe('Damaged or melted');
+    // The cold-chain claims live here and nowhere in app code.
+    expect(choc.storefront.packaging.trustLabel).toBe('Ships cold & insulated');
+    expect(choc.storefront.packaging.standardDelivery).toMatch(/cold/i);
+    expect(choc.storefront.packaging.pdpBullet).toMatch(/ice packs/i);
     expect(Object.keys(choc.presentation.swatches)).toEqual(['dark', 'milk', 'ruby', 'caramel', 'white', 'matcha']);
     expect(choc.presentation.defaultSwatch).toBe('dark');
 
@@ -100,6 +107,8 @@ describe('vertical presets', () => {
     );
     expect(snacks.storefront.coldChain).toBe(false);
     expect(snacks.storefront.returnReasonLabels.damaged_or_melted).not.toMatch(/melt/i);
+    expect(snacks.storefront.packaging.trustLabel).toBeNull();
+    expect(JSON.stringify(snacks.storefront.packaging)).not.toMatch(/cold|insulated|ice/i);
     expect(snacks.units).toBe('weight');
     expect(snacks.taxDefaults).toEqual({ category: 'Khakhra / bakery products', rateBp: 0, codeSystem: 'HSN', code: '1905' });
     const keys = snacks.attributeSchema.map((a) => a.key);
