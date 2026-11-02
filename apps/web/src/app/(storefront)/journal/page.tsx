@@ -1,29 +1,31 @@
 import type { ReactNode } from "react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   ContentPageShell,
-  ContentClosingCta,
+  ClosingCta,
   CONTENT_FOCUS_RING,
 } from "@/components/content/ContentPageShell";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
 import {
   getJournalArticles,
   formatArticleDate,
+  journalEnabled,
   type Article,
-} from "@/lib/content/journal";
+} from "@/lib/journal";
 import { brand } from "@/lib/brand";
 
-const BRAND_NAME = brand.profile.name;
+const { index: copy } = brand.copy.journal;
 
 export const metadata: Metadata = {
   title: "The Journal",
-  description: `Notes from the ${BRAND_NAME} kitchen — original, brand-authored guides to single-origin cacao, the bean-to-bar craft, storing chocolate well, and tasting like a maker.`,
+  description: copy.metaDescription,
   alternates: { canonical: "/journal" },
 };
 
 /**
- * The Journal index — an editorial card grid of KAKOA-authored articles. Each
+ * The Journal index — an editorial card grid of brand-authored articles. Each
  * card reuses the catalog `ProductCard` hover-rise vocabulary (raised paper,
  * rounded-[20px], border-line-soft, shadow-card → hover:shadow-lift, a group
  * cover that slowly zooms) and links, whole-card, to the article. Server
@@ -85,23 +87,17 @@ function ArticleCard({ article }: { article: Article }): ReactNode {
 }
 
 export default function JournalPage(): ReactNode {
+  // A brand without a Journal (feature off, or no articles) has no such page.
+  if (!journalEnabled()) notFound();
   const articles = getJournalArticles();
 
   return (
     <ContentPageShell
       eyebrow="The Journal"
-      title={`Notes from the ${BRAND_NAME} kitchen`}
+      title={copy.title}
       width="wide"
-      lede="Original writing on single-origin cacao, the bean-to-bar craft, and getting the most from every square — written by the people who roast, conch and temper it."
-      footer={
-        <ContentClosingCta
-          eyebrow="Taste the difference"
-          title="Reading about chocolate is lovely. Tasting it is better."
-          body="Put the theory to work with a bar from our latest small batch — shipped cold and ready to compare, square by square."
-          primary={{ label: "Shop the collection", href: "/shop" }}
-          secondary={{ label: "Our story", href: "/about" }}
-        />
-      }
+      lede={copy.lede}
+      footer={<ClosingCta copy={copy.closing} />}
     >
       {articles.length > 0 ? (
         <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-[22px] lg:grid-cols-3">
@@ -115,22 +111,21 @@ export default function JournalPage(): ReactNode {
         <div className="rounded-[22px] border border-line-soft bg-cream-2 px-8 py-16 text-center">
           <div className="flex justify-center">
             <span className="font-mono text-eyebrow font-medium tracking-[0.12em] text-espresso uppercase">
-              Coming soon
+              {copy.empty.eyebrow}
             </span>
           </div>
           <h2 className="mx-auto mt-4 max-w-[24ch] font-display text-h3 leading-[1.1] text-balance text-ink">
-            The first stories are still being written.
+            {copy.empty.title}
           </h2>
           <p className="mx-auto mt-3 max-w-[46ch] font-body text-lead text-ink-soft">
-            Our kitchen notes on cacao, craft and tasting land here soon. In the
-            meantime, the chocolate speaks for itself.
+            {copy.empty.body}
           </p>
           <div className="mt-7">
             <Link
-              href="/shop"
+              href={copy.empty.cta.href as Route}
               className={`inline-block rounded-pill bg-ink px-[30px] py-4 font-body text-[15.5px] font-bold text-cream shadow-lift transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-ink-hover motion-reduce:transform-none ${CONTENT_FOCUS_RING}`}
             >
-              Browse the shop
+              {copy.empty.cta.label}
             </Link>
           </div>
         </div>

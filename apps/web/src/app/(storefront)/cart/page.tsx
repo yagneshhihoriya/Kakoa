@@ -5,7 +5,7 @@ import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "Your bag",
-  description: `Review your ${brand.profile.name} bag — small-batch chocolate, gift wrap, and coupons.`,
+  description: brand.copy.cart.metaDescription,
   robots: { index: false },
 };
 

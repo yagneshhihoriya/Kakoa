@@ -1,26 +1,25 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import {
-  ContentClosingCta,
-  Eyebrow,
-} from "@/components/content/ContentPageShell";
+import { ClosingCta, Eyebrow } from "@/components/content/ContentPageShell";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
 import { brand } from "@/lib/brand";
 
+/** Every sentence here is the brand pack's; the page owns the layout. */
+const { about } = brand.copy;
 const BRAND_NAME = brand.profile.name;
 
 /**
  * ABOUT / OUR STORY — the emotional-trust page that justifies premium pricing.
  * A rich, homepage-grade editorial layout (NOT the narrow doc shell): a framed
- * hero, alternating image/text craft bands (origin → craft → gifting), a stats
- * row, an unnamed founder-voice pull-quote on a warm cocoa band, and a closing
- * CTA. Server component — no interactivity. All colour comes from `@theme`
- * tokens; every PhotoSlot frame is a positioned box with an explicit aspect.
+ * hero, alternating image/text craft bands, a stats row, an unnamed
+ * founder-voice pull-quote on a warm band, and a closing CTA. Server component
+ * — no interactivity. All colour comes from `@theme` tokens; every PhotoSlot
+ * frame is a positioned box with an explicit aspect.
  */
 
 export const metadata: Metadata = {
   title: "Our Story",
-  description: `How ${BRAND_NAME} makes single-origin, bean-to-bar chocolate by hand in India — direct-trade cacao from four origins, roasted and tempered in small batches, shipped cold and gifting-ready.`,
+  description: about.metaDescription,
   alternates: { canonical: "/about" },
 };
 
@@ -45,76 +44,17 @@ function PhotoFallback({
   );
 }
 
-/** Origin → craft → gifting: alternating image/text bands. `flip` pulls the
- * image to the right on desktop (odd rows) while keeping it first in the DOM
- * on mobile for a natural read order. */
-const STORY_BANDS = [
-  {
-    eyebrow: "Where it begins",
-    title: "Single-origin cacao, chosen bean by bean.",
-    body: [
-      "We work directly with growers across four origins, tasting and selecting the beans that carry a real sense of place. It's direct, ethical trade — growers are paid above market, because chocolate this good should be fair the whole way down.",
-      "Each origin brings its own signature: bright red-fruit acidity, deep roasted nuttiness, a whisper of spice. We don't blend those voices away. We build the bar around them.",
-    ],
-    photo: {
-      label: "Origin cacao",
-      alt: "Single-origin cacao beans from four growing regions",
-      from: "from-cocoa",
-      to: "to-espresso",
-    },
-    flip: false,
-  },
-  {
-    eyebrow: "In our kitchen",
-    title: "Roasted, conched and tempered by hand.",
-    body: [
-      "Everything happens in our own small-batch kitchen. We roast every batch low and slow to draw out its origin character, then slow-conch for days until the texture turns to silk on the tongue.",
-      "Finally we hand-temper and mould each piece for that clean, glossy snap. No shortcuts, no fillers, no industrial rush — just the same care, batch after batch.",
-    ],
-    photo: {
-      label: "Small-batch kitchen",
-      alt: "Chocolate being tempered by hand in the KAKOA kitchen",
-      from: "from-espresso",
-      to: "to-ink",
-    },
-    flip: true,
-  },
-  {
-    eyebrow: "To your door",
-    title: "Ships cold, arrives gifting-ready.",
-    body: [
-      "Great chocolate deserves to arrive in perfect condition. We pack every order cold and insulated, temperature-controlled from our kitchen to your door, anywhere in India.",
-      "It's wrapped in signature packaging and ready to give — and you can add a handwritten note at checkout, tucked in by hand, so a gift feels like one.",
-    ],
-    photo: {
-      label: "Cold, ready to gift",
-      alt: "KAKOA chocolate boxed in signature, gifting-ready packaging",
-      from: "from-cocoa-deep",
-      to: "to-plum",
-    },
-    flip: false,
-  },
-] as const;
-
-/** Provenance stats — mirrors the homepage story-band figures. */
-const STATS = [
-  { value: "4", label: "Cacao origins" },
-  { value: "100%", label: "Roasted in-house" },
-  { value: "Small", label: "Batch sizes" },
-] as const;
-
 /** AboutPage + Organization JSON-LD — brand-true facts only, no fabricated
  * ratings, awards or named people. */
 const ABOUT_JSONLD = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
   name: `Our Story · ${BRAND_NAME}`,
-  description: `How ${BRAND_NAME} makes single-origin, bean-to-bar chocolate by hand in India.`,
+  description: about.jsonLd.pageDescription,
   mainEntity: {
     "@type": "Organization",
     name: BRAND_NAME,
-    description:
-      "Single-origin, small-batch, bean-to-bar chocolate made in India. Direct-trade cacao from four origins; roasted, conched and tempered in-house.",
+    description: about.jsonLd.organizationDescription,
     foundingLocation: { "@type": "Place", name: "India" },
   },
 } as const;
@@ -130,37 +70,32 @@ export default function AboutPage(): ReactNode {
       {/* ============================ HERO ============================ */}
       <section className="mx-auto w-full max-w-[1180px] px-6 pt-12 pb-14 md:px-8 md:pt-16 md:pb-16">
         <div className="max-w-[62ch]">
-          <Eyebrow>Our story</Eyebrow>
+          <Eyebrow>{about.hero.eyebrow}</Eyebrow>
           <h1 className="mt-4 font-display text-[36px] leading-[1.05] text-balance text-ink md:text-hero">
-            Great chocolate should
-            <br className="hidden sm:block" /> taste of{" "}
-            <span className="text-espresso italic">somewhere.</span>
+            {about.hero.headlineLead[0]}
+            <br className="hidden sm:block" /> {about.hero.headlineLead[1]}{" "}
+            <span className="text-espresso italic">{about.hero.headlineEmphasis}</span>
           </h1>
-          <p className="mt-5 font-body text-lead text-ink-soft">
-            We started KAKOA in a tiny kitchen with one conviction: that a bar of
-            chocolate could carry the character of the place it came from. Every
-            piece is bean-to-bar, made by hand, in small batches — no shortcuts,
-            no fillers, nothing to hide.
-          </p>
+          <p className="mt-5 font-body text-lead text-ink-soft">{about.hero.body}</p>
         </div>
 
         <div className="relative mt-10 aspect-[16/10] overflow-hidden rounded-[26px] shadow-float md:mt-12 md:aspect-[16/9]">
           <PhotoSlot
-            alt="Inside the KAKOA small-batch chocolate kitchen"
+            alt={about.hero.photo.alt}
             sizes="(max-width: 1180px) 100vw, 1180px"
             priority
           >
             <PhotoFallback
-              label="Our kitchen"
-              from="from-cocoa"
-              to="to-ink"
+              label={about.hero.photo.label}
+              from={about.hero.photo.from}
+              to={about.hero.photo.to}
             />
           </PhotoSlot>
         </div>
       </section>
 
       {/* ==================== ALTERNATING CRAFT BANDS ==================== */}
-      {STORY_BANDS.map((band) => (
+      {about.bands.map((band) => (
         <section
           key={band.eyebrow}
           className="mx-auto grid max-w-[1180px] items-center gap-9 px-6 py-12 md:px-8 md:gap-14 lg:grid-cols-2 lg:py-16"
@@ -200,11 +135,11 @@ export default function AboutPage(): ReactNode {
 
       {/* ========================== STATS ROW ========================== */}
       <section
-        aria-label="KAKOA by the numbers"
+        aria-label={about.stats.ariaLabel}
         className="mx-auto max-w-[1180px] px-6 py-4 md:px-8 md:py-6"
       >
         <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-[22px] border border-line bg-line shadow-soft sm:grid-cols-3">
-          {STATS.map((stat) => (
+          {about.stats.items.map((stat) => (
             <div key={stat.label} className="bg-cream-2 px-7 py-8 text-center">
               <dt className="font-display text-[40px] leading-none text-ink">
                 {stat.value}
@@ -232,25 +167,17 @@ export default function AboutPage(): ReactNode {
               &ldquo;
             </span>
             <blockquote className="mt-2 font-display text-[26px] leading-[1.32] text-balance text-cream italic md:text-[32px]">
-              We&rsquo;d rather make a little chocolate we&rsquo;re proud of than
-              a lot we&rsquo;re not. Every batch leaves our kitchen the way
-              we&rsquo;d want it to arrive at our own table.
+              {about.quote.text}
             </blockquote>
             <figcaption className="mt-7 font-mono text-[11px] tracking-[0.14em] text-gold-soft uppercase">
-              The KAKOA Kitchen
+              {about.quote.attribution}
             </figcaption>
           </div>
         </figure>
       </section>
 
       {/* ========================= CLOSING CTA ========================= */}
-      <ContentClosingCta
-        eyebrow="Taste the difference"
-        title="Chocolate worth slowing down for."
-        body="Start with a single-origin bar, or send a box that says it better than words."
-        primary={{ label: "Shop the collection", href: "/shop" }}
-        secondary={{ label: "Read the Journal", href: "/journal" }}
-      />
+      <ClosingCta copy={about.closing} />
     </main>
   );
 }

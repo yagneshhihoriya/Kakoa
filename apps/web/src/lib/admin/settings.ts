@@ -106,8 +106,8 @@ export async function updateSettings(
       for (const key of keys) {
         const next = validated[key]!;
         const cur = currentByKey.has(key) ? currentByKey.get(key)! : undefined;
-        // Skip a genuine no-op (same JSON primitive) — keeps the audit clean.
-        if (cur !== undefined && Object.is(cur, next)) continue;
+        // Skip a genuine no-op (same JSON value; lists compare by content) — keeps the audit clean.
+        if (cur !== undefined && JSON.stringify(cur) === JSON.stringify(next)) continue;
         changed.push(key);
         before[key] = cur ?? null;
         after[key] = next;

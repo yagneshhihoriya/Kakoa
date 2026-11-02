@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
 import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
-import { vocabulary } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
 import { useCartChrome, type ChromeCartContext } from "./useCartChrome";
 import { useOverlay } from "./useOverlay";
 
@@ -127,11 +127,9 @@ export function CartDrawer(): ReactNode {
             </div>
             <div>
               <div className="mb-1 text-[22px] font-medium text-[#000]">
-                Your bag is empty
+                {brand.copy.cart.emptyTitle}
               </div>
-              <div className="text-sm text-ink-soft">
-                Let&rsquo;s fix that — the truffles are calling.
-              </div>
+              <div className="text-sm text-ink-soft">{brand.copy.cart.emptyBody}</div>
             </div>
             <button
               type="button"

@@ -7,6 +7,7 @@ import {
   type JsonValue,
   type SettingField,
 } from "@/lib/admin/settings-schema";
+import { MediaPicker } from "./MediaPicker";
 
 type DraftValue = string | boolean;
 type Draft = Record<string, DraftValue>;
@@ -22,19 +23,34 @@ const INPUT =
 const HINT = "mt-1 text-[11.5px] text-[#6f5d48]";
 const META = "mt-1 text-[11px] text-[#9a8973]";
 
-/** Stored jsonb value → the string/boolean the widget edits. */
+/** Stored jsonb value → the string/boolean the widget edits (lists as one line per item). */
 function toDraft(field: SettingField, value: JsonValue | undefined): DraftValue {
   if (field.type === "bool") return value === true;
   if (field.type === "int-paise") {
     const paise = typeof value === "number" ? value : Number(value ?? 0);
     return String((Number.isFinite(paise) ? paise : 0) / 100);
   }
-  return value === undefined || value === null ? "" : String(value);
+  if (field.type === "json-list") return Array.isArray(value) ? value.join("\n") : "";
+  return value === undefined || value === null || Array.isArray(value) ? "" : String(value);
+}
+
+/** Draft text → the wire value the validator expects for this field type. */
+function toPatchValue(field: SettingField, draft: string): JsonValue {
+  if (field.type === "int-paise" || field.type === "int") return Number(draft);
+  if (field.type === "json-list") {
+    return draft
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line !== "");
+  }
+  return draft;
 }
 
 const GROUP_NOTE: Partial<Record<string, string>> = {
   "Fees & shipping":
     "Fee changes apply only to future orders — placed orders keep the fees they were charged.",
+  Brand:
+    "Blank colour fields keep the brand pack's palette; a #RRGGBB value overrides that token storefront-wide.",
 };
 
 export function SettingsForm({
@@ -79,10 +95,7 @@ export function SettingsForm({
         } else {
           const ds = String(d ?? "").trim();
           const bs = String(b ?? "").trim();
-          if (ds !== bs) {
-            patch[f.key] =
-              f.type === "int-paise" || f.type === "int" ? Number(ds) : ds;
-          }
+          if (ds !== bs) patch[f.key] = toPatchValue(f, ds);
         }
       }
     }
@@ -196,7 +209,11 @@ function Field({
   disabled: boolean;
   onChange: (v: DraftValue) => void;
 }): React.ReactNode {
-  const isFullWidth = field.type === "string" && (field.maxLen ?? 0) > 120;
+  const isFullWidth =
+    (field.type === "string" && (field.maxLen ?? 0) > 120) ||
+    field.type === "json-list" ||
+    field.media === true;
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (field.type === "bool") {
     return (
@@ -217,6 +234,92 @@ function Field({
   }
 
   const isNumeric = field.type === "int-paise" || field.type === "int";
+  const text = typeof value === "boolean" ? "" : value;
+  const isHex = /^#[0-9A-Fa-f]{6}$/.test(text.trim());
+
+  let control: React.ReactNode;
+  if (field.type === "json-list") {
+    control = (
+      <textarea
+        id={`s-${field.key}`}
+        rows={Math.min(6, Math.max(3, text.split("\n").length + 1))}
+        className={INPUT}
+        value={text}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  } else if (field.type === "hex") {
+    control = (
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          aria-label={`${field.label} colour picker`}
+          className="h-9 w-10 flex-none cursor-pointer rounded-md border border-[#eadbc6] bg-white p-0.5 disabled:cursor-default"
+          value={isHex ? text.trim() : "#000000"}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+        />
+        <input
+          id={`s-${field.key}`}
+          type="text"
+          placeholder="#RRGGBB"
+          className={INPUT}
+          value={text}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+    );
+  } else if (field.type === "url" && field.media === true) {
+    control = (
+      <div className="flex items-start gap-2">
+        {text.trim() !== "" ? (
+          // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail of an arbitrary media URL
+          <img src={text.trim()} alt="" className="h-9 w-9 flex-none rounded-md border border-[#eadbc6] object-cover" />
+        ) : null}
+        <input
+          id={`s-${field.key}`}
+          type="url"
+          placeholder="https://…"
+          className={INPUT}
+          value={text}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setPickerOpen(true)}
+          className="flex-none rounded-lg border border-[#eadbc6] bg-white px-3 py-2 text-[12.5px] font-medium text-[#2a1d12] hover:bg-[#f7f1e8] disabled:opacity-50"
+        >
+          Library…
+        </button>
+        {pickerOpen ? (
+          <MediaPicker
+            onPick={(asset) => {
+              onChange(asset.url);
+              setPickerOpen(false);
+            }}
+            onClose={() => setPickerOpen(false)}
+          />
+        ) : null}
+      </div>
+    );
+  } else {
+    control = (
+      <input
+        id={`s-${field.key}`}
+        type={isNumeric ? "number" : field.type === "url" ? "url" : "text"}
+        inputMode={isNumeric ? "decimal" : undefined}
+        min={isNumeric ? (field.min !== undefined ? field.min / (field.type === "int-paise" ? 100 : 1) : 0) : undefined}
+        className={INPUT}
+        value={text}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
 
   return (
     <div className={isFullWidth ? "sm:col-span-2" : ""}>
@@ -228,16 +331,7 @@ function Field({
           </span>
         ) : null}
       </label>
-      <input
-        id={`s-${field.key}`}
-        type={isNumeric ? "number" : "text"}
-        inputMode={isNumeric ? "decimal" : undefined}
-        min={isNumeric ? (field.min !== undefined ? field.min / (field.type === "int-paise" ? 100 : 1) : 0) : undefined}
-        className={INPUT}
-        value={typeof value === "boolean" ? "" : value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      {control}
       {field.hint ? <p className={HINT}>{field.hint}</p> : null}
       {meta?.updatedByEmail ? (
         <p className={META}>

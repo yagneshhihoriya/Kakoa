@@ -19,7 +19,7 @@
  *     would be a stored-XSS / markup-injection vector.
  */
 import { formatIST, formatPaise } from '@kakoa/core';
-import type { BrandEmailTheme } from '@/brands/contract';
+import type { BrandEmailCopy, BrandEmailTheme } from '@/brands/contract';
 
 /* ------------------------------------------------------------------ */
 /* Identity — who the email is from (brand pack + store_settings)      */
@@ -48,6 +48,8 @@ export interface EmailIdentityModel {
   /** What one unit of the product is called ('piece', 'pack') — vertical vocabulary. */
   unitNoun: { one: string; many: string };
   theme: BrandEmailTheme;
+  /** The pack's opening lines per mail (lib/email/identity-model.ts fills it). */
+  copy: BrandEmailCopy;
 }
 
 /* ------------------------------------------------------------------ */
@@ -301,9 +303,7 @@ export function orderConfirmationEmail(m: OrderEmailModel, id: EmailIdentityMode
   const t = id.theme;
   const paid = m.paymentMode === 'prepaid';
   const headline = paid ? 'Payment received' : 'Order placed';
-  const lede = paid
-    ? `Thank you — your payment is in and your order is confirmed. We're getting it ready with care.`
-    : `Thank you — your order is placed. We'll confirm the details by phone shortly, then get it ready with care.`;
+  const lede = paid ? id.copy.confirmation.paidLede : id.copy.confirmation.codLede;
   const subject = `${headline} — order ${m.orderNumber}${id.subjectSuffix}`;
 
   const inner = `
@@ -312,7 +312,7 @@ export function orderConfirmationEmail(m: OrderEmailModel, id: EmailIdentityMode
         <h1 style="margin:16px 0 4px 0;font-size:24px;font-weight:700;color:${t.ink};font-family:Georgia,'Times New Roman',serif;text-align:center;">${esc(headline)}</h1>
         <p style="margin:0 0 20px 0;font-size:13px;color:${t.muted};text-align:center;font-family:Arial,Helvetica,sans-serif;">Order ${esc(m.orderNumber)} &middot; ${esc(formatIST(m.placedAt))}</p>
         ${para(esc(m.shippingAddress.fullName) + ',', t)}
-        ${para(lede, t)}
+        ${para(esc(lede), t)}
         ${itemsTable(m.items, t)}
         <div style="height:20px;"></div>
         ${totalsBlock(m, t)}
@@ -421,30 +421,31 @@ export interface FulfilmentEmailModel {
 }
 
 /**
- * Stage copy; `brand` is the trade name, `unit` the vertical's unit noun
- * ('piece'), `n` the order number, `sfx` the subject suffix.
+ * Stage headline + subject; the lede is the pack's (`id.copy.fulfilment`),
+ * given the trade name and the vertical's unit noun. `n` is the order number,
+ * `sfx` the subject suffix.
  */
 const FULFILMENT_COPY: Record<
   FulfilmentStage,
   {
     headline: string;
-    lede: (brand: string, unit: string) => string;
+    lede: (copy: BrandEmailCopy['fulfilment'], brand: string, unit: string) => string;
     subject: (n: string, sfx: string) => string;
   }
 > = {
   shipped: {
     headline: 'Your order is on its way',
-    lede: (brand) => `Good news — your ${brand} box has shipped and is heading to you.`,
+    lede: (copy, brand) => copy.shippedLede(brand),
     subject: (n, sfx) => `Shipped — order ${n} is on its way${sfx}`,
   },
   out_for_delivery: {
     headline: 'Out for delivery today',
-    lede: () => 'Your box is out for delivery today — keep your phone handy for the courier.',
+    lede: (copy, brand) => copy.outForDeliveryLede(brand),
     subject: (n, sfx) => `Out for delivery — order ${n}${sfx}`,
   },
   delivered: {
     headline: 'Delivered — enjoy!',
-    lede: (brand, unit) => `Your ${brand} order has been delivered. We hope every ${unit} is a delight.`,
+    lede: (copy, brand, unit) => copy.deliveredLede(brand, unit),
     subject: (n, sfx) => `Delivered — order ${n}${sfx}`,
   },
 };
@@ -457,7 +458,7 @@ export function orderFulfilmentEmail(m: FulfilmentEmailModel, id: EmailIdentityM
   const t = id.theme;
   const copy = FULFILMENT_COPY[m.stage];
   const subject = copy.subject(m.orderNumber, id.subjectSuffix);
-  const lede = copy.lede(id.brandName, id.unitNoun.one);
+  const lede = copy.lede(id.copy.fulfilment, id.brandName, id.unitNoun.one);
 
   const courierLine =
     m.awb !== null && m.awb !== ''

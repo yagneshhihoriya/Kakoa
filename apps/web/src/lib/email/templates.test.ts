@@ -39,6 +39,17 @@ const ID: EmailIdentityModel = {
   footerTagline: 'Baked fresh weekly',
   unitNoun: { one: 'loaf', many: 'loaves' },
   theme: { ink: '#111111', cream: '#fffdf7', muted: '#777777', line: '#dddddd', card: '#ffffff' },
+  copy: {
+    confirmation: {
+      paidLede: 'Thank you — your payment is in and your order is confirmed.',
+      codLede: 'Thank you — your order is placed. We will confirm the details by phone.',
+    },
+    fulfilment: {
+      shippedLede: (brand) => `Good news — your ${brand} box has shipped and is heading to you.`,
+      outForDeliveryLede: () => 'Your box is out for delivery today.',
+      deliveredLede: (brand, unit) => `Your ${brand} order has been delivered. We hope every ${unit} is a delight.`,
+    },
+  },
 };
 
 function model(overrides: Partial<OrderEmailModel> = {}): OrderEmailModel {

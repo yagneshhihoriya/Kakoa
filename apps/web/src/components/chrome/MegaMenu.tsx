@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
 import { vocabulary } from "@/lib/brand";
+import { categoryHref, type NavCategory } from "./nav";
 
 /**
  * Desktop "Shop" mega-menu panel (≥1000px). A full-width cream panel that drops
@@ -14,22 +16,37 @@ import { vocabulary } from "@/lib/brand";
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream";
 
-/** Collections surfaced in the panel — hrefs mirror the mobile drill-down.
- * `as const` keeps each href a literal so Next's typed routes accept it. */
-const COLLECTIONS = [
-  { href: "/shop", label: `All ${vocabulary.noun.collective}`, desc: "The full collection" },
-  { href: "/shop?category=bars", label: "Bars", desc: "Single-origin & flavoured" },
-  { href: "/shop?category=pralines", label: "Pralines", desc: "Filled & ganache" },
-  { href: "/shop?category=signature", label: "Signature", desc: "Tasting boxes" },
-  { href: "/shop?category=gifts", label: "Gifts", desc: "Ready to give" },
-] as const;
-
 export interface MegaMenuProps {
+  /** Active catalogue categories, in `position` order. */
+  categories: readonly NavCategory[];
   /** Called when any link is activated, so the Header can close the panel. */
   onNavigate: () => void;
 }
 
-export function MegaMenu({ onNavigate }: MegaMenuProps): ReactNode {
+interface Collection {
+  href: Route;
+  label: string;
+  desc: string;
+}
+
+/**
+ * Collections surfaced in the panel — "All <collective>" then every active
+ * category with its own description (categories.description, admin-editable).
+ * Hrefs mirror the mobile drill-down.
+ */
+function collections(categories: readonly NavCategory[]): Collection[] {
+  return [
+    { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}`, desc: "The full collection" },
+    ...categories.map((category) => ({
+      href: categoryHref(category.slug),
+      label: category.name,
+      desc: category.description ?? "",
+    })),
+  ];
+}
+
+export function MegaMenu({ categories, onNavigate }: MegaMenuProps): ReactNode {
+  const items = collections(categories);
   return (
     <div className="mx-auto grid max-w-[1240px] gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_300px] lg:gap-12">
       <div>
@@ -38,7 +55,7 @@ export function MegaMenu({ onNavigate }: MegaMenuProps): ReactNode {
           Shop by collection
         </div>
         <ul className="grid grid-cols-2 gap-1.5">
-          {COLLECTIONS.map((collection) => (
+          {items.map((collection) => (
             <li key={collection.label}>
               <Link
                 href={collection.href}

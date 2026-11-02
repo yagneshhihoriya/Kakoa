@@ -1,42 +1,18 @@
+import type { BrandJournal } from "../contract";
+
 /**
- * The Journal — KAKOA's editorial surface. Original, brand-authored educational
- * writing (byline "KAKOA Kitchen"), never fabricated user content, reviews, or
- * named-founder bios. Pure data: no DB, no network, no `Date.now()` — dates are
- * fixed 2026 ISO strings so builds are deterministic and the copy stays honest.
+ * The KAKOA Journal — original, brand-authored educational writing (byline
+ * "KAKOA Kitchen"), never fabricated user content, reviews, or named-founder
+ * bios. Pure data: no DB, no network, no `Date.now()` — dates are fixed 2026
+ * ISO strings so builds are deterministic and the copy stays honest. Moved
+ * verbatim from lib/content/journal.ts; the neutral helpers (ordering, lookup,
+ * date formatting) now live in lib/journal.ts and read `brand.journal`.
  *
  * `coverTone` is a Tailwind gradient class built only from `@theme` tokens (no
  * raw hex); the index/article pages drop it into a `PhotoSlot` placeholder so
  * real photography can replace it later with zero markup churn.
  */
-
-export type ArticleCategory = "Craft" | "Origins" | "Guides" | "Pairing";
-
-/** A single rendered block of article prose. Rendered as nodes — never HTML. */
-export type ArticleBlock =
-  | { type: "p"; text: string }
-  | { type: "h2"; text: string }
-  | { type: "ul"; items: string[] };
-
-export interface Article {
-  /** Kebab-case URL slug. */
-  slug: string;
-  title: string;
-  /** ~20-word summary used on cards and as the meta description. */
-  excerpt: string;
-  category: ArticleCategory;
-  /** Fixed ISO date (YYYY-MM-DD) in 2026 — never computed at runtime. */
-  dateIso: string;
-  readMinutes: number;
-  /** Token-only Tailwind gradient class for the cover placeholder. */
-  coverTone: string;
-  body: ArticleBlock[];
-}
-
-/**
- * The published Journal. Ordered newest-first here for readability; callers
- * that need ordering guarantees should use `getJournalArticles()`.
- */
-export const JOURNAL: readonly Article[] = [
+export const journal = [
   {
     slug: "a-beginners-guide-to-tasting-dark-chocolate",
     title: "A beginner's guide to tasting dark chocolate",
@@ -220,56 +196,4 @@ export const JOURNAL: readonly Article[] = [
       },
     ],
   },
-];
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-] as const;
-
-/**
- * Format a fixed ISO date (YYYY-MM-DD) as "14 May 2026" — matching the legal
- * pages' date style. Pure and deterministic; returns the raw string if the
- * input is malformed rather than throwing.
- */
-export function formatArticleDate(iso: string): string {
-  const parts = iso.split("-");
-  const year = Number(parts[0]);
-  const month = Number(parts[1]);
-  const day = Number(parts[2]);
-  const monthName = MONTH_NAMES[month - 1];
-  if (
-    parts.length !== 3 ||
-    !Number.isInteger(year) ||
-    !Number.isInteger(day) ||
-    monthName === undefined
-  ) {
-    return iso;
-  }
-  return `${day} ${monthName} ${year}`;
-}
-
-/** All published articles, ordered newest-first by their fixed date. */
-export function getJournalArticles(): Article[] {
-  return [...JOURNAL].sort((a, b) => (a.dateIso < b.dateIso ? 1 : -1));
-}
-
-/** Look up a single article by slug, or `undefined` if none matches. */
-export function getArticleBySlug(slug: string): Article | undefined {
-  return JOURNAL.find((article) => article.slug === slug);
-}
-
-/** Every article slug — for `generateStaticParams`. */
-export function journalSlugs(): string[] {
-  return JOURNAL.map((article) => article.slug);
-}
+] satisfies BrandJournal;

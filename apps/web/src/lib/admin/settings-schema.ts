@@ -5,21 +5,27 @@
  * form" pattern the Products attribute form uses).
  *
  * `store_settings.value` is jsonb: a number is stored as a JSON number, a boolean
- * as a JSON boolean, a string as a JSON string. `int-paise` fields are edited in
- * RUPEES in the UI and on the wire; this validator converts ₹→paise and stores an
- * integer paise NUMBER (never a string — the checkout reader uses `getInt`).
+ * as a JSON boolean, a string as a JSON string, a `json-list` as a JSON array of
+ * strings. `int-paise` fields are edited in RUPEES in the UI and on the wire;
+ * this validator converts ₹→paise and stores an integer paise NUMBER (never a
+ * string — the checkout reader uses `getInt`).
  *
  * `default:` values come from the brand profile (`brand.profile.defaults`), so
  * a missing row falls back to THIS brand's policy, never another's. The legal
  * identity (`required: true`) has NO default at all — a missing row is an
  * explicit "not configured" state (lib/admin/legal-identity.ts), so a fresh
  * database can never print another brand's GSTIN.
+ *
+ * Keys the storefront reads are NAMESPACED (`storefront.`, `brand.`, `policy.`,
+ * `ops.`, `shipping.`): the SettingsReader (lib/admin/context.ts) and the
+ * storefront readers (lib/catalog/queries.ts) resolve `ns.key` first, then the
+ * flat `key`, so legacy flat rows keep working.
  */
 
 import { brand } from '@/lib/brand';
 
-/** Every setting value is one of these JSON primitive types. */
-export type JsonValue = string | number | boolean;
+/** Every setting value is one of these JSON types. */
+export type JsonValue = string | number | boolean | string[];
 
 export type SettingType =
   | 'string'
@@ -33,7 +39,15 @@ export type SettingType =
   | 'int'
   | 'bool'
   /** A product/category slug, or blank for "unset". */
-  | 'slug';
+  | 'slug'
+  /** An https:// URL or a same-origin `/uploads/…` path, or blank for "unset". */
+  | 'url'
+  /** `#RRGGBB`, or blank for "use the brand pack's value". */
+  | 'hex'
+  /** An ordered list of short lines (stored as a JSON array). */
+  | 'json-list'
+  /** A business-day window as printed in the policies: "2" or "1–2". */
+  | 'day-range';
 
 export interface SettingField {
   key: string;
@@ -44,7 +58,7 @@ export interface SettingField {
   /** string types: length bounds (inclusive). */
   minLen?: number;
   maxLen?: number;
-  /** `int` / `int-paise`: numeric bounds. For `int-paise` these are PAISE. */
+  /** `int` / `int-paise`: numeric bounds. For `int-paise` these are PAISE. `json-list`: item count. */
   min?: number;
   max?: number;
   /**
@@ -54,6 +68,10 @@ export interface SettingField {
   default?: JsonValue;
   /** Must be configured per brand database; the admin sees a banner until it is. */
   required?: true;
+  /** `email` / `phone`: blank is a valid "not set" (stored as ''). */
+  optional?: true;
+  /** `url`: the value is an image — the form offers the Media Library picker. */
+  media?: true;
 }
 
 export const SETTING_GROUPS = [
@@ -63,6 +81,8 @@ export const SETTING_GROUPS = [
   'Payments',
   'Support',
   'Storefront',
+  'Brand',
+  'Operations',
 ] as const;
 export type SettingGroup = (typeof SETTING_GROUPS)[number];
 
@@ -73,6 +93,29 @@ export type SettingGroup = (typeof SETTING_GROUPS)[number];
 export const MAX_PAISE = 100_000_000;
 
 const DEFAULTS = brand.profile.defaults;
+const SOCIAL = brand.profile.social;
+
+/**
+ * `brand.theme.<key>` settings → the CSS custom property each one overrides.
+ * The storefront layout emits a `:root { … }` block for the configured ones
+ * (after the pack's theme.css, so they win) — colour tuning without a deploy.
+ */
+export const THEME_TOKENS = {
+  ink: '--color-ink',
+  cream: '--color-cream',
+  field: '--color-field',
+  field_ink: '--color-field-ink',
+  gold: '--color-gold',
+} as const satisfies Readonly<Record<string, `--color-${string}`>>;
+export type ThemeTokenKey = keyof typeof THEME_TOKENS;
+
+const THEME_LABELS: Readonly<Record<ThemeTokenKey, string>> = {
+  ink: 'Ink (text, buttons)',
+  cream: 'Page background',
+  field: 'Chrome band (header hover, hero, footer)',
+  field_ink: 'Chrome band text',
+  gold: 'Accent (focus rings, highlights)',
+};
 
 export const SETTINGS_CATALOG: readonly SettingField[] = [
   // ── Business identity ──────────────────────────────────────────────
@@ -148,6 +191,50 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     hint: 'Shown on product pages (Legal Metrology / E-Commerce Rules).',
     default: DEFAULTS.country_of_origin,
   },
+  {
+    key: 'policy.legal_effective_date',
+    group: 'Legal',
+    label: 'Policy effective date',
+    type: 'string',
+    minLen: 4,
+    maxLen: 40,
+    hint: 'Printed under every policy title, e.g. 12 July 2026. Update it when a policy changes.',
+    default: DEFAULTS.legal_effective_date,
+  },
+  {
+    key: 'policy.damage_report_window_hours',
+    group: 'Legal',
+    label: 'Damage report window (hours)',
+    type: 'int',
+    min: 1,
+    max: 720,
+    hint: 'Hours after delivery within which damage / wrong-item claims must be raised (FAQ + Refund Policy).',
+    default: DEFAULTS.damage_report_window_hours,
+  },
+  {
+    key: 'policy.refund_sla_days',
+    group: 'Legal',
+    label: 'Refund timeline (business days)',
+    type: 'day-range',
+    hint: 'e.g. 5–7 — approved refunds reach the original method within this window.',
+    default: DEFAULTS.refund_sla_days,
+  },
+  {
+    key: 'policy.dispatch_sla_days',
+    group: 'Legal',
+    label: 'Dispatch timeline (business days)',
+    type: 'day-range',
+    hint: 'e.g. 1–2 — orders are dispatched within this window of payment.',
+    default: DEFAULTS.dispatch_sla_days,
+  },
+  {
+    key: 'policy.delivery_eta_days',
+    group: 'Legal',
+    label: 'Delivery estimate (business days)',
+    type: 'day-range',
+    hint: 'e.g. 2–7 — typical delivery window once dispatched.',
+    default: DEFAULTS.delivery_eta_days,
+  },
   // ── Fees & shipping (NOT retroactive — snapshotted at placement) ─────
   {
     key: 'shipping_fee_standard_paise',
@@ -185,6 +272,16 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     min: 0,
     max: MAX_PAISE,
     default: DEFAULTS.gift_wrap_fee_paise,
+  },
+  {
+    key: 'shipping.shiprocket_pickup_location',
+    group: 'Fees & shipping',
+    label: 'Shiprocket pickup location',
+    type: 'string',
+    minLen: 1,
+    maxLen: 80,
+    hint: 'The pickup-location nickname registered in the Shiprocket dashboard — used on every shipment push.',
+    default: DEFAULTS.shiprocket_pickup_location,
   },
   // ── Payments ───────────────────────────────────────────────────────
   {
@@ -242,11 +339,126 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
   },
   // ── Storefront (namespaced keys; the SettingsReader resolves `ns.key` first) ─
   {
+    key: 'storefront.announcement_segments',
+    group: 'Storefront',
+    label: 'Announcement ribbon',
+    type: 'json-list',
+    min: 1,
+    max: 6,
+    maxLen: 80,
+    hint: 'One line per segment. The first always shows; the rest join it on wider screens.',
+    default: [...DEFAULTS.announcement_segments],
+  },
+  {
     key: 'storefront.home_hero_product_slug',
     group: 'Storefront',
     label: 'Home hero product (slug)',
     type: 'slug',
     hint: 'The product the home hero spotlights, by URL slug. Blank = the first featured product.',
+    default: '',
+  },
+  {
+    key: 'storefront.hero_image_url',
+    group: 'Storefront',
+    label: 'Home hero image (desktop)',
+    type: 'url',
+    media: true,
+    hint: 'Wide 2.5:1 crop behind the hero copy. Blank = the brand pack’s photo.',
+    default: '',
+  },
+  {
+    key: 'storefront.hero_image_mobile_url',
+    group: 'Storefront',
+    label: 'Home hero image (mobile)',
+    type: 'url',
+    media: true,
+    hint: 'Square 1:1 crop for the stacked mobile hero. Blank = the brand pack’s photo.',
+    default: '',
+  },
+  {
+    key: 'storefront.newsletter_offer',
+    group: 'Storefront',
+    label: 'Newsletter offer',
+    type: 'string',
+    minLen: 2,
+    maxLen: 80,
+    hint: 'The incentive line under the footer club heading, e.g. 15% off your first box.',
+    default: DEFAULTS.newsletter_offer,
+  },
+  // ── Brand (logo / share image / social / theme) ──────────────────────
+  {
+    key: 'brand.logo_url',
+    group: 'Brand',
+    label: 'Logo image',
+    type: 'url',
+    media: true,
+    hint: 'Replaces the drawn mark in the header and footer lockup. Blank = the brand pack’s mark.',
+    default: '',
+  },
+  {
+    key: 'brand.og_image_url',
+    group: 'Brand',
+    label: 'Social share image',
+    type: 'url',
+    media: true,
+    hint: 'Default Open Graph image for storefront pages (1200×630). Blank = the generated card.',
+    default: '',
+  },
+  {
+    key: 'brand.social_instagram',
+    group: 'Brand',
+    label: 'Instagram URL',
+    type: 'url',
+    default: SOCIAL.instagram ?? '',
+  },
+  {
+    key: 'brand.social_facebook',
+    group: 'Brand',
+    label: 'Facebook URL',
+    type: 'url',
+    default: SOCIAL.facebook ?? '',
+  },
+  {
+    key: 'brand.social_pinterest',
+    group: 'Brand',
+    label: 'Pinterest URL',
+    type: 'url',
+    default: SOCIAL.pinterest ?? '',
+  },
+  {
+    key: 'brand.social_youtube',
+    group: 'Brand',
+    label: 'YouTube URL',
+    type: 'url',
+    default: SOCIAL.youtube ?? '',
+  },
+  ...(Object.keys(THEME_TOKENS) as ThemeTokenKey[]).map(
+    (token): SettingField => ({
+      key: `brand.theme.${token}`,
+      group: 'Brand',
+      label: THEME_LABELS[token],
+      type: 'hex',
+      hint: `#RRGGBB override of ${THEME_TOKENS[token]}. Blank = the brand pack’s colour.`,
+      default: '',
+    }),
+  ),
+  // ── Operations ─────────────────────────────────────────────────────
+  {
+    key: 'ops.alert_email',
+    group: 'Operations',
+    label: 'New-order alert email',
+    type: 'email',
+    optional: true,
+    hint: 'Ops inbox that receives a note for every new order. Blank = no email alert.',
+    default: '',
+  },
+  {
+    key: 'ops.alert_phone',
+    group: 'Operations',
+    label: 'New-order alert phone',
+    type: 'phone',
+    optional: true,
+    hint: 'Indian mobile for the new-order SMS alert. Blank = no SMS alert.',
     default: '',
   },
 ];
@@ -279,6 +491,15 @@ export function settingsByGroup(): { group: SettingGroup; fields: SettingField[]
   }));
 }
 
+/**
+ * The flat (un-namespaced) name of a catalogued key — `storefront.newsletter_offer`
+ * → `newsletter_offer` — i.e. the legacy row name the readers fall back to.
+ */
+export function flatKey(key: string): string {
+  const dot = key.lastIndexOf('.');
+  return dot === -1 ? key : key.slice(dot + 1);
+}
+
 /* ── Validation ─────────────────────────────────────────────────────── */
 
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$/;
@@ -289,6 +510,9 @@ const PHONE_RE = /^\+91[6-9][0-9]{9}$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 /** Matches the DB CHECK `slug ~ '^[a-z0-9-]+$'` (max 120). */
 const SLUG_RE = /^[a-z0-9-]{1,120}$/;
+const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
+/** "2" or "1–2" (hyphen accepted on input, normalised to an en dash). */
+const DAY_RANGE_RE = /^([0-9]{1,3})(?:\s*[-–]\s*([0-9]{1,3}))?$/;
 
 export type SettingsPatchResult =
   | { ok: true; value: Record<string, JsonValue> }
@@ -304,6 +528,51 @@ function coerceBool(v: unknown): boolean | null {
     if (s === 'false' || s === '0') return false;
   }
   return null;
+}
+
+/**
+ * An https:// URL or a same-origin path (`/uploads/…`); `null` when invalid.
+ * Mirrors `normalizeCategoryImageUrl` so tile images and hero images accept the
+ * same shapes (the Media Library returns absolute https URLs).
+ */
+export function normalizeSettingUrl(raw: string): string | null {
+  const s = raw.trim();
+  if (s.length === 0 || s.length > 2048) return null;
+  if (s.startsWith('/') && !s.startsWith('//')) return s;
+  try {
+    return new URL(s).protocol === 'https:' ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Normalise a day window: "2" → "2", "1-2" / "1 – 2" → "1–2". `null` when
+ * malformed or the range runs backwards.
+ */
+export function normalizeDayRange(raw: string): string | null {
+  const m = DAY_RANGE_RE.exec(raw.trim());
+  if (m === null) return null;
+  const lo = Number(m[1]);
+  if (m[2] === undefined) return String(lo);
+  const hi = Number(m[2]);
+  return hi >= lo ? `${lo}–${hi}` : null;
+}
+
+/**
+ * A `json-list` value arrives as an array (API) or as newline-separated text
+ * (the form); items are trimmed and blank lines dropped.
+ */
+function coerceList(raw: unknown): string[] | null {
+  const items = Array.isArray(raw)
+    ? raw
+    : typeof raw === 'string'
+      ? raw.split(/\r?\n/)
+      : null;
+  if (items === null || !items.every((item): item is string => typeof item === 'string')) {
+    return null;
+  }
+  return items.map((item) => item.trim()).filter((item) => item !== '');
 }
 
 /**
@@ -402,16 +671,24 @@ export function validateSettingsPatch(patch: unknown): SettingsPatchResult {
       }
       case 'phone': {
         const s = typeof raw === 'string' ? raw.trim() : '';
+        if (s === '' && field.optional === true) {
+          out[key] = '';
+          break;
+        }
         if (!PHONE_RE.test(s)) {
-          return { ok: false, message: 'Enter a valid Indian phone (e.g. +919820012345).' };
+          return { ok: false, message: `${field.label}: enter a valid Indian phone (e.g. +919820012345).` };
         }
         out[key] = s;
         break;
       }
       case 'email': {
         const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+        if (s === '' && field.optional === true) {
+          out[key] = '';
+          break;
+        }
         if (s.length === 0 || s.length > 254 || !EMAIL_RE.test(s)) {
-          return { ok: false, message: 'Enter a valid support email.' };
+          return { ok: false, message: `${field.label}: enter a valid email address.` };
         }
         out[key] = s;
         break;
@@ -423,6 +700,55 @@ export function validateSettingsPatch(patch: unknown): SettingsPatchResult {
           return { ok: false, message: `${field.label} must be a URL slug (lowercase letters, digits, dashes).` };
         }
         out[key] = s;
+        break;
+      }
+      case 'url': {
+        // Blank is a valid "unset"; anything else must be https:// or /uploads/….
+        const s = typeof raw === 'string' ? raw.trim() : '';
+        if (s === '') {
+          out[key] = '';
+          break;
+        }
+        const url = normalizeSettingUrl(s);
+        if (url === null) {
+          return { ok: false, message: `${field.label} must be an https:// URL or a /uploads/… path.` };
+        }
+        out[key] = url;
+        break;
+      }
+      case 'hex': {
+        // Blank is a valid "use the pack's colour"; anything else is #RRGGBB.
+        const s = typeof raw === 'string' ? raw.trim().toUpperCase() : '';
+        if (s !== '' && !HEX_RE.test(s)) {
+          return { ok: false, message: `${field.label} must be a #RRGGBB colour.` };
+        }
+        out[key] = s;
+        break;
+      }
+      case 'json-list': {
+        const items = coerceList(raw);
+        const min = field.min ?? 0;
+        const max = field.max ?? 50;
+        const maxLen = field.maxLen ?? 200;
+        if (items === null) {
+          return { ok: false, message: `${field.label} must be a list of lines.` };
+        }
+        if (items.length < min || items.length > max) {
+          return { ok: false, message: `${field.label} needs between ${min} and ${max} lines.` };
+        }
+        if (items.some((item) => item.length > maxLen)) {
+          return { ok: false, message: `${field.label}: each line must be at most ${maxLen} characters.` };
+        }
+        out[key] = items;
+        break;
+      }
+      case 'day-range': {
+        const s = typeof raw === 'string' ? raw : typeof raw === 'number' ? String(raw) : '';
+        const range = normalizeDayRange(s);
+        if (range === null) {
+          return { ok: false, message: `${field.label} must be a number of days or a range, e.g. 2 or 1–2.` };
+        }
+        out[key] = range;
         break;
       }
       case 'string': {

@@ -153,7 +153,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
         <div>
           <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: COCOA }}>{BRAND_NAME}</div>
           <div style={{ fontSize: 10, letterSpacing: 2, color: MUTED, textTransform: "uppercase", marginTop: 1 }}>
-            Fine chocolate
+            {brand.copy.invoiceTagline}
           </div>
           <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600 }}>{m.seller.legalName}</div>
           <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, maxWidth: 280 }}>{m.seller.address}</div>

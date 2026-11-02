@@ -18,6 +18,8 @@ export interface FaqCategory {
 export interface FaqAccordionProps {
   /** Server-built, policy-grounded dataset (see support/page.tsx). */
   categories: FaqCategory[];
+  /** Search box placeholder — the brand pack's (support.searchPlaceholder). */
+  searchPlaceholder: string;
 }
 
 /** Chevron that rotates when its accordion row is open — matches PdpDetails. */
@@ -95,7 +97,7 @@ function itemKey(category: string, question: string): string {
  * AccordionItem interaction (aria-expanded + aria-controls + rotating chevron +
  * border-b border-line + kk-rise reveal). Each row toggles independently.
  */
-export function FaqAccordion({ categories }: FaqAccordionProps): ReactNode {
+export function FaqAccordion({ categories, searchPlaceholder }: FaqAccordionProps): ReactNode {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
@@ -129,7 +131,7 @@ export function FaqAccordion({ categories }: FaqAccordionProps): ReactNode {
           inputMode="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search help — shipping, melting, refunds…"
+          placeholder={searchPlaceholder}
           aria-label="Search the help centre"
           className={cx(
             "w-full rounded-[16px] border border-line-soft bg-surface py-3.5 pr-4 pl-11 font-body text-[15.5px] text-ink placeholder:text-ink-muted",

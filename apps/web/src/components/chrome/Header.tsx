@@ -1,57 +1,92 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
 import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
-import { brand, vocabulary } from "@/lib/brand";
+import { brand, routeEnabled, staticNav, vocabulary } from "@/lib/brand";
 import { BrandLockup } from "./BrandMark";
 import { MegaMenu } from "./MegaMenu";
+import { categoryHref, type NavCategory } from "./nav";
 import { SearchOverlay } from "./SearchOverlay";
 import { useCartChrome } from "./useCartChrome";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
 
-/** Desktop nav — inline links (≥1000px). `activeOn` drives the active
- * underline; `mega` marks the item that opens the Shop mega-menu on hover/focus. */
-const NAV_LINKS = [
-  { href: "/shop", label: "Shop", activeOn: ["/shop", "/product"], mega: true },
-  { href: "/shop?category=gifts", label: "Gifts", activeOn: [], mega: false },
-  { href: "/about", label: "Our Story", activeOn: ["/about"], mega: false },
-  { href: "/journal", label: "Journal", activeOn: ["/journal"], mega: false },
-] as const;
+/** The Shop item — always first, opens the mega-menu on hover/focus. */
+const SHOP_NAV = {
+  href: "/shop" as Route,
+  label: "Shop",
+  activeOn: ["/shop", "/product"],
+  mega: true,
+} as const;
+
+interface NavItem {
+  href: Route;
+  label: string;
+  /** Pathname prefixes that light the active underline (none for query links). */
+  activeOn: readonly string[];
+  mega: boolean;
+}
 
 /**
- * Mobile menu (< 1000px) — primary nav shown as a serif list. `children`, when
- * present, renders an inline accordion (the collections drill-down).
+ * Desktop nav — inline links (≥1000px): Shop, then the brand's static pages
+ * (profile.nav.primary) with feature-gated routes dropped. A query-string link
+ * (e.g. a category shortcut) never claims the active state.
+ */
+const NAV_LINKS: readonly NavItem[] = [
+  SHOP_NAV,
+  ...staticNav(brand.profile.nav.primary).map(
+    (link): NavItem => ({
+      href: link.href as Route,
+      label: link.label,
+      activeOn: link.href.includes("?") ? [] : [link.href],
+      mega: false,
+    }),
+  ),
+];
+
+interface MobileItem {
+  label: string;
+  href: Route;
+  /** Inline accordion (the collections drill-down). */
+  children?: readonly { href: Route; label: string }[];
+}
+
+/**
+ * Mobile menu (< 1000px) — primary nav shown as a serif list: Shop with the
+ * live collections as its accordion, then the brand's static pages.
  * Subscription & gift cards are deferred (PROJECT_PLAN §6).
  */
-const MOBILE_PRIMARY = [
-  {
-    label: "Shop",
-    href: "/shop",
-    children: [
-      { href: "/shop", label: `All ${vocabulary.noun.collective}` },
-      { href: "/shop?category=bars", label: "Bars" },
-      { href: "/shop?category=pralines", label: "Pralines" },
-      { href: "/shop?category=signature", label: "Signature" },
-      { href: "/shop?category=gifts", label: "Gifts" },
-    ],
-  },
-  { label: "Gifts", href: "/shop?category=gifts" },
-  { label: "Our Story", href: "/about" },
-  { label: "Journal", href: "/journal" },
-] as const;
+function mobilePrimary(categories: readonly NavCategory[]): MobileItem[] {
+  return [
+    {
+      label: "Shop",
+      href: "/shop" as Route,
+      children: [
+        { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}` },
+        ...categories.map((category) => ({
+          href: categoryHref(category.slug),
+          label: category.name,
+        })),
+      ],
+    },
+    ...staticNav(brand.profile.nav.primary).map(
+      (link): MobileItem => ({ label: link.label, href: link.href as Route }),
+    ),
+  ];
+}
 
 /** Mobile menu — secondary utility links (accent colour, below the primary list). */
 const MOBILE_SECONDARY = [
   { href: "/support", label: "Help centre" },
   { href: "/locator", label: "Store locator" },
   { href: "/account/track", label: "Track an order" },
-] as const;
+].filter((link) => routeEnabled(link.href)) as readonly { href: Route; label: string }[];
 
 const ICON_BUTTON_CLASSES = cx(
   "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field",
@@ -165,8 +200,16 @@ function Chevron({ open }: { open: boolean }): ReactNode {
  * underlines, icon buttons, dark cart pill with kk-pop count, mobile menu
  * sheet, and the search overlay island.
  */
-export function Header(): ReactNode {
+export interface HeaderProps {
+  /** Active catalogue categories — the mobile drill-down and mega-menu collections. */
+  categories: readonly NavCategory[];
+  /** `brand.logo_url` setting; null renders the pack's drawn mark. */
+  logoUrl: string | null;
+}
+
+export function Header({ categories, logoUrl }: HeaderProps): ReactNode {
   const pathname = usePathname();
+  const mobilePrimaryItems = mobilePrimary(categories);
   const router = useRouter();
   const cartCtx = useCartChrome();
   const auth = useAuthOptional();
@@ -351,7 +394,7 @@ export function Header(): ReactNode {
           {/* DESKTOP (≥1000px) — unchanged: logo left · inline nav · actions right */}
           <div className="hidden h-full items-center justify-between gap-6 min-[1000px]:flex">
             <Link href="/" aria-label={`${brand.profile.name} home`} className={cx("no-underline", FOCUS_RING)}>
-              <BrandLockup size="header" />
+              <BrandLockup size="header" logoUrl={logoUrl} />
             </Link>
             <nav
               aria-label="Primary"
@@ -413,7 +456,7 @@ export function Header(): ReactNode {
                 onMouseLeave={closeMegaSoon}
                 className="absolute inset-x-0 top-full z-40 border-b border-line bg-cream shadow-[0_22px_44px_-18px_rgb(var(--shadow-tint)_/_0.30)] animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none"
               >
-                <MegaMenu onNavigate={closeMegaNow} />
+                <MegaMenu categories={categories} onNavigate={closeMegaNow} />
               </div>
             ) : null}
             <div className="flex items-center gap-1.5">
@@ -451,7 +494,7 @@ export function Header(): ReactNode {
               aria-label={`${brand.profile.name} home`}
               className={cx("justify-self-center no-underline", FOCUS_RING)}
             >
-              <BrandLockup size="header" />
+              <BrandLockup size="header" logoUrl={logoUrl} />
             </Link>
             <div className="flex items-center justify-self-end gap-0.5">
               {searchButton}
@@ -496,7 +539,7 @@ export function Header(): ReactNode {
               }}
               className={cx("no-underline", FOCUS_RING)}
             >
-              <BrandLockup size="header" />
+              <BrandLockup size="header" logoUrl={logoUrl} />
             </Link>
             <div className="flex items-center gap-0.5">{cartButton}</div>
           </div>
@@ -521,8 +564,8 @@ export function Header(): ReactNode {
 
             {/* Primary — serif list, hairline dividers, collections accordion. */}
             <nav aria-label="Primary" className="border-t border-black/10">
-              {MOBILE_PRIMARY.map((item) => {
-                const kids = "children" in item ? item.children : null;
+              {mobilePrimaryItems.map((item) => {
+                const kids = item.children ?? null;
                 const expanded = openSection === item.label;
                 return (
                   <div key={item.label} className="border-b border-black/10">

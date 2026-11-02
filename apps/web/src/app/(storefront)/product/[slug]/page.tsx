@@ -11,6 +11,7 @@ import {
   getCategories,
   getCompanyInfo,
   getProductBySlug,
+  getPublishedProductSlugs,
 } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PdpGallery } from "@/components/catalog/pdp/PdpGallery";
@@ -24,22 +25,14 @@ import { getDefaultVariantIds } from "../../shop/default-variants";
 /** ISR: tag-driven purges (`product:{slug}`) + 5-min time fallback. */
 export const revalidate = 300;
 
-/** The 10 Phase-0 seeded slugs (packages/db/src/seed.ts) — prebuilt at deploy. */
-const SEEDED_SLUGS = [
-  "midnight-72-dark",
-  "sea-salt-caramel-bar",
-  "roasted-hazelnut-crunch",
-  "madagascar-85-single-origin",
-  "truffle-noir",
-  "pistachio-praline-collection",
-  "salted-caramel-pralines",
-  "raspberry-ganache-squares",
-  "single-origin-tasting-library",
-  "kakoa-celebration-hamper",
-] as const;
-
-export function generateStaticParams(): { slug: string }[] {
-  return SEEDED_SLUGS.map((slug) => ({ slug }));
+/**
+ * Prebuild every published PDP at deploy (the same visibility predicate as the
+ * shop grid), whatever catalogue this brand's database holds. An unreachable
+ * database prerenders nothing and every PDP renders on demand (ISR).
+ */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const published = await getPublishedProductSlugs().catch(() => []);
+  return published.map(({ slug }) => ({ slug }));
 }
 
 interface ProductPageProps {

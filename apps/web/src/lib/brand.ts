@@ -3,8 +3,8 @@
  *
  * `@brand` is a build-time alias (next.config.ts) to src/brands/<BRAND_KEY>;
  * for type-checking it points at the kakoa pack (tsconfig paths). The helpers
- * below derive every brand-keyed identifier (cookies, email identity) from the
- * profile so no literal brand name is needed outside the pack.
+ * below derive every brand-keyed identifier (cookies, email identity, nav
+ * gating) from the profile so no literal brand name is needed outside the pack.
  */
 import { parseServerEnv } from "@kakoa/config";
 import {
@@ -21,6 +21,7 @@ import {
   type Swatch,
   type VerticalPreset,
 } from "@platform/kernel";
+import type { BrandNavLink, BrandProfile } from "@kakoa/brands";
 import { brand } from "@brand";
 
 export { brand };
@@ -74,6 +75,39 @@ export function swatchFor(tone: string): Swatch {
  */
 export function returnReasonLabel(reason: string): string {
   return vocabulary.returnReasonLabels[reason] ?? reason.replace(/_/g, " ");
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────── */
+
+/** Routes that exist only when the matching brand feature is on. */
+const FEATURE_ROUTES: readonly { prefix: string; feature: keyof BrandProfile["features"] }[] = [
+  { prefix: "/journal", feature: "journal" },
+  { prefix: "/locator", feature: "locator" },
+];
+
+/**
+ * Whether a root-relative route is reachable for this brand: `/journal*` needs
+ * `features.journal` AND at least one article; `/locator` needs
+ * `features.locator`. Every other route is always on.
+ */
+export function routeEnabled(href: string): boolean {
+  const path = href.split(/[?#]/, 1)[0] ?? href;
+  for (const { prefix, feature } of FEATURE_ROUTES) {
+    if (path === prefix || path.startsWith(`${prefix}/`)) {
+      if (!brand.profile.features[feature]) return false;
+      if (feature === "journal" && brand.journal.length === 0) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * A pack's static nav list (profile.nav.primary / footerCompany) with the
+ * feature-gated routes dropped — the Header, Footer and sitemap all filter
+ * through here so a brand without a Journal never links to one.
+ */
+export function staticNav(links: readonly BrandNavLink[]): BrandNavLink[] {
+  return links.filter((link) => routeEnabled(link.href));
 }
 
 /* ── Order / invoice numbers ──────────────────────────────────────────── */

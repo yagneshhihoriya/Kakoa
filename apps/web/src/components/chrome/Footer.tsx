@@ -1,13 +1,19 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
-import { getCompanyInfo, getFssaiLicense } from "@/lib/catalog/queries";
-import { brand, vocabulary } from "@/lib/brand";
+import {
+  getCompanyInfo,
+  getFssaiLicense,
+  type StorefrontSettings,
+} from "@/lib/catalog/queries";
+import { brand, staticNav, vocabulary } from "@/lib/brand";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { BrandLockup } from "./BrandMark";
+import { categoryHref, type NavCategory } from "./nav";
 
 /* ------------------------------------------------------------------ */
-/* Link data — every href maps to a real app route (kept working).     */
+/* Link data — categories from the catalogue, static pages from the    */
+/* brand pack; every href maps to a real app route (kept working).     */
 /* ------------------------------------------------------------------ */
 
 interface FooterLink {
@@ -15,20 +21,19 @@ interface FooterLink {
   label: string;
 }
 
-const SHOP_LINKS: FooterLink[] = [
-  { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}` },
-  { href: "/shop?category=bars" as Route, label: "Bars" },
-  { href: "/shop?category=pralines" as Route, label: "Pralines" },
-  { href: "/shop?category=signature" as Route, label: "Signature" },
-  { href: "/shop?category=gifts" as Route, label: "Gift boxes" },
-];
+/** "Shop" column — "All <collective>" then every active category (position order). */
+function shopLinks(categories: readonly NavCategory[]): FooterLink[] {
+  return [
+    { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}` },
+    ...categories.map((category) => ({ href: categoryHref(category.slug), label: category.name })),
+  ];
+}
 
-const COMPANY_LINKS: FooterLink[] = [
-  { href: "/about" as Route, label: "Our story" },
-  { href: "/journal" as Route, label: "Journal" },
-  { href: "/locator" as Route, label: "Store locator" },
-  { href: "/account" as Route, label: "My account" },
-];
+/** "Company" column — the pack's static pages, feature-gated routes dropped. */
+const COMPANY_LINKS: FooterLink[] = staticNav(brand.profile.nav.footerCompany).map((link) => ({
+  href: link.href as Route,
+  label: link.label,
+}));
 
 const SUPPORT_LINKS: FooterLink[] = [
   { href: "/contact" as Route, label: "Contact us" },
@@ -57,11 +62,19 @@ const LEGAL_LINKS: FooterLink[] = [
  * (FSSAI / MRP) and the accepted payment methods.
  *
  * Server component; the only client island is the newsletter form. All routes
- * and compliance content preserved — presentation only. The legal bar also
- * carries the brand pack's font attribution when its typeface licence requires
- * one (KAKOA's Infini is CC BY-ND).
+ * and compliance content preserved — presentation only. Copy is the brand
+ * pack's; social links and the newsletter offer are store settings. The legal
+ * bar also carries the pack's font attribution when its typeface licence
+ * requires one (CC BY-ND faces).
  */
-export async function Footer(): Promise<ReactNode> {
+export interface FooterProps {
+  /** Active catalogue categories — the "Shop" column. */
+  categories: readonly NavCategory[];
+  /** Storefront settings — social links, newsletter offer, logo. */
+  settings: StorefrontSettings;
+}
+
+export async function Footer({ categories, settings }: FooterProps): Promise<ReactNode> {
   const [fssai, company] = await Promise.all([
     getFssaiLicense().catch(() => null),
     getCompanyInfo(),
@@ -69,7 +82,14 @@ export async function Footer(): Promise<ReactNode> {
   const year = new Date().getFullYear();
 
   const payments = ["UPI", "Cards", "Netbanking", ...(company.codEnabled ? ["Cash on delivery"] : [])];
-  const { fontAttribution, profile } = brand;
+  const { fontAttribution, profile, copy } = brand;
+  const { footer } = copy;
+  const socials = [
+    { key: "instagram", label: "Instagram", href: settings.social.instagram, Icon: InstagramIcon },
+    { key: "facebook", label: "Facebook", href: settings.social.facebook, Icon: FacebookIcon },
+    { key: "pinterest", label: "Pinterest", href: settings.social.pinterest, Icon: PinterestIcon },
+    { key: "youtube", label: "YouTube", href: settings.social.youtube, Icon: YouTubeIcon },
+  ].filter((social): social is typeof social & { href: string } => social.href !== null);
 
   return (
     <footer
@@ -81,13 +101,12 @@ export async function Footer(): Promise<ReactNode> {
         <div className="grid gap-x-8 gap-y-10 py-12 sm:py-14 max-[680px]:grid-cols-1 max-[1023px]:grid-cols-2 lg:grid-cols-[1.55fr_.85fr_.85fr_.85fr_1.3fr]">
           {/* Brand · about · contact · social */}
           <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:flex max-[749px]:flex-col max-[749px]:items-center max-[749px]:text-center">
-            <BrandLockup size="footer" />
+            <BrandLockup size="footer" logoUrl={settings.logoUrl} />
             <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-field-ink">
-              Chocolate that tastes of somewhere.
+              {footer.tagline}
             </p>
             <p className="mt-2 max-w-[320px] text-[13px] leading-[19.5px] tracking-[0.4px] text-field-ink/75">
-              Small-batch, single-origin chocolate, roasted and hand-finished in
-              our own kitchen.
+              {footer.blurb}
             </p>
 
             <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic max-[749px]:items-center">
@@ -116,36 +135,31 @@ export async function Footer(): Promise<ReactNode> {
               ) : null}
             </address>
 
-            <div className="mt-6 flex items-center gap-1 max-[749px]:justify-center">
-              <SocialLink label={`${profile.name} on Instagram`} href="https://instagram.com">
-                <InstagramIcon />
-              </SocialLink>
-              <SocialLink label={`${profile.name} on Facebook`} href="https://facebook.com">
-                <FacebookIcon />
-              </SocialLink>
-              <SocialLink label={`${profile.name} on Pinterest`} href="https://pinterest.com">
-                <PinterestIcon />
-              </SocialLink>
-              <SocialLink label={`${profile.name} on YouTube`} href="https://youtube.com">
-                <YouTubeIcon />
-              </SocialLink>
-            </div>
+            {socials.length > 0 ? (
+              <div className="mt-6 flex items-center gap-1 max-[749px]:justify-center">
+                {socials.map(({ key, label, href, Icon }) => (
+                  <SocialLink key={key} label={`${profile.name} on ${label}`} href={href}>
+                    <Icon />
+                  </SocialLink>
+                ))}
+              </div>
+            ) : null}
           </div>
 
-          <FooterColumn heading="Shop" links={SHOP_LINKS} />
+          <FooterColumn heading="Shop" links={shopLinks(categories)} />
           <FooterColumn heading="Company" links={COMPANY_LINKS} />
           <FooterColumn heading="Support" links={SUPPORT_LINKS} />
 
           {/* Newsletter — inline final column */}
           <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:text-center">
             <p className="text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
-              The KAKOA Club
+              {footer.clubHeading}
             </p>
             <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase max-[749px]:mx-auto">
-              15% off your first box
+              {settings.newsletterOffer}
             </p>
             <div className="mt-4">
-              <NewsletterForm variant="square" />
+              <NewsletterForm variant="square" offer={settings.newsletterOffer} />
             </div>
           </div>
         </div>
@@ -153,7 +167,7 @@ export async function Footer(): Promise<ReactNode> {
         {/* ---- Legal bar ---- */}
         <div className="flex flex-col gap-3 border-t border-field-ink/15 py-6 max-[749px]:items-center max-[749px]:text-center sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light tracking-[0.4px] text-field-ink/60 max-[749px]:justify-center">
-            <span>© {year} KAKOA Chocolates. All rights reserved.</span>
+            <span>© {year} {footer.copyrightHolder}. All rights reserved.</span>
             {LEGAL_LINKS.map((link) => (
               <span key={link.label} className="flex items-center gap-x-2.5">
                 <span aria-hidden="true" className="text-field-ink/25">

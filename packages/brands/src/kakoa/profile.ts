@@ -38,8 +38,11 @@ export const KAKOA = {
   },
 
   features: { journal: true, locator: true, gifting: true, giftWrap: true },
+  // Static pages + the brand's merchandising shortcut; category links come
+  // from the catalogue at render time.
   nav: {
     primary: [
+      { href: '/shop?category=gifts', label: 'Gifts' },
       { href: '/about', label: 'Our Story' },
       { href: '/journal', label: 'Journal' },
     ],
@@ -77,6 +80,20 @@ export const KAKOA = {
     support_phone: '+919820012345',
     support_email: 'support@kakoa.in',
     support_hours: 'Monday to Saturday, 10:00–18:00 IST',
+    // Ribbon / club / policy lines the storefront rendered as literals before
+    // the move; the owner overrides them in Admin → Settings.
+    announcement_segments: [
+      'Complimentary shipping on qualifying orders',
+      'Hand-made in small batches',
+      'Ships cold & safe',
+    ],
+    newsletter_offer: '15% off your first box',
+    legal_effective_date: '12 July 2026',
+    damage_report_window_hours: 48,
+    refund_sla_days: '5–7',
+    dispatch_sla_days: '1–2',
+    delivery_eta_days: '2–7',
+    shiprocket_pickup_location: 'Primary',
   },
   // Written by the KAKOA seed only; at runtime the legal identity is whatever
   // store_settings holds (no code fallback — see contract.ts).
@@ -88,14 +105,5 @@ export const KAKOA = {
       'Unit 12, Veera Desai Industrial Estate, Andheri West, Mumbai 400053, Maharashtra, India',
     origin_pincode: '400053',
     fssai_license_number: '11525023000841',
-  },
-  content: {
-    announcementSegments: [
-      'Complimentary shipping on qualifying orders',
-      'Hand-made in small batches',
-      'Ships cold & safe',
-    ],
-    newsletterOffer: '15% off your first box',
-    legalEffectiveDate: '12 July 2026',
   },
 } as const satisfies BrandProfile;

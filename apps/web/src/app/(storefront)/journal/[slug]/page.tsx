@@ -4,24 +4,26 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ContentPageShell,
-  ContentClosingCta,
+  ClosingCta,
   CONTENT_FOCUS_RING,
 } from "@/components/content/ContentPageShell";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
 import {
   getArticleBySlug,
+  journalEnabled,
   journalSlugs,
   formatArticleDate,
   type Article,
   type ArticleBlock,
-} from "@/lib/content/journal";
+} from "@/lib/journal";
 import { brand } from "@/lib/brand";
 import { siteUrl } from "@/lib/seo/site";
 
 const BRAND_NAME = brand.profile.name;
+const { article: copy } = brand.copy.journal;
 
 export function generateStaticParams(): { slug: string }[] {
-  return journalSlugs().map((slug) => ({ slug }));
+  return journalEnabled() ? journalSlugs().map((slug) => ({ slug })) : [];
 }
 
 export async function generateMetadata({
@@ -93,7 +95,7 @@ export default async function JournalArticlePage({
   params: Promise<{ slug: string }>;
 }): Promise<ReactNode> {
   const { slug } = await params;
-  const article: Article | undefined = getArticleBySlug(slug);
+  const article: Article | undefined = journalEnabled() ? getArticleBySlug(slug) : undefined;
   if (article === undefined) {
     notFound();
   }
@@ -116,7 +118,7 @@ export default async function JournalArticlePage({
     },
     author: {
       "@type": "Organization",
-      name: `${BRAND_NAME} Kitchen`,
+      name: copy.authorName,
     },
     publisher: {
       "@type": "Organization",
@@ -142,15 +144,7 @@ export default async function JournalArticlePage({
         meta={`${formattedDate} · ${article.readMinutes} min read`}
         lede={article.excerpt}
         width="narrow"
-        footer={
-          <ContentClosingCta
-            eyebrow="Keep exploring"
-            title="From the page to the palate."
-            body="Put what you've read to the test with a bar from our latest small batch — shipped cold, ready to taste square by square."
-            primary={{ label: "Shop the collection", href: "/shop" }}
-            secondary={{ label: "Back to the Journal", href: "/journal" }}
-          />
-        }
+        footer={<ClosingCta copy={copy.closing} />}
       >
         {/* Framed cover — real photo when present, else a token-gradient slot. */}
         <figure className="relative mb-11 aspect-[16/9] overflow-hidden rounded-[24px] border border-line-soft bg-cream-2 shadow-soft">
@@ -172,7 +166,7 @@ export default async function JournalArticlePage({
           <ArticleBody blocks={article.body} />
 
           <p className="mt-12 font-mono text-[11.5px] tracking-[0.08em] text-ink-muted uppercase">
-            Written by the {BRAND_NAME} Kitchen
+            {copy.byline}
           </p>
         </article>
 

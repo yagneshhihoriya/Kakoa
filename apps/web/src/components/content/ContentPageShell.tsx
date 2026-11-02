@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
+import type { ClosingCtaCopy } from "@/brands/contract";
 
 /**
- * Shared content-page primitives for KAKOA's editorial / reference surfaces
+ * Shared content-page primitives for the storefront's editorial / reference surfaces
  * (Help/FAQ, Journal articles, and — retrofit-ready — Legal/Contact). Extracted
  * so every long-form page inherits the same eyebrow → DM Serif H1 → measured
  * reading column, and can't drift on spacing, type scale, or palette. All colour
@@ -128,8 +129,21 @@ export function ContentPageShell({
   );
 }
 
+/** `ContentClosingCta` fed from a brand pack `ClosingCtaCopy` block. */
+export function ClosingCta({ copy }: { copy: ClosingCtaCopy }): ReactNode {
+  return (
+    <ContentClosingCta
+      eyebrow={copy.eyebrow}
+      title={copy.title}
+      body={copy.body}
+      primary={{ label: copy.primary.label, href: copy.primary.href as Route }}
+      secondary={{ label: copy.secondary.label, href: copy.secondary.href as Route }}
+    />
+  );
+}
+
 /**
- * Reusable closing CTA band — a warm cocoa strip inviting the reader back to
+ * Reusable closing CTA band — a warm strip inviting the reader back to
  * shopping or the newsletter. Drop into `ContentPageShell`'s `footer` slot.
  */
 export function ContentClosingCta({

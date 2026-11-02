@@ -37,7 +37,14 @@ import {
 import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { resolveLegalIdentity } from '@/lib/admin/legal-identity';
-import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
+import {
+  SETTINGS_DEFAULTS,
+  SETTINGS_KEYS,
+  THEME_TOKENS,
+  flatKey,
+  normalizeSettingUrl,
+  type ThemeTokenKey,
+} from '@/lib/admin/settings-schema';
 import { displayReviewerName } from '@/lib/admin/review-format';
 // `preset` = the brand's vertical preset (same resolution the admin
 // BusinessContext uses) — drives which product attributes surface on the PDP;
@@ -79,6 +86,7 @@ const REVALIDATE_SECONDS = 900;
 
 /** Matches the DB CHECK `slug ~ '^[a-z0-9-]+$'` (spec §1.2, max 120). */
 const SLUG_RE = /^[a-z0-9-]{1,120}$/;
+const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
 /** RFC-4122 UUID (case-insensitive) — pre-filter before the IN query. */
 const UUID_RE =
@@ -773,23 +781,63 @@ export async function getCatalogSettings(): Promise<CatalogSettings> {
 }
 
 /* ------------------------------------------------------------------ */
-/* getStorefrontSettings — storefront-namespaced presentation settings */
+/* getStorefrontSettings — storefront / brand presentation settings    */
 /* ------------------------------------------------------------------ */
 
+export interface StorefrontSocialLinks {
+  instagram: string | null;
+  facebook: string | null;
+  pinterest: string | null;
+  youtube: string | null;
+}
+
 export interface StorefrontSettings {
+  /** `storefront.announcement_segments` — ribbon lines (first always visible). */
+  announcementSegments: string[];
   /**
    * `storefront.home_hero_product_slug` — the product the home hero spotlights;
    * null (unset / blank) → the page falls back to the first featured product.
    */
   homeHeroProductSlug: string | null;
+  /** `storefront.hero_image_url` / `_mobile_url` — null → the pack's bundled photo. */
+  heroImageUrl: string | null;
+  heroImageMobileUrl: string | null;
+  /** `storefront.newsletter_offer` — the incentive line in the footer club column. */
+  newsletterOffer: string;
+  /** `brand.logo_url` — null → the pack's drawn mark. */
+  logoUrl: string | null;
+  /** `brand.og_image_url` — null → the generated share card. */
+  ogImageUrl: string | null;
+  /** `brand.social_*` — null hides that icon. */
+  social: StorefrontSocialLinks;
+  /** `brand.theme.*` — configured `#RRGGBB` overrides keyed by token (ink, cream, …). */
+  theme: Partial<Record<ThemeTokenKey, string>>;
 }
+
+/** Catalogued namespaced keys this reader resolves (plus their flat fallbacks). */
+const STOREFRONT_SETTING_KEYS = SETTINGS_KEYS.filter(
+  (key) => key.startsWith('storefront.') || key.startsWith('brand.'),
+);
 
 /**
  * Read a namespaced setting the way the admin SettingsReader does: the
- * `namespace.key` row first, then the flat `key` row.
+ * `namespace.key` row first, then the flat `key` row, then the catalog default.
  */
-function namespaced(byKey: ReadonlyMap<string, unknown>, ns: string, key: string): unknown {
-  return byKey.has(`${ns}.${key}`) ? byKey.get(`${ns}.${key}`) : byKey.get(key);
+function namespaced(byKey: ReadonlyMap<string, unknown>, key: string): unknown {
+  if (byKey.has(key)) return byKey.get(key);
+  const flat = flatKey(key);
+  return byKey.has(flat) ? byKey.get(flat) : SETTINGS_DEFAULTS[key];
+}
+
+/** A non-blank string setting, else null. */
+function optionalString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+}
+
+/** An https:// or same-origin URL setting, else null (never render a malformed src). */
+function optionalUrl(value: unknown): string | null {
+  const s = optionalString(value);
+  return s === null ? null : normalizeSettingUrl(s);
 }
 
 const getStorefrontSettingsCached = unstable_cache(
@@ -799,15 +847,41 @@ const getStorefrontSettingsCached = unstable_cache(
       .from(storeSettings)
       .where(
         inArray(storeSettings.key, [
-          'storefront.home_hero_product_slug',
-          'home_hero_product_slug',
+          ...STOREFRONT_SETTING_KEYS,
+          ...STOREFRONT_SETTING_KEYS.map(flatKey),
         ]),
       );
     const byKey = new Map(rows.map((row) => [row.key, row.value]));
-    const slug = namespaced(byKey, 'storefront', 'home_hero_product_slug');
+    const get = (key: string): unknown => namespaced(byKey, key);
+
+    const segments = get('storefront.announcement_segments');
+    const slug = get('storefront.home_hero_product_slug');
+    const offer = optionalString(get('storefront.newsletter_offer'));
+
+    const theme: Partial<Record<ThemeTokenKey, string>> = {};
+    for (const token of Object.keys(THEME_TOKENS) as ThemeTokenKey[]) {
+      const hex = optionalString(get(`brand.theme.${token}`));
+      if (hex !== null && HEX_RE.test(hex)) theme[token] = hex;
+    }
+
     return {
+      announcementSegments: Array.isArray(segments)
+        ? segments.filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+        : [],
       homeHeroProductSlug:
         typeof slug === 'string' && SLUG_RE.test(slug.trim()) ? slug.trim() : null,
+      heroImageUrl: optionalUrl(get('storefront.hero_image_url')),
+      heroImageMobileUrl: optionalUrl(get('storefront.hero_image_mobile_url')),
+      newsletterOffer: offer ?? String(SETTINGS_DEFAULTS['storefront.newsletter_offer'] ?? ''),
+      logoUrl: optionalUrl(get('brand.logo_url')),
+      ogImageUrl: optionalUrl(get('brand.og_image_url')),
+      social: {
+        instagram: optionalUrl(get('brand.social_instagram')),
+        facebook: optionalUrl(get('brand.social_facebook')),
+        pinterest: optionalUrl(get('brand.social_pinterest')),
+        youtube: optionalUrl(get('brand.social_youtube')),
+      },
+      theme,
     };
   },
   ['storefront-settings'],
@@ -817,6 +891,28 @@ const getStorefrontSettingsCached = unstable_cache(
 /** Storefront presentation settings (read-only here; Admin owns writes). */
 export async function getStorefrontSettings(): Promise<StorefrontSettings> {
   return getStorefrontSettingsCached();
+}
+
+/** The catalog defaults — what the storefront renders before any row exists or when the DB is unreachable. */
+export function defaultStorefrontSettings(): StorefrontSettings {
+  const str = (key: string): string => String(SETTINGS_DEFAULTS[key] ?? '');
+  const list = SETTINGS_DEFAULTS['storefront.announcement_segments'];
+  return {
+    announcementSegments: Array.isArray(list) ? [...list] : [],
+    homeHeroProductSlug: null,
+    heroImageUrl: null,
+    heroImageMobileUrl: null,
+    newsletterOffer: str('storefront.newsletter_offer'),
+    logoUrl: null,
+    ogImageUrl: null,
+    social: {
+      instagram: optionalUrl(str('brand.social_instagram')),
+      facebook: optionalUrl(str('brand.social_facebook')),
+      pinterest: optionalUrl(str('brand.social_pinterest')),
+      youtube: optionalUrl(str('brand.social_youtube')),
+    },
+    theme: {},
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -873,9 +969,33 @@ export interface CompanyInfo {
   expressShippingPaise: number | null;
   codEnabled: boolean;
   codFeePaise: number | null;
+  /** `policy.*` — the dates and SLA windows the FAQ and legal pages print. */
+  policy: CompanyPolicy;
 }
 
+export interface CompanyPolicy {
+  /** "Effective date" line under every policy title. */
+  legalEffectiveDate: string;
+  /** Hours after delivery within which damage / wrong-item claims must be raised. */
+  damageReportWindowHours: number;
+  /** Business-day windows as printed ("5–7", "1–2", "2–7"). */
+  refundSlaDays: string;
+  dispatchSlaDays: string;
+  deliveryEtaDays: string;
+}
+
+/** Namespaced policy keys (+ flat fallbacks) the company reader resolves. */
+const POLICY_KEYS = [
+  'policy.legal_effective_date',
+  'policy.damage_report_window_hours',
+  'policy.refund_sla_days',
+  'policy.dispatch_sla_days',
+  'policy.delivery_eta_days',
+] as const;
+
 const COMPANY_KEYS = [
+  ...POLICY_KEYS,
+  ...POLICY_KEYS.map(flatKey),
   'seller_legal_name',
   'seller_address',
   'seller_gstin',
@@ -893,6 +1013,21 @@ const COMPANY_KEYS = [
   'cod_enabled',
   'cod_fee_paise',
 ];
+
+/** A `policy.*` string: the namespaced row, the flat row, else the brand default. */
+function policyString(byKey: ReadonlyMap<string, unknown>, key: string): string {
+  const v = namespaced(byKey, key);
+  return typeof v === 'string' && v.trim() !== '' ? v.trim() : String(SETTINGS_DEFAULTS[key] ?? '');
+}
+
+/** A `policy.*` integer with the same resolution order. */
+function policyInt(byKey: ReadonlyMap<string, unknown>, key: string): number {
+  const v = namespaced(byKey, key);
+  const n = typeof v === 'string' ? Number(v) : v;
+  if (typeof n === 'number' && Number.isSafeInteger(n) && n > 0) return n;
+  const fallback = SETTINGS_DEFAULTS[key];
+  return typeof fallback === 'number' ? fallback : 0;
+}
 
 const getCompanyInfoCached = unstable_cache(
   async (): Promise<CompanyInfo> => {
@@ -924,6 +1059,13 @@ const getCompanyInfoCached = unstable_cache(
       expressShippingPaise: toPaiseSetting(byKey.get('shipping_fee_express_paise')),
       codEnabled: toBoolSetting(byKey.get('cod_enabled')) ?? false,
       codFeePaise: toPaiseSetting(byKey.get('cod_fee_paise')),
+      policy: {
+        legalEffectiveDate: policyString(byKey, 'policy.legal_effective_date'),
+        damageReportWindowHours: policyInt(byKey, 'policy.damage_report_window_hours'),
+        refundSlaDays: policyString(byKey, 'policy.refund_sla_days'),
+        dispatchSlaDays: policyString(byKey, 'policy.dispatch_sla_days'),
+        deliveryEtaDays: policyString(byKey, 'policy.delivery_eta_days'),
+      },
     };
   },
   ['company-info'],

@@ -3,15 +3,18 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
+import { brand } from "@/lib/brand";
 
 export interface NewsletterFormProps {
   /**
-   * `card` (default) — bordered dark panel used by the home Chocolate-Club CTA.
+   * `card` (default) — bordered dark panel (the home club CTA layout).
    * `bare` — no card chrome; a centered input + button row for the footer band.
    * `square` — Valrhona-style: stacked bordered input over a solid cream
    *   rectangular submit. Used by the footer.
    */
   variant?: "card" | "bare" | "square";
+  /** The incentive line (`storefront.newsletter_offer`), e.g. "15% off your first box". */
+  offer: string;
 }
 
 type Status = "idle" | "busy" | "success" | "error";
@@ -37,13 +40,15 @@ function CheckIcon(): ReactNode {
 }
 
 /**
- * Newsletter signup (footer "Sweeten your inbox" band). Persists the email via
+ * Newsletter signup (footer club column). Copy is the brand pack's; the offer
+ * line is the `storefront.newsletter_offer` setting. Persists the email via
  * `POST /api/newsletter` (idempotent). Feedback is inline and persistent — an
  * idle → busy → success/error state machine rendered in the form — with a toast
  * kept only as a secondary cue, so the outcome survives after the toast fades
  * and is announced to screen readers. The input id is per-instance (`useId`).
  */
-export function NewsletterForm({ variant = "card" }: NewsletterFormProps): ReactNode {
+export function NewsletterForm({ variant = "card", offer }: NewsletterFormProps): ReactNode {
+  const { newsletter } = brand.copy;
   const { toast } = useToast();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -69,7 +74,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
       const data = await res.json();
       if (data.ok) {
         setStatus("success");
-        toast({ kind: "success", message: "Welcome to the Club! Check your inbox." });
+        toast({ kind: "success", message: newsletter.toastSuccess });
         form.reset();
       } else {
         const message = data.error?.message ?? "Enter a valid email address.";
@@ -93,7 +98,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
         </label>
       ) : (
         <label htmlFor={emailId} className="mb-2 block text-[13px] text-cream/85">
-          Get 15% off your first box
+          {newsletter.label(offer)}
         </label>
       )}
 
@@ -106,7 +111,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
           <span className="text-gold-soft">
             <CheckIcon />
           </span>
-          You&rsquo;re in — check your inbox for 15% off.
+          {newsletter.success(offer)}
         </p>
       ) : (
         <>
@@ -160,7 +165,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
             </p>
           ) : (
             <div className={cx("mt-2.5 text-xs text-cream/55", bare && "text-center")}>
-              No spam, ever. Unsubscribe in one click.
+              {newsletter.finePrint}
             </div>
           )}
         </>

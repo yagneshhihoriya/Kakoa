@@ -35,6 +35,7 @@ import { getShippingProvider, mapShiprocketStatus } from '@kakoa/integrations';
 import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { preset } from '@/lib/brand';
 import { withConstraintMapping } from './db-errors';
+import { SETTINGS_DEFAULTS } from './settings-schema';
 import { resolveParcelCm } from './parcel';
 import { isUuid } from './product-validation';
 import { applyOrderTransitionTx } from './order-actions';
@@ -300,14 +301,23 @@ export type ShippingResult =
       message: string;
     };
 
-/** The registered Shiprocket pickup-location nickname (must match the dashboard). */
+/**
+ * The registered Shiprocket pickup-location nickname (must match the dashboard):
+ * `shipping.shiprocket_pickup_location` (Admin → Settings → Fees & shipping),
+ * the legacy flat row, else the brand's default.
+ */
 async function getShiprocketPickupLocation(): Promise<string> {
-  const [row] = await db
-    .select({ value: storeSettings.value })
+  const rows = await db
+    .select({ key: storeSettings.key, value: storeSettings.value })
     .from(storeSettings)
-    .where(eq(storeSettings.key, 'shiprocket_pickup_location'))
-    .limit(1);
-  return typeof row?.value === 'string' && row.value.trim() !== '' ? row.value : 'Primary';
+    .where(inArray(storeSettings.key, ['shipping.shiprocket_pickup_location', 'shiprocket_pickup_location']));
+  const byKey = new Map(rows.map((r) => [r.key, r.value]));
+  const value = byKey.has('shipping.shiprocket_pickup_location')
+    ? byKey.get('shipping.shiprocket_pickup_location')
+    : byKey.get('shiprocket_pickup_location');
+  if (typeof value === 'string' && value.trim() !== '') return value.trim();
+  const fallback = SETTINGS_DEFAULTS['shipping.shiprocket_pickup_location'];
+  return typeof fallback === 'string' ? fallback : 'Primary';
 }
 
 /** A valid Indian pincode for a fulfilment push. */

@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductCardView } from "@kakoa/core";
 import { EmptyState } from "@kakoa/ui";
 import { assets } from "@brand/assets";
-import { SWATCH_KEYS, toTone, vocabulary } from "@/lib/brand";
+import { illustrations } from "@brand/illustrations";
+import type { GiftIconName, TrustIconName } from "@/brands/contract";
+import { brand, SWATCH_KEYS, toTone, vocabulary } from "@/lib/brand";
 import {
+  defaultStorefrontSettings,
   getCategories,
   getProductBySlug,
   getProducts,
@@ -14,9 +18,13 @@ import {
 import { getDefaultVariantIds } from "./shop/default-variants";
 import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
 import { ProductCard } from "@/components/catalog/ProductCard";
-import { ChocoScene } from "@/components/home/ChocoScene";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
 import { SectionReveal } from "@/components/home/SectionReveal";
+
+/** Every sentence on this page is the brand pack's; the page owns layout + icons. */
+const { home } = brand.copy;
+/** The pack's story-band visual (the photo-slot fallback). */
+const StoryIllustration = illustrations.Story;
 
 /** ISR — 5-min time fallback; tag-based revalidation purges sooner. */
 export const revalidate = 300;
@@ -30,30 +38,8 @@ function categorySwatch(index: number): string {
   return toTone(SWATCH_KEYS[index % Math.max(1, SWATCH_KEYS.length)]);
 }
 
-/** Trust triad — a slim reassurance band shown high on the page. Icons are
- * inline thin-stroke SVGs (no imagery); copy stays presentational. Items
- * flagged `coldChain` render only where the vertical ships cold. */
-const TRUST_SIGNALS = [
-  {
-    key: "cool",
-    coldChain: true,
-    title: "Kept cool, guaranteed",
-    body: "Insulated, temperature-controlled packing — or we make it right.",
-  },
-  {
-    key: "batch",
-    title: "Small-batch, bean-to-bar",
-    body: "Roasted, conched and tempered by hand in our own kitchen.",
-  },
-  {
-    key: "cacao",
-    title: "Fair-trade cacao",
-    body: "Direct-trade beans from four origins, growers paid above market.",
-  },
-] as const;
-
 /** Thin-stroke line icons for the trust band — decorative, brand-neutral. */
-function TrustIcon({ name }: { name: (typeof TRUST_SIGNALS)[number]["key"] }): ReactNode {
+function TrustIcon({ name }: { name: TrustIconName }): ReactNode {
   const common = {
     width: 22,
     height: 22,
@@ -65,7 +51,7 @@ function TrustIcon({ name }: { name: (typeof TRUST_SIGNALS)[number]["key"] }): R
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
   };
-  if (name === "cool") {
+  if (name === "snowflake") {
     return (
       <svg {...common}>
         <path d="M12 2v20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3" />
@@ -74,7 +60,7 @@ function TrustIcon({ name }: { name: (typeof TRUST_SIGNALS)[number]["key"] }): R
       </svg>
     );
   }
-  if (name === "batch") {
+  if (name === "flame") {
     return (
       <svg {...common}>
         <path d="M11 20A7 7 0 0 1 4 13C4 8 8 4 13 3c2 8-2 14-2 17z" />
@@ -90,78 +76,8 @@ function TrustIcon({ name }: { name: (typeof TRUST_SIGNALS)[number]["key"] }): R
   );
 }
 
-/** Editorial marquee — the craft vocabulary, looped as a decorative ribbon. */
-const MARQUEE_WORDS = [
-  "Single-origin cacao",
-  "Bean-to-bar",
-  "Roasted in-house",
-  "Small-batch",
-  "Ethically sourced",
-  "Hand-finished",
-] as const;
-/** Appended to the marquee only where the vertical ships cold. */
-const COLD_CHAIN_MARQUEE_WORDS = ["Ships cold & safe"] as const;
-
-/** Bean-to-bar process — the provenance narrative, four movements. */
-const PROCESS = [
-  {
-    step: "01",
-    title: "Source",
-    body: "Direct-trade cacao from growers across four origins, chosen bean by bean.",
-  },
-  {
-    step: "02",
-    title: "Roast",
-    body: "Every batch roasted in-house, low and slow, to draw out its origin character.",
-  },
-  {
-    step: "03",
-    title: "Conch",
-    body: "Slow-conched for days until the texture turns to silk on the tongue.",
-  },
-  {
-    step: "04",
-    title: "Temper",
-    body: "Hand-tempered and molded for that clean, glossy snap in every piece.",
-  },
-] as const;
-
-/** Gifting band — gift-led reasons to choose KAKOA, grounded in real features:
- * signature packaging, a handwritten note added at checkout, and cold-chain
- * nationwide shipping. Thin-stroke line icons match the Trust triad's language. */
-const GIFT_FEATURES = [
-  {
-    key: "wrap" as const,
-    title: "Hand-wrapped, ready to gift",
-    body: "Every order arrives in signature packaging — gifting-ready, straight out of the box.",
-  },
-  {
-    key: "note" as const,
-    title: "Add a handwritten note",
-    body: "Write a personal message at checkout and we tuck it in by hand.",
-  },
-  {
-    key: "cold" as const,
-    coldChain: true,
-    title: "Ships cold, across India",
-    body: `Temperature-controlled packing keeps every ${vocabulary.unitNoun.one} perfect — door to door.`,
-  },
-];
-
-/** Drop the items flagged `coldChain: true` unless the vertical actually ships cold. */
-function withoutColdChain<T extends object>(items: readonly T[]): T[] {
-  return items.filter(
-    (item) => vocabulary.coldChain || !("coldChain" in item && item.coldChain === true),
-  );
-}
-const trustSignals = withoutColdChain(TRUST_SIGNALS);
-const giftFeatures = withoutColdChain(GIFT_FEATURES);
-const marqueeWords: readonly string[] = vocabulary.coldChain
-  ? [...MARQUEE_WORDS, ...COLD_CHAIN_MARQUEE_WORDS]
-  : MARQUEE_WORDS;
-
 /** Thin-stroke line icons for the gifting band — decorative, brand-neutral. */
-function GiftIcon({ name }: { name: (typeof GIFT_FEATURES)[number]["key"] }): ReactNode {
+function GiftIcon({ name }: { name: GiftIconName }): ReactNode {
   const common = {
     width: 20,
     height: 20,
@@ -230,9 +146,7 @@ export default async function HomePage() {
   const [categories, { products: featured }, storefront] = await Promise.all([
     getCategories(),
     getProducts({ sort: "featured", page: 1, pageSize: 4 }),
-    getStorefrontSettings().catch((): { homeHeroProductSlug: null } => ({
-      homeHeroProductSlug: null,
-    })),
+    getStorefrontSettings().catch(defaultStorefrontSettings),
   ]);
 
   // Per-category product counts for the category strip ("N pieces") — cheap
@@ -274,10 +188,22 @@ export default async function HomePage() {
 
   /**
    * Hero photography — two art-directed crops: a 2.51:1 frame for the overlay
-   * layout and a 1:1 frame for the stacked mobile band. Bundled with the brand
-   * pack; a pack without photography degrades to the cocoa gradient below.
+   * layout and a 1:1 frame for the stacked mobile band. The owner's uploads
+   * (storefront.hero_image_url / _mobile_url) win; otherwise the crops bundled
+   * with the brand pack; a pack without photography degrades to the gradient
+   * field below. One configured URL serves both crops.
    */
-  const heroPhoto = assets.heroPhoto;
+  const configuredHero = storefront.heroImageUrl ?? storefront.heroImageMobileUrl;
+  const heroPhoto =
+    configuredHero !== null
+      ? {
+          desktop: storefront.heroImageUrl ?? configuredHero,
+          mobile: storefront.heroImageMobileUrl ?? configuredHero,
+        }
+      : assets.heroPhoto !== null
+        ? { desktop: assets.heroPhoto.desktop.src, mobile: assets.heroPhoto.mobile.src }
+        : null;
+  const heroName = heroProduct?.name ?? null;
 
   return (
     <main>
@@ -291,7 +217,7 @@ export default async function HomePage() {
 
         {/* Full-bleed visual field (their geometry: one cover image, text
             overlaid at 3% left across 50% width). Real photography drops into
-            the first layer; the cocoa gradient stands in until it exists. */}
+            the first layer; the field gradient stands in until it exists. */}
         <div
           aria-hidden="true"
           className="relative aspect-square w-full sm:aspect-[1989/791] md:absolute md:inset-0 md:-z-10 md:aspect-auto"
@@ -305,9 +231,9 @@ export default async function HomePage() {
                No scrim: the photo's own left field measures 7.3:1 against the
                cream copy (AA body text needs 4.5). */
             <picture>
-              <source media="(min-width: 640px)" srcSet={heroPhoto.desktop.src} />
+              <source media="(min-width: 640px)" srcSet={heroPhoto.desktop} />
               <img
-                src={heroPhoto.mobile.src}
+                src={heroPhoto.mobile}
                 alt=""
                 fetchPriority="high"
                 decoding="async"
@@ -320,25 +246,20 @@ export default async function HomePage() {
         <div className="w-full px-[3%] py-12 md:py-0 lg:py-20">
           <div className="w-full md:max-w-[65%] lg:max-w-[50%]">
             <div className="mb-6">
-              <Eyebrow tone="gold">Small-batch · Single origin</Eyebrow>
+              <Eyebrow tone="gold">{home.hero.eyebrow}</Eyebrow>
             </div>
             <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance text-field-ink md:text-[34px] md:leading-[1.15]">
-              {heroProduct !== null
-                ? `${heroProduct.name}: our house dark.`
-                : "Chocolate worth slowing down for."}
+              {home.hero.headline(heroName)}
             </h1>
             <p className="mb-8 max-w-[52ch] text-[14px] leading-[21px] font-light tracking-[0.7px] text-field-ink/85">
-              {heroProduct?.blurb ??
-                "Ethically sourced cacao, roasted in-house and finished by hand. Tasting notes you can actually taste — no shortcuts, no fillers."}
+              {heroProduct?.blurb ?? home.hero.body}
             </p>
             <div className="mb-9 flex flex-wrap gap-3.5">
               <Link
                 href={heroProduct !== null ? `/product/${heroProduct.slug}` : "/shop"}
                 className={`rounded-none border border-field-ink bg-field-ink px-5 py-3 text-[14px] tracking-[1.4px] text-field uppercase no-underline transition-colors hover:bg-transparent hover:text-field-ink ${FOCUS_RING}`}
               >
-                {heroProduct !== null
-                  ? `Discover ${heroProduct.name}`
-                  : "Shop the collection"}
+                {home.hero.cta(heroName)}
               </Link>
             </div>
           </div>
@@ -351,7 +272,7 @@ export default async function HomePage() {
         className="overflow-hidden border-y border-line bg-cream-2 py-[15px]"
       >
         <div className="kk-marquee">
-          {[...marqueeWords, ...marqueeWords, ...marqueeWords].map(
+          {[...home.marqueeWords, ...home.marqueeWords, ...home.marqueeWords].map(
             (word, index) => (
               <span
                 key={index}
@@ -367,20 +288,20 @@ export default async function HomePage() {
 
       {/* ==================== TRUST / REASSURANCE ==================== */}
       <section
-        aria-label="The KAKOA promise"
+        aria-label={home.trust.ariaLabel}
         className="mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 lg:pt-[72px]"
       >
         <ul className="grid gap-px overflow-hidden rounded-[22px] border border-line bg-line shadow-soft sm:grid-cols-3">
-          {trustSignals.map((signal) => (
+          {home.trust.signals.map((signal) => (
             <li
-              key={signal.key}
+              key={signal.title}
               className="flex items-start gap-3.5 bg-cream-2 px-6 py-6 sm:px-7 sm:py-7"
             >
               <span
                 aria-hidden="true"
                 className="mt-px grid h-11 w-11 flex-none place-items-center rounded-[14px] border border-line-soft bg-cream text-espresso"
               >
-                <TrustIcon name={signal.key} />
+                <TrustIcon name={signal.icon} />
               </span>
               <div className="max-w-[34ch]">
                 <h3 className="font-body text-[15px] font-semibold text-ink">
@@ -404,13 +325,13 @@ export default async function HomePage() {
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <div className="mb-2.5">
-                <Eyebrow>Shop by collection</Eyebrow>
+                <Eyebrow>{home.collections.eyebrow}</Eyebrow>
               </div>
               <h2
                 id="home-collections"
                 className="font-display text-h2 font-normal"
               >
-                Find your flavour
+                {home.collections.title}
               </h2>
             </div>
             <Link
@@ -483,20 +404,20 @@ export default async function HomePage() {
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
             <div className="mb-2.5">
-              <Eyebrow>Loved by many</Eyebrow>
+              <Eyebrow>{home.bestSellers.eyebrow}</Eyebrow>
             </div>
             <h2
               id="home-featured"
               className="font-display text-h2 font-normal"
             >
-              Best sellers
+              {home.bestSellers.title}
             </h2>
           </div>
           <Link
             href="/shop"
             className={`flex items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold text-ink transition-[gap] hover:gap-2.5 ${FOCUS_RING}`}
           >
-            View all <span aria-hidden="true">→</span>
+            {home.bestSellers.viewAll} <span aria-hidden="true">→</span>
           </Link>
         </div>
         {featured.length > 0 ? (
@@ -513,9 +434,9 @@ export default async function HomePage() {
           </ul>
         ) : (
           <EmptyState
-            title="The first batch is still tempering"
-            description={`New ${vocabulary.noun.many} land here soon — check back shortly.`}
-            cta={{ label: "Browse the shop", href: "/shop" }}
+            title={home.bestSellers.emptyTitle}
+            description={home.bestSellers.emptyBody}
+            cta={{ label: home.bestSellers.emptyCta.label, href: home.bestSellers.emptyCta.href }}
           />
         )}
       </section>
@@ -527,33 +448,27 @@ export default async function HomePage() {
       >
         <div className="relative aspect-[5/4] overflow-hidden rounded-[26px] shadow-float">
           {/* photo-ready: pass a `src` to swap in real kitchen photography. */}
-          <PhotoSlot alt="Inside the KAKOA small-batch kitchen" sizes="(max-width: 1024px) 100vw, 48vw">
-            <ChocoScene kind="story" label="Small-batch kitchen" />
+          <PhotoSlot alt={home.story.photoAlt} sizes="(max-width: 1024px) 100vw, 48vw">
+            <StoryIllustration label={home.story.photoLabel} />
           </PhotoSlot>
         </div>
         <div>
           <div className="mb-4">
-            <Eyebrow>Our story</Eyebrow>
+            <Eyebrow>{home.story.eyebrow}</Eyebrow>
           </div>
           <h2
             id="home-story"
             className="mb-5 font-display text-h1 font-normal leading-[1.06]"
           >
-            From bean to bar,
+            {home.story.title[0]}
             <br />
-            in our own hands.
+            {home.story.title[1]}
           </h2>
           <p className="mb-7 max-w-[62ch] font-body text-lead text-ink-soft">
-            We started KAKOA in a tiny kitchen with one conviction: great
-            chocolate should taste of somewhere. Today we work directly with
-            growers across four origins, and still roast every batch ourselves.
+            {home.story.body}
           </p>
           <dl className="mb-8 flex flex-wrap gap-x-12 gap-y-5">
-            {[
-              { value: "4", label: "Cacao origins" },
-              { value: "100%", label: "Roasted in-house" },
-              { value: "Small", label: "Batch sizes" },
-            ].map((stat) => (
+            {home.story.stats.map((stat) => (
               <div key={stat.label}>
                 <dt className="font-display text-[32px] leading-none text-ink">
                   {stat.value}
@@ -564,8 +479,8 @@ export default async function HomePage() {
               </div>
             ))}
           </dl>
-          <Link href="/about" className={SECONDARY_CTA}>
-            Read our story
+          <Link href={home.story.cta.href as Route} className={SECONDARY_CTA}>
+            {home.story.cta.label}
           </Link>
         </div>
       </section>
@@ -575,14 +490,14 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8 py-16 lg:py-[88px]">
           <div className="mb-10 max-w-[62ch]">
             <div className="mb-3">
-              <Eyebrow tone="gold">The craft</Eyebrow>
+              <Eyebrow tone="gold">{home.process.eyebrow}</Eyebrow>
             </div>
             <h2 className="font-display text-h1 font-normal leading-[1.06] text-balance text-cream">
-              Four movements, from bean to bar.
+              {home.process.title}
             </h2>
           </div>
           <ol className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {PROCESS.map((movement) => (
+            {home.process.steps.map((movement) => (
               <li
                 key={movement.step}
                 className="border-t border-[rgba(233,199,176,.22)] pt-5"
@@ -603,6 +518,7 @@ export default async function HomePage() {
       </section>
 
       {/* ========================== GIFTING ========================== */}
+      {brand.profile.features.gifting ? (
       <section
         aria-labelledby="home-gifting"
         className="mx-auto max-w-[1240px] px-5 sm:px-8 py-14 lg:py-[72px]"
@@ -615,38 +531,36 @@ export default async function HomePage() {
           <div className="relative grid gap-10 p-8 sm:p-11 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14 lg:p-14">
             <div>
               <div className="mb-3.5">
-                <Eyebrow>Made for gifting</Eyebrow>
+                <Eyebrow>{home.gifting.eyebrow}</Eyebrow>
               </div>
               <h2
                 id="home-gifting"
                 className="font-display text-h2 font-normal leading-[1.08] text-balance"
               >
-                A box that says it
-                <br className="hidden sm:block" /> better than words.
+                {home.gifting.title[0]}
+                <br className="hidden sm:block" /> {home.gifting.title[1]}
               </h2>
               <p className="mt-4 max-w-[46ch] font-body text-lead text-ink-soft">
-                Single-origin chocolate, wrapped and ready to give — finished by
-                hand, with a personal note and cold-chain delivery anywhere in
-                India.
+                {home.gifting.body}
               </p>
               <Link
-                href="/shop?category=gifts"
+                href={home.gifting.cta.href as Route}
                 className={`mt-8 inline-block ${PRIMARY_CTA}`}
               >
-                Shop gifts
+                {home.gifting.cta.label}
               </Link>
             </div>
             <ul className="grid gap-3.5">
-              {giftFeatures.map((feature) => (
+              {home.gifting.features.map((feature) => (
                 <li
-                  key={feature.key}
+                  key={feature.title}
                   className="flex items-start gap-4 rounded-[16px] border border-line-soft bg-cream/70 px-5 py-4"
                 >
                   <span
                     aria-hidden="true"
                     className="mt-px grid h-10 w-10 flex-none place-items-center rounded-[12px] border border-line bg-cream text-espresso"
                   >
-                    <GiftIcon name={feature.key} />
+                    <GiftIcon name={feature.icon} />
                   </span>
                   <div>
                     <h3 className="font-body text-[15px] font-semibold text-ink">
@@ -662,6 +576,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      ) : null}
 
     </main>
   );

@@ -5,6 +5,8 @@ import type { CSSProperties, ReactNode } from "react";
  * warm lit surface. 1:1 translation of the prototype's `chocoScene()` helper
  * (app script) into a server component. Fills its nearest positioned parent
  * (`position: absolute; inset: 0`) — callers own aspect-ratio + radius + clip.
+ * KAKOA's story-band illustration (see ./index.tsx); the other `kind`s are the
+ * prototype's remaining scenes, kept for the brand's editorial surfaces.
  *
  * All hexes here are prototype art direction (scene lighting), not palette
  * tokens — same carve-out as `ProductPlaceholder`.

@@ -37,5 +37,6 @@ export function buildEmailIdentity(rows: ReadonlyMap<string, unknown>): EmailIde
     footerTagline: email.footerTagline,
     unitNoun: { one: vocabulary.unitNoun.one, many: vocabulary.unitNoun.many },
     theme: email.theme,
+    copy: email.copy,
   };
 }

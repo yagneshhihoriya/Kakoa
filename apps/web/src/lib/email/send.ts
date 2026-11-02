@@ -354,18 +354,26 @@ export function sendOrderDelivered(orderId: string): Promise<void> {
 
 /**
  * Alert the ops inbox about a new order — best-effort, never throws. Recipients
- * come from `store_settings` (`ops_alert_email` / `ops_alert_phone`); if neither
- * is set, this is a no-op. `admin-new-order-<id>` dedups the prepaid double-fire.
+ * come from `store_settings` (`ops.alert_email` / `ops.alert_phone`, editable in
+ * Admin → Settings → Operations; the legacy flat `ops_alert_*` rows still
+ * resolve); if neither is set, this is a no-op. `admin-new-order-<id>` dedups
+ * the prepaid double-fire.
  */
 export async function sendAdminNewOrderAlert(orderId: string): Promise<void> {
   try {
     const settingRows = await db
       .select({ key: storeSettings.key, value: storeSettings.value })
       .from(storeSettings)
-      .where(sql`${storeSettings.key} in ('ops_alert_email', 'ops_alert_phone')`);
+      .where(
+        sql`${storeSettings.key} in ('ops.alert_email', 'ops.alert_phone', 'ops_alert_email', 'ops_alert_phone')`,
+      );
     const byKey = new Map(settingRows.map((r) => [r.key, r.value]));
-    const alertEmail = typeof byKey.get('ops_alert_email') === 'string' ? (byKey.get('ops_alert_email') as string) : '';
-    const alertPhone = typeof byKey.get('ops_alert_phone') === 'string' ? (byKey.get('ops_alert_phone') as string) : '';
+    const recipient = (ns: string, flat: string): string => {
+      const v = byKey.has(ns) ? byKey.get(ns) : byKey.get(flat);
+      return typeof v === 'string' ? v.trim() : '';
+    };
+    const alertEmail = recipient('ops.alert_email', 'ops_alert_email');
+    const alertPhone = recipient('ops.alert_phone', 'ops_alert_phone');
     if (alertEmail === '' && alertPhone === '') return; // no recipient configured
 
     const [order] = await db

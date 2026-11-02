@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { getCompanyInfo, type CompanyInfo } from "@/lib/catalog/queries";
-import { brand, vocabulary } from "@/lib/brand";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Cold-chain clause variants: the vertical preset decides whether the policies
- * speak of temperature-sensitive goods and melted deliveries (chocolate) or of
- * shelf-stable packaged food (snacks). Everything else is shared.
+ * Vertical-specific clause variants (Terms §6, Refund §2 trigger, Shipping §5)
+ * come from the brand pack (`brand.legal`): a cold-chain brand speaks of
+ * temperature-sensitive goods and melted deliveries, a shelf-stable one of
+ * packaged food. Everything else is shared. The effective date and the SLA
+ * windows are `policy.*` store settings (CompanyInfo.policy).
  */
-const COLD_CHAIN = vocabulary.coldChain;
+const LEGAL = brand.legal;
 
 /**
  * India-market legal pages (Privacy / Terms / Refund-Return-Cancellation /
@@ -30,8 +32,6 @@ const DOC_TITLES = {
   shipping: "Shipping Policy",
 } as const;
 type Doc = keyof typeof DOC_TITLES;
-
-const EFFECTIVE = "12 July 2026";
 
 /** A content block is a paragraph (string) or a bullet list (string[]). */
 type Block = string | string[];
@@ -81,6 +81,8 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
   const email = c.supportEmail;
   const phone = c.supportPhone;
   const addr = c.address;
+  const { damageReportWindowHours: hours, refundSlaDays, dispatchSlaDays, deliveryEtaDays } =
+    c.policy;
 
   if (doc === "privacy") {
     return [
@@ -209,13 +211,8 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         ],
       },
       {
-        heading: COLD_CHAIN ? "6. Perishable / food products" : "6. Food products",
-        blocks: [
-          (COLD_CHAIN
-            ? "Our products are food items and may be temperature-sensitive and perishable. Please refer to the storage instructions and use-by information on each product and store them appropriately on receipt. We are an FSSAI-licensed food business"
-            : "Our products are packaged food items. Please refer to the storage instructions and best-before information on each pack and store them appropriately on receipt. We are an FSSAI-licensed food business") +
-            (c.fssai ? ` (FSSAI Lic. No. ${c.fssai}).` : "."),
-        ],
+        heading: LEGAL.foodProducts.heading,
+        blocks: [LEGAL.foodProducts.body + (c.fssai ? ` (FSSAI Lic. No. ${c.fssai}).` : ".")],
       },
       {
         heading: "7. Shipping, returns & refunds",
@@ -266,17 +263,15 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         ],
       },
       {
-        heading: COLD_CHAIN ? "2. Returns — perishable food items" : "2. Returns — packaged food items",
+        heading: LEGAL.returns.heading,
         blocks: [
           "Because our products are food items, for hygiene and safety reasons we cannot accept returns of products that have been opened, consumed or tampered with. However, you are fully protected if something is wrong with your order. You are eligible for a replacement or refund if:",
           [
-            COLD_CHAIN
-              ? "the product arrived damaged, melted, spoilt or leaking;"
-              : "the product arrived damaged, crushed, stale or leaking;",
+            LEGAL.returns.damagedTrigger,
             "you received the wrong item; or",
             "the product was past or near its use-by date on arrival.",
           ],
-          "Please report such issues within 48 hours of delivery, with your order number and clear photographs of the product and packaging, so we can resolve it quickly.",
+          `Please report such issues within ${hours} hours of delivery, with your order number and clear photographs of the product and packaging, so we can resolve it quickly.`,
         ],
       },
       {
@@ -288,7 +283,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
       {
         heading: "4. How to raise a request",
         blocks: [
-          `Email ${email} or call ${phone} within 48 hours of delivery with your order number and photos (for damage/defect claims). Our team will acknowledge your request and confirm the resolution — replacement, refund, or store credit — after a quick review.`,
+          `Email ${email} or call ${phone} within ${hours} hours of delivery with your order number and photos (for damage/defect claims). Our team will acknowledge your request and confirm the resolution — replacement, refund, or store credit — after a quick review.`,
         ],
       },
       {
@@ -296,8 +291,8 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         blocks: [
           "Once a refund is approved:",
           [
-            "Prepaid orders (card/UPI/net-banking): refunded to your original payment method within 5–7 business days of approval.",
-            "Cash on Delivery orders: refunded via bank transfer/UPI to the details you provide, within 5–7 business days of approval.",
+            `Prepaid orders (card/UPI/net-banking): refunded to your original payment method within ${refundSlaDays} business days of approval.`,
+            `Cash on Delivery orders: refunded via bank transfer/UPI to the details you provide, within ${refundSlaDays} business days of approval.`,
             "The exact time for the amount to reflect depends on your bank or payment provider.",
           ],
         ],
@@ -329,13 +324,13 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
     {
       heading: "2. Order processing & dispatch",
       blocks: [
-        "Orders are processed and dispatched within 1–2 business days of successful payment (or order confirmation for Cash on Delivery). Business days exclude Sundays and public holidays.",
+        `Orders are processed and dispatched within ${dispatchSlaDays} business days of successful payment (or order confirmation for Cash on Delivery). Business days exclude Sundays and public holidays.`,
       ],
     },
     {
       heading: "3. Delivery timelines",
       blocks: [
-        "Once dispatched, orders are typically delivered within 2–7 business days depending on your location. Metro cities are usually faster; remote PIN codes may take longer. A tracking link is shared by email/SMS once your order ships.",
+        `Once dispatched, orders are typically delivered within ${deliveryEtaDays} business days depending on your location. Metro cities are usually faster; remote PIN codes may take longer. A tracking link is shared by email/SMS once your order ships.`,
       ],
     },
     {
@@ -345,19 +340,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         shippingChargeLines(c),
       ],
     },
-    COLD_CHAIN
-      ? {
-          heading: "5. Perishable / cold-chain handling",
-          blocks: [
-            `Our ${vocabulary.noun.many} are temperature-sensitive. We use protective and, where needed, insulated packaging, and plan dispatch to reduce time in transit. During warmer months or to certain regions we may adjust dispatch scheduling to protect product quality.`,
-          ],
-        }
-      : {
-          heading: "5. Packaging & handling",
-          blocks: [
-            `Our ${vocabulary.noun.many} are packed to protect them in transit. We use protective packaging sized to the order and plan dispatch to reduce time in transit so every pack arrives crisp and intact.`,
-          ],
-        },
+    { heading: LEGAL.handling.heading, blocks: [LEGAL.handling.body] },
     {
       heading: "6. Tracking your order",
       blocks: [
@@ -429,7 +412,9 @@ export default async function LegalPage({
       <h1 className="mt-2 text-[34px] leading-tight text-ink md:text-[40px]" style={{ fontFamily: "var(--font-display), serif" }}>
         {DOC_TITLES[key]}
       </h1>
-      <p className="mt-2 font-body text-[13px] text-ink-muted">Effective date: {EFFECTIVE}</p>
+      <p className="mt-2 font-body text-[13px] text-ink-muted">
+        Effective date: {company.policy.legalEffectiveDate}
+      </p>
 
       <div className="mt-8 flex flex-col gap-7">
         {sections.map((section) => (

@@ -7,9 +7,10 @@
  * The rich production emails (order confirmation etc.) are still rendered by
  * `lib/email/templates.ts`; THIS catalog's `defaultBody` is the editable
  * starting point an admin overrides, and the source for the live preview. The
- * subject suffix (' · KAKOA') and SMS prefix ('KAKOA: ') are the brand's.
+ * default copy, the subject suffix (' · <brand>') and the SMS prefix
+ * ('<brand>: ') all come from the brand pack.
  */
-import { brand, vocabulary } from '@/lib/brand';
+import { brand } from '@/lib/brand';
 
 export type NotificationChannel = 'email' | 'sms';
 
@@ -28,71 +29,69 @@ const COMMON = ['orderNumber', 'customerName', 'trackingUrl'];
 /** ' · <brand>' on every email subject; '<brand>: ' leading every SMS. */
 const { subjectSuffix: SFX, smsPrefix: SMS } = brand.profile.email;
 
+/** The pack's default copy per `<key>.<channel>` (apps/web/src/brands/<key>/copy.ts). */
+const COPY = brand.copy.notifications;
+
 export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
   {
     key: 'order_confirmed',
     channel: 'email',
     label: 'Order confirmed',
-    defaultSubject: `Payment received — order {{orderNumber}}${SFX}`,
-    defaultBody:
-      'Hi {{customerName}},\n\nThank you — your order {{orderNumber}} is confirmed and we\'re getting it ready with care.\n\nTrack it any time: {{trackingUrl}}',
+    defaultSubject: `${COPY['order_confirmed.email'].subject}${SFX}`,
+    defaultBody: COPY['order_confirmed.email'].body,
     placeholders: [...COMMON, 'amount'],
   },
   {
     key: 'order_cancelled',
     channel: 'email',
     label: 'Order cancelled',
-    defaultSubject: `Order {{orderNumber}} cancelled${SFX}`,
-    defaultBody:
-      'Hi {{customerName}},\n\nWe\'ve cancelled order {{orderNumber}} as requested. Any amount paid is refunded to the original method.',
+    defaultSubject: `${COPY['order_cancelled.email'].subject}${SFX}`,
+    defaultBody: COPY['order_cancelled.email'].body,
     placeholders: [...COMMON, 'amount'],
   },
   {
     key: 'order_shipped',
     channel: 'email',
     label: 'Order shipped',
-    defaultSubject: `Shipped — order {{orderNumber}} is on its way${SFX}`,
-    defaultBody:
-      'Hi {{customerName}},\n\nGood news — order {{orderNumber}} has shipped via {{courierName}} (AWB {{awb}}).\n\nTrack it: {{trackingUrl}}',
+    defaultSubject: `${COPY['order_shipped.email'].subject}${SFX}`,
+    defaultBody: COPY['order_shipped.email'].body,
     placeholders: [...COMMON, 'awb', 'courierName', 'eta'],
   },
   {
     key: 'order_shipped',
     channel: 'sms',
     label: 'Order shipped',
-    defaultBody: `${SMS}Order {{orderNumber}} shipped via {{courierName}} (AWB {{awb}}). Track: {{trackingUrl}}`,
+    defaultBody: `${SMS}${COPY['order_shipped.sms'].body}`,
     placeholders: [...COMMON, 'awb', 'courierName'],
   },
   {
     key: 'order_out_for_delivery',
     channel: 'email',
     label: 'Out for delivery',
-    defaultSubject: `Out for delivery — order {{orderNumber}}${SFX}`,
-    defaultBody:
-      'Hi {{customerName}},\n\nYour order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}',
+    defaultSubject: `${COPY['order_out_for_delivery.email'].subject}${SFX}`,
+    defaultBody: COPY['order_out_for_delivery.email'].body,
     placeholders: [...COMMON],
   },
   {
     key: 'order_out_for_delivery',
     channel: 'sms',
     label: 'Out for delivery',
-    defaultBody: `${SMS}Order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}`,
+    defaultBody: `${SMS}${COPY['order_out_for_delivery.sms'].body}`,
     placeholders: [...COMMON],
   },
   {
     key: 'order_delivered',
     channel: 'email',
     label: 'Order delivered',
-    defaultSubject: `Delivered — order {{orderNumber}}${SFX}`,
-    defaultBody:
-      `Hi {{customerName}},\n\nOrder {{orderNumber}} has been delivered. We hope every ${vocabulary.unitNoun.one} is a delight!`,
+    defaultSubject: `${COPY['order_delivered.email'].subject}${SFX}`,
+    defaultBody: COPY['order_delivered.email'].body,
     placeholders: [...COMMON],
   },
   {
     key: 'order_delivered',
     channel: 'sms',
     label: 'Order delivered',
-    defaultBody: `${SMS}Order {{orderNumber}} delivered. Enjoy! {{trackingUrl}}`,
+    defaultBody: `${SMS}${COPY['order_delivered.sms'].body}`,
     placeholders: [...COMMON],
   },
 ];

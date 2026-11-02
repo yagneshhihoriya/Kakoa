@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import type { ProductListInput, ProductSort } from "@kakoa/core";
 import { productListInputSchema } from "@kakoa/core";
 import { EmptyState, cx } from "@kakoa/ui";
-import { vocabulary } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
 import { getCategories, getProducts } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { SortDropdown } from "@/components/catalog/SortDropdown";
@@ -126,8 +126,7 @@ export async function generateMetadata({
       return {
         title: category.name,
         description:
-          category.description ??
-          `Shop ${category.name} — small-batch bean-to-bar chocolate, crafted in India.`,
+          category.description ?? brand.copy.shop.categoryMetaDescription(category.name),
         // Canonical without the volatile ?page — page 1 of the (filtered)
         // listing is the indexable URL; deeper pages consolidate to it.
         alternates: {
@@ -138,8 +137,7 @@ export async function generateMetadata({
   }
   return {
     title: "Shop",
-    description:
-      "Shop small-batch bean-to-bar chocolate — bars, pralines, signature collections, and gifts.",
+    description: brand.copy.shop.metaDescription,
     alternates: { canonical: "/shop" },
   };
 }

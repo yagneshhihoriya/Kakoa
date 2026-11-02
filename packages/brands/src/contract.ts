@@ -103,9 +103,16 @@ const legalIdentitySchema = z.object({
  * Default value for every catalogued `store_settings` key that HAS a brand
  * default (SETTINGS_CATALOG in apps/web/src/lib/admin/settings-schema.ts reads
  * these for its `default:` fields; the seed writes them as the initial rows).
- * Policy, fees and support contacts only — never legal identity. Money is
- * integer paise.
+ * Policy, fees, support contacts, marketing lines and ops nicknames — never
+ * legal identity. Money is integer paise. Keys are the FLAT setting names; the
+ * catalog namespaces them (`storefront.`, `policy.`, `shipping.`).
  */
+/**
+ * A business-day window as the policies print it: "2" or "1–2" (en dash).
+ * Stored as text so a range survives verbatim into the FAQ / legal copy.
+ */
+const dayRange = z.string().regex(/^[0-9]{1,3}(?:–[0-9]{1,3})?$/, 'expected "N" or "N–M"');
+
 const settingsDefaultsSchema = z.object({
   grievance_officer_name: nonEmpty,
   country_of_origin: nonEmpty,
@@ -119,6 +126,19 @@ const settingsDefaultsSchema = z.object({
   support_phone: z.string().regex(/^\+91[6-9][0-9]{9}$/),
   support_email: z.string().email(),
   support_hours: nonEmpty,
+  /** Announcement-ribbon segments (storefront.announcement_segments). */
+  announcement_segments: z.array(nonEmpty).readonly(),
+  /** Newsletter incentive line under the club heading (storefront.newsletter_offer). */
+  newsletter_offer: nonEmpty,
+  /** "Effective date" printed on every policy page (policy.legal_effective_date). */
+  legal_effective_date: nonEmpty,
+  /** Hours after delivery within which damage must be reported (policy.*). */
+  damage_report_window_hours: z.number().int().min(1).max(720),
+  refund_sla_days: dayRange,
+  dispatch_sla_days: dayRange,
+  delivery_eta_days: dayRange,
+  /** Shiprocket pickup-location nickname (shipping.shiprocket_pickup_location). */
+  shiprocket_pickup_location: nonEmpty,
 });
 
 /* ── The profile ───────────────────────────────────────────────────────── */
@@ -195,12 +215,6 @@ export const brandProfileSchema = z.object({
    * whose identity is entered through the admin instead simply omits it.
    */
   seedLegalIdentity: legalIdentitySchema.optional(),
-  /** Marketing-ish values that become editable settings in a later increment. */
-  content: z.object({
-    announcementSegments: z.array(nonEmpty).readonly(),
-    newsletterOffer: nonEmpty,
-    legalEffectiveDate: nonEmpty,
-  }),
 });
 
 export type BrandProfile = z.infer<typeof brandProfileSchema>;
