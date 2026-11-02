@@ -2,6 +2,9 @@ import type { CSSProperties, ReactNode } from "react";
 import { formatPaise } from "@kakoa/core";
 import type { AddressSnapshot } from "@kakoa/db";
 import type { InvoiceModel } from "@/lib/invoice/invoice-data";
+import { brand } from "@/lib/brand";
+
+const BRAND_NAME = brand.profile.name;
 
 /**
  * Presentational A4 tax-invoice document (NO directive — usable from both the
@@ -143,7 +146,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: COCOA }}>KAKOA</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: COCOA }}>{BRAND_NAME}</div>
           <div style={{ fontSize: 10, letterSpacing: 2, color: MUTED, textTransform: "uppercase", marginTop: 1 }}>
             Fine chocolate
           </div>
@@ -306,7 +309,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
 
       {/* Footer */}
       <div style={{ marginTop: 26, paddingTop: 14, borderTop: `1px solid ${LINE}`, fontSize: 10, color: MUTED, lineHeight: 1.6 }}>
-        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with KAKOA 🍫</div>
+        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with {BRAND_NAME} 🍫</div>
         <div>
           This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds are governed by our
           published policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.

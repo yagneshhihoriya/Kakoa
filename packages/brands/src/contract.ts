@@ -61,17 +61,29 @@ const navLinkSchema = z.object({ href: appPath, label: nonEmpty });
 /* ── store_settings defaults ───────────────────────────────────────────── */
 
 /**
- * Default value for every catalogued `store_settings` key (SETTINGS_CATALOG in
- * apps/web/src/lib/admin/settings-schema.ts reads these for its `default:`
- * fields; the seed writes them as the initial rows). Money is integer paise.
+ * The seller's LEGAL identity (GST invoices, Contact / legal pages, FSSAI
+ * display). Deliberately NOT part of `defaults`: the app has no code fallback
+ * for these keys — a store_settings row must exist or the storefront renders a
+ * "not configured" state and the admin sees a banner. That is what guarantees
+ * a fresh brand's database can never print another brand's GSTIN.
  */
-const settingsDefaultsSchema = z.object({
+const legalIdentitySchema = z.object({
   seller_legal_name: nonEmpty,
   seller_gstin: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$/),
   seller_state_code: z.string().regex(/^[0-9]{2}$/),
   seller_address: nonEmpty,
   origin_pincode: z.string().regex(/^[1-9][0-9]{5}$/),
   fssai_license_number: z.string().regex(/^[0-9]{14}$/),
+});
+
+/**
+ * Default value for every catalogued `store_settings` key that HAS a brand
+ * default (SETTINGS_CATALOG in apps/web/src/lib/admin/settings-schema.ts reads
+ * these for its `default:` fields; the seed writes them as the initial rows).
+ * Policy, fees and support contacts only — never legal identity. Money is
+ * integer paise.
+ */
+const settingsDefaultsSchema = z.object({
   grievance_officer_name: nonEmpty,
   country_of_origin: nonEmpty,
   shipping_fee_standard_paise: z.number().int().min(0),
@@ -153,6 +165,13 @@ export const brandProfileSchema = z.object({
   }),
 
   defaults: settingsDefaultsSchema,
+  /**
+   * SEED-ONLY legal identity: the rows `pnpm db:seed` writes for a brand whose
+   * owner has supplied them. Nothing at runtime may read this block — runtime
+   * identity comes from store_settings alone (see legalIdentitySchema). A brand
+   * whose identity is entered through the admin instead simply omits it.
+   */
+  seedLegalIdentity: legalIdentitySchema.optional(),
   /** Marketing-ish values that become editable settings in a later increment. */
   content: z.object({
     announcementSegments: z.array(nonEmpty).readonly(),
@@ -163,4 +182,8 @@ export const brandProfileSchema = z.object({
 
 export type BrandProfile = z.infer<typeof brandProfileSchema>;
 export type BrandSettingsDefaults = BrandProfile['defaults'];
+export type BrandLegalIdentity = z.infer<typeof legalIdentitySchema>;
+/** The store_settings keys that carry the legal identity (no code defaults). */
+export const LEGAL_IDENTITY_KEYS = legalIdentitySchema.keyof().options;
+export type LegalIdentityKey = (typeof LEGAL_IDENTITY_KEYS)[number];
 export type BrandNavLink = z.infer<typeof navLinkSchema>;

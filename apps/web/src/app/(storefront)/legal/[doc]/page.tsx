@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { getCompanyInfo, type CompanyInfo } from "@/lib/catalog/queries";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +46,21 @@ export async function generateMetadata({
   if (!(doc in DOC_TITLES)) return { title: "Legal" };
   return {
     title: DOC_TITLES[doc as Doc],
-    description: `${DOC_TITLES[doc as Doc]} for KAKOA Chocolate.`,
+    description: `${DOC_TITLES[doc as Doc]} for ${brand.profile.name}.`,
     alternates: { canonical: `/legal/${doc}` },
   };
+}
+
+/**
+ * "operated by <legal name> (GSTIN …), registered office <address>" — each part
+ * only once configured in Settings; before that the trade name stands in (the
+ * legal identity has no code default).
+ */
+function operator(c: CompanyInfo): string {
+  if (!c.legalName) return brand.profile.name;
+  const gstin = c.gstin ? ` (GSTIN ${c.gstin})` : "";
+  const office = c.address ? `, registered office ${c.address}` : "";
+  return `${c.legalName}${gstin}${office}`;
 }
 
 function freeShipText(c: CompanyInfo): string {
@@ -67,7 +80,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
       {
         heading: "1. Who we are",
         blocks: [
-          `This Privacy Policy explains how ${name} ("we", "us", "the Company"), with its registered office at ${addr}, collects, uses, shares and protects your personal data when you use our website and place orders. We are the data fiduciary for the personal data described below and process it in accordance with India's Digital Personal Data Protection Act, 2023 (DPDP Act) and applicable rules.`,
+          `This Privacy Policy explains how ${name || brand.profile.name} ("we", "us", "the Company")${addr ? `, with its registered office at ${addr},` : ""} collects, uses, shares and protects your personal data when you use our website and place orders. We are the data fiduciary for the personal data described below and process it in accordance with India's Digital Personal Data Protection Act, 2023 (DPDP Act) and applicable rules.`,
         ],
       },
       {
@@ -161,7 +174,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
       {
         heading: "1. Acceptance of these terms",
         blocks: [
-          `This website is operated by ${name} (GSTIN ${c.gstin}), registered office ${addr}. By browsing or purchasing from this website you agree to these Terms & Conditions, our Privacy Policy, Shipping Policy and Refund, Return & Cancellation Policy, each linked in the footer and accessible from checkout.`,
+          `This website is operated by ${operator(c)}. By browsing or purchasing from this website you agree to these Terms & Conditions, our Privacy Policy, Shipping Policy and Refund, Return & Cancellation Policy, each linked in the footer and accessible from checkout.`,
         ],
       },
       {
@@ -370,8 +383,8 @@ function grievanceSection(c: CompanyInfo): Section {
       "In accordance with the Consumer Protection (E-Commerce) Rules, 2020 and the Information Technology Act, 2000, the Grievance Officer for this platform is:",
       [
         `Name: ${c.grievanceName}`,
-        `Company: ${c.legalName}`,
-        `Address: ${c.address}`,
+        ...(c.legalName ? [`Company: ${c.legalName}`] : []),
+        ...(c.address ? [`Address: ${c.address}`] : []),
         `Email: ${c.supportEmail}`,
         `Phone: ${c.supportPhone}`,
         `Hours: ${c.supportHours}`,

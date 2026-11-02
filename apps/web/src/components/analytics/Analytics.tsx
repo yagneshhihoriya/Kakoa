@@ -3,6 +3,7 @@
 import Script from "next/script";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
+import { cookieName } from "@/lib/brand";
 
 /**
  * Consent-gated analytics. GA4 / Meta Pixel load ONLY when (a) their public env
@@ -15,7 +16,8 @@ import { useEffect, useState, type ReactNode } from "react";
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 const HAS_ANALYTICS = Boolean(GA_ID || META_PIXEL_ID);
-const CONSENT_KEY = "kakoa_cookie_consent";
+/** localStorage key for the consent choice — brand-prefixed like the cookies. */
+const CONSENT_KEY = cookieName("cookie_consent");
 
 type Consent = "granted" | "denied" | null;
 

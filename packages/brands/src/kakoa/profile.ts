@@ -65,13 +65,6 @@ export const KAKOA = {
   // Contract §1.1 v1 policy values — paise integers; NOT retroactive (fees are
   // snapshotted at placement).
   defaults: {
-    seller_legal_name: 'Kakao Chocolates Private Limited',
-    seller_gstin: '27AABCK4321M1Z5',
-    seller_state_code: '27',
-    seller_address:
-      'Unit 12, Veera Desai Industrial Estate, Andheri West, Mumbai 400053, Maharashtra, India',
-    origin_pincode: '400053',
-    fssai_license_number: '11525023000841',
     grievance_officer_name: 'Grievance Officer',
     country_of_origin: 'India',
     shipping_fee_standard_paise: 4900, // ₹49; free ≥ threshold
@@ -84,6 +77,17 @@ export const KAKOA = {
     support_phone: '+919820012345',
     support_email: 'support@kakoa.in',
     support_hours: 'Monday to Saturday, 10:00–18:00 IST',
+  },
+  // Written by the KAKOA seed only; at runtime the legal identity is whatever
+  // store_settings holds (no code fallback — see contract.ts).
+  seedLegalIdentity: {
+    seller_legal_name: 'Kakao Chocolates Private Limited',
+    seller_gstin: '27AABCK4321M1Z5',
+    seller_state_code: '27',
+    seller_address:
+      'Unit 12, Veera Desai Industrial Estate, Andheri West, Mumbai 400053, Maharashtra, India',
+    origin_pincode: '400053',
+    fssai_license_number: '11525023000841',
   },
   content: {
     announcementSegments: [

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
 import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
+import { brand } from "@/lib/brand";
 import { BrandLockup } from "./BrandMark";
 import { MegaMenu } from "./MegaMenu";
 import { SearchOverlay } from "./SearchOverlay";
@@ -349,7 +350,7 @@ export function Header(): ReactNode {
         >
           {/* DESKTOP (≥1000px) — unchanged: logo left · inline nav · actions right */}
           <div className="hidden h-full items-center justify-between gap-6 min-[1000px]:flex">
-            <Link href="/" aria-label="KAKOA home" className={cx("no-underline", FOCUS_RING)}>
+            <Link href="/" aria-label={`${brand.profile.name} home`} className={cx("no-underline", FOCUS_RING)}>
               <BrandLockup size="header" />
             </Link>
             <nav
@@ -447,7 +448,7 @@ export function Header(): ReactNode {
             </div>
             <Link
               href="/"
-              aria-label="KAKOA home"
+              aria-label={`${brand.profile.name} home`}
               className={cx("justify-self-center no-underline", FOCUS_RING)}
             >
               <BrandLockup size="header" />
@@ -489,7 +490,7 @@ export function Header(): ReactNode {
             </button>
             <Link
               href="/"
-              aria-label="KAKOA home"
+              aria-label={`${brand.profile.name} home`}
               onClick={() => {
                 setMenuOpen(false);
               }}

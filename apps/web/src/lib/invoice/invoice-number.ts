@@ -1,7 +1,7 @@
 /**
  * Pure invoice-number derivation — NO @kakoa/db import, unit-testable. Produces a
- * stable, human GST-style serial from the order number + placement date, e.g.
- * `KK/25-26/48210`. Deterministic (same order → same number every render), so no
+ * stable, human GST-style serial from the brand prefix + order number +
+ * placement date, e.g. `KK/25-26/48210`. Deterministic (same order → same number every render), so no
  * DB column write is needed for v1. The Indian financial year (Apr–Mar) boundary
  * is evaluated in IST to match how orders are placed/reported.
  */
@@ -30,9 +30,11 @@ function orderNumericSuffix(orderNumber: string): string {
 }
 
 /**
- * Derive the display invoice number for an order. Stable across renders.
- * @example deriveInvoiceNumber('KK-48210', new Date('2026-07-05')) === 'KK/26-27/48210'
+ * Derive the display invoice number for an order. Stable across renders. The
+ * `prefix` is the brand's identifier prefix (the same one that leads the order
+ * number), so each brand's invoice series is its own.
+ * @example deriveInvoiceNumber('KK', 'KK-48210', new Date('2026-07-05')) === 'KK/26-27/48210'
  */
-export function deriveInvoiceNumber(orderNumber: string, placedAt: Date): string {
-  return `KK/${financialYearLabel(placedAt)}/${orderNumericSuffix(orderNumber)}`;
+export function deriveInvoiceNumber(prefix: string, orderNumber: string, placedAt: Date): string {
+  return `${prefix}/${financialYearLabel(placedAt)}/${orderNumericSuffix(orderNumber)}`;
 }

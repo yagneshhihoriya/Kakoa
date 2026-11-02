@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCompanyInfo } from "@/lib/catalog/queries";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  description: "Get in touch with KAKOA Chocolate — support, address, phone, email and our Grievance Officer.",
+  description: `Get in touch with ${brand.profile.name} — support, address, phone, email and our Grievance Officer.`,
   alternates: { canonical: "/contact" },
 };
 
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
  * Protection E-Commerce Rules 2020 + payment-gateway activation): legal entity
  * name, physical registered address, working phone + email, support hours, tax
  * identifiers, and the named Grievance Officer with a resolution timeline. All
- * values come from Settings so they stay accurate and consistent with invoices.
+ * values come from Settings so they stay accurate and consistent with invoices;
+ * the legal identity has no code default, so its rows render only once the
+ * owner has configured them (never another brand's details).
  */
 export default async function ContactPage() {
   const c = await getCompanyInfo();
@@ -47,10 +50,13 @@ export default async function ContactPage() {
         </ContactCard>
 
         <ContactCard title="Registered business">
-          <Row label="Legal name">{c.legalName}</Row>
-          <Row label="Address">{c.address}</Row>
+          {c.legalName ? <Row label="Legal name">{c.legalName}</Row> : null}
+          {c.address ? <Row label="Address">{c.address}</Row> : null}
           {c.gstin ? <Row label="GSTIN">{c.gstin}</Row> : null}
           {c.fssai ? <Row label="FSSAI Lic. No.">{c.fssai}</Row> : null}
+          {!c.legalIdentityConfigured ? (
+            <Row label="Registration details">Being updated — please contact support for our registered particulars.</Row>
+          ) : null}
         </ContactCard>
       </div>
 
@@ -64,8 +70,8 @@ export default async function ContactPage() {
         </p>
         <div className="mt-4 flex flex-col gap-2">
           <Row label="Name">{c.grievanceName}</Row>
-          <Row label="Company">{c.legalName}</Row>
-          <Row label="Address">{c.address}</Row>
+          {c.legalName ? <Row label="Company">{c.legalName}</Row> : null}
+          {c.address ? <Row label="Address">{c.address}</Row> : null}
           <Row label="Email">
             <a href={`mailto:${c.supportEmail}`} className="font-semibold text-espresso underline">
               {c.supportEmail}

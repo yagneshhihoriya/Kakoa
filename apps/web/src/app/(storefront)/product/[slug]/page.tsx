@@ -5,6 +5,7 @@ import type { ProductDetailView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { StarRating } from "@kakoa/ui";
 import { absoluteUrl } from "@/lib/seo/site";
+import { brand } from "@/lib/brand";
 import {
   getCatalogSettings,
   getCategories,
@@ -64,10 +65,10 @@ export async function generateMetadata({
     description: product.blurb,
     alternates: { canonical: `/product/${slug}` },
     openGraph: {
-      title: `${product.name} · KAKOA`,
+      title: `${product.name} · ${brand.profile.name}`,
       description: product.blurb,
       type: "website",
-      siteName: "KAKOA",
+      siteName: brand.profile.name,
       url: `/product/${slug}`,
       ...(ogImage !== null ? { images: [{ url: ogImage, alt: product.name }] } : {}),
     },
@@ -109,7 +110,7 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
         name: product.name,
         description: product.blurb,
         ...(defaultVariant !== undefined ? { sku: defaultVariant.sku } : {}),
-        brand: { "@type": "Brand", name: "KAKOA" },
+        brand: { "@type": "Brand", name: brand.profile.name },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",

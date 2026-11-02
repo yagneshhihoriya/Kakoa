@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { KAKOA, brandProfileSchema } from '@kakoa/brands';
-import { assertBrandMatchesEnv, brand, cookieName, emailIdentity } from './brand';
+import {
+  EXAMPLE_ORDER_NUMBER,
+  ORDER_NUMBER_PREFIX,
+  assertBrandMatchesEnv,
+  brand,
+  cookieName,
+  emailIdentity,
+  isOrderNumber,
+  lookupRequestSchema,
+  orderNumberSchema,
+} from './brand';
 
 /**
  * Runs against the kakoa pack (vitest aliases `@brand` the way tsconfig does).
@@ -25,6 +35,22 @@ describe('brand pack', () => {
     // Infini is CC BY-ND — the attribution obligation travels with the pack.
     expect(brand.fontAttribution?.text).toMatch(/Infini/);
     expect(brand.fontAttribution?.href).toMatch(/^https:\/\/creativecommons\.org\//);
+    // Email chrome is literal colour (clients cannot read CSS vars).
+    expect(brand.email.theme.ink).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(brand.email.footerTagline).toBe('Handcrafted in small batches');
+  });
+});
+
+describe('order numbers', () => {
+  it('binds the pack prefix: KK keeps the historical KK-ddddd contract', () => {
+    expect(ORDER_NUMBER_PREFIX).toBe('KK');
+    expect(EXAMPLE_ORDER_NUMBER).toBe('KK-48210');
+    expect(orderNumberSchema.parse(' KK-48210 ')).toBe('KK-48210');
+    expect(isOrderNumber('KK-48210')).toBe(true);
+    expect(isOrderNumber('KK-4821')).toBe(false);
+    expect(isOrderNumber('KH-48210')).toBe(false);
+    expect(lookupRequestSchema.safeParse({ orderNumber: 'KH-48210', phone: '9876543210' }).success).toBe(false);
+    expect(lookupRequestSchema.safeParse({ orderNumber: 'KK-48210', phone: '9876543210' }).success).toBe(true);
   });
 });
 

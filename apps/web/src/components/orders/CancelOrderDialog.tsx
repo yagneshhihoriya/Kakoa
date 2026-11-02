@@ -29,6 +29,7 @@ import {
   type OrderSummary,
 } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
+import { brand } from "@/lib/brand";
 
 const SERIF = { fontFamily: "var(--font-display), serif" } as const;
 const FOCUS_RING =
@@ -199,7 +200,7 @@ export function CancelOrderDialog({
             </p>
             <div className="flex justify-end gap-3">
               <a
-                href="mailto:hello@kakoa.in"
+                href={`mailto:${brand.profile.defaults.support_email}`}
                 className={cx(
                   "rounded-pill border-[1.5px] border-[#E0CFB6] bg-transparent px-[22px] py-3 font-body text-[14px] font-bold text-ink no-underline transition-colors hover:bg-[#F3E7D5]",
                   FOCUS_RING,

@@ -15,8 +15,10 @@ import {
   type Article,
   type ArticleBlock,
 } from "@/lib/content/journal";
+import { brand } from "@/lib/brand";
+import { siteUrl } from "@/lib/seo/site";
 
-const SITE_URL = "https://kakoa.in";
+const BRAND_NAME = brand.profile.name;
 
 export function generateStaticParams(): { slug: string }[] {
   return journalSlugs().map((slug) => ({ slug }));
@@ -110,16 +112,16 @@ export default async function JournalArticlePage({
     inLanguage: "en-IN",
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${SITE_URL}/journal/${article.slug}`,
+      "@id": `${siteUrl()}/journal/${article.slug}`,
     },
     author: {
       "@type": "Organization",
-      name: "KAKOA Kitchen",
+      name: `${BRAND_NAME} Kitchen`,
     },
     publisher: {
       "@type": "Organization",
-      name: "KAKOA",
-      url: SITE_URL,
+      name: BRAND_NAME,
+      url: siteUrl(),
     },
   };
 
@@ -170,7 +172,7 @@ export default async function JournalArticlePage({
           <ArticleBody blocks={article.body} />
 
           <p className="mt-12 font-mono text-[11.5px] tracking-[0.08em] text-ink-muted uppercase">
-            Written by the KAKOA Kitchen
+            Written by the {BRAND_NAME} Kitchen
           </p>
         </article>
 

@@ -1,6 +1,7 @@
 import { KAKOA } from "@kakoa/brands/kakoa";
 import type { BrandPack } from "../contract";
 import { copy } from "./copy";
+import { email } from "./email";
 import { icon, og } from "./og";
 
 /**
@@ -14,6 +15,7 @@ export const brand = {
   copy,
   og,
   icon,
+  email,
   // Infini is CC BY-ND 3.0 — attribution is a licence condition, rendered in
   // the footer legal bar (see fonts.ts).
   fontAttribution: {

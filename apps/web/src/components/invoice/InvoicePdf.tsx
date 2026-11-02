@@ -8,6 +8,9 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { formatPaise } from "@kakoa/core";
 import type { AddressSnapshot } from "@kakoa/db";
 import type { InvoiceModel } from "@/lib/invoice/invoice-data";
+import { brand } from "@/lib/brand";
+
+const BRAND_NAME = brand.profile.name;
 
 const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
@@ -55,7 +58,7 @@ function addressLines(a: AddressSnapshot): string[] {
 export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
   const showCgstSgst = m.summary.cgstPaise > 0 || m.summary.sgstPaise > 0;
   return (
-    <Document title={`Invoice ${m.invoiceNumber}`} author="KAKOA">
+    <Document title={`Invoice ${m.invoiceNumber}`} author={BRAND_NAME}>
       <Page size="A4" style={s.page}>
         {/* Slim brand accent bar */}
         <View
@@ -70,7 +73,7 @@ export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
         {/* Header */}
         <View style={s.headerRow}>
           <View style={{ maxWidth: 300 }}>
-            <Text style={s.brand}>KAKOA</Text>
+            <Text style={s.brand}>{BRAND_NAME}</Text>
             <Text style={s.sellerName}>{m.seller.legalName}</Text>
             <Text style={[s.muted, { lineHeight: 1.4 }]}>{m.seller.address}</Text>
             <Text style={[s.muted, { marginTop: 3 }]}>
@@ -187,7 +190,7 @@ export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
 
         {/* Footer */}
         <View style={s.footer}>
-          <Text style={{ color: INK, fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 }}>Thank you for shopping with KAKOA</Text>
+          <Text style={{ color: INK, fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 }}>Thank you for shopping with {BRAND_NAME}</Text>
           <Text>
             This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds follow our published
             policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.

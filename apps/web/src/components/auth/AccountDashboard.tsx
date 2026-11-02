@@ -19,6 +19,7 @@ import {
   EMPTY_ADDRESS_FORM,
   type AddressFormValues,
 } from "@/components/account/AddressForm";
+import { brand } from "@/lib/brand";
 import { LogoutButton } from "./LogoutButton";
 import { CustomerAvatar } from "./CustomerAvatar";
 
@@ -212,7 +213,7 @@ export function AccountDashboard({
             />
             <div className="min-w-0 flex-1">
               <div className="truncate font-body text-[15.5px] font-semibold text-ink">
-                {customer.name ?? "KAKOA member"}
+                {customer.name ?? `${brand.profile.name} member`}
               </div>
               <div className="truncate font-body text-[12.5px] text-[#8a7a68]">
                 {customer.phone ?? customer.email ?? ""}

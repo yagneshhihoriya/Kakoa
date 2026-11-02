@@ -10,7 +10,10 @@
  * integer paise NUMBER (never a string — the checkout reader uses `getInt`).
  *
  * `default:` values come from the brand profile (`brand.profile.defaults`), so
- * a missing row falls back to THIS brand's identity and policy, never another's.
+ * a missing row falls back to THIS brand's policy, never another's. The legal
+ * identity (`required: true`) has NO default at all — a missing row is an
+ * explicit "not configured" state (lib/admin/legal-identity.ts), so a fresh
+ * database can never print another brand's GSTIN.
  */
 
 import { brand } from '@/lib/brand';
@@ -42,8 +45,13 @@ export interface SettingField {
   /** `int` / `int-paise`: numeric bounds. For `int-paise` these are PAISE. */
   min?: number;
   max?: number;
-  /** Default stored (jsonb) value — paise as a paise NUMBER for `int-paise`. */
-  default: JsonValue;
+  /**
+   * Default stored (jsonb) value — paise as a paise NUMBER for `int-paise`.
+   * Absent for `required` fields: there is nothing to fall back to.
+   */
+  default?: JsonValue;
+  /** Must be configured per brand database; the admin sees a banner until it is. */
+  required?: true;
 }
 
 export const SETTING_GROUPS = [
@@ -73,7 +81,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     minLen: 2,
     maxLen: 120,
     hint: 'Printed on GST invoices.',
-    default: DEFAULTS.seller_legal_name,
+    required: true,
   },
   {
     key: 'seller_gstin',
@@ -81,7 +89,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'GSTIN',
     type: 'gstin',
     hint: '15-character GST identification number.',
-    default: DEFAULTS.seller_gstin,
+    required: true,
   },
   {
     key: 'seller_state_code',
@@ -89,7 +97,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'GST state code',
     type: 'state-code',
     hint: 'Two digits (01–37); drives CGST/SGST vs IGST.',
-    default: DEFAULTS.seller_state_code,
+    required: true,
   },
   {
     key: 'seller_address',
@@ -98,7 +106,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     type: 'string',
     minLen: 5,
     maxLen: 300,
-    default: DEFAULTS.seller_address,
+    required: true,
   },
   {
     key: 'origin_pincode',
@@ -106,7 +114,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'Dispatch origin PIN code',
     type: 'pincode',
     hint: '6-digit origin PIN for shipping.',
-    default: DEFAULTS.origin_pincode,
+    required: true,
   },
   // ── Legal ──────────────────────────────────────────────────────────
   {
@@ -115,7 +123,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'FSSAI license number',
     type: 'fssai',
     hint: '14-digit FSSAI license.',
-    default: DEFAULTS.fssai_license_number,
+    required: true,
   },
   {
     key: 'grievance_officer_name',
@@ -238,9 +246,18 @@ export const CATALOG_BY_KEY: ReadonlyMap<string, SettingField> = new Map(
 /** All catalogued keys. */
 export const SETTINGS_KEYS: readonly string[] = SETTINGS_CATALOG.map((f) => f.key);
 
-/** Default stored (jsonb) value per key — the fallback for a missing row. */
-export const SETTINGS_DEFAULTS: Readonly<Record<string, JsonValue>> =
-  Object.fromEntries(SETTINGS_CATALOG.map((f) => [f.key, f.default]));
+/**
+ * Default stored (jsonb) value per key — the fallback for a missing row. Only
+ * keys WITH a brand default appear; `required` keys (legal identity) do not.
+ */
+export const SETTINGS_DEFAULTS: Readonly<Record<string, JsonValue>> = Object.fromEntries(
+  SETTINGS_CATALOG.flatMap((f) => (f.default !== undefined ? [[f.key, f.default]] : [])),
+);
+
+/** Keys that must be configured per brand database (no code default). */
+export const REQUIRED_SETTINGS_KEYS: readonly string[] = SETTINGS_CATALOG.filter(
+  (f) => f.required === true,
+).map((f) => f.key);
 
 /** Fields grouped in display order. */
 export function settingsByGroup(): { group: SettingGroup; fields: SettingField[] }[] {

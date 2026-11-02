@@ -222,6 +222,11 @@ function Field({
     <div className={isFullWidth ? "sm:col-span-2" : ""}>
       <label className={LABEL} htmlFor={`s-${field.key}`}>
         {field.type === "int-paise" ? `${field.label} (₹)` : field.label}
+        {field.required && (typeof value !== "string" || value.trim() === "") ? (
+          <span className="ml-2 rounded-full bg-[#fbeaea] px-2 py-px text-[10.5px] font-semibold text-[#b23b3b]">
+            Required — not configured
+          </span>
+        ) : null}
       </label>
       <input
         id={`s-${field.key}`}

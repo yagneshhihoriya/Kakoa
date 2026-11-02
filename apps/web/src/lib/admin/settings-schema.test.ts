@@ -5,26 +5,41 @@
  * and jsonb TYPE integrity (paise stored as a number, not a string).
  */
 import { describe, expect, it } from 'vitest';
+import { LEGAL_IDENTITY_KEYS } from '@kakoa/brands';
 import {
   MAX_PAISE,
+  REQUIRED_SETTINGS_KEYS,
+  SETTINGS_CATALOG,
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
   validateSettingsPatch,
 } from './settings-schema';
 
 describe('catalog', () => {
-  it('has all 18 keys with defaults', () => {
+  it('has all 18 keys; policy keys carry a brand default, legal identity has none', () => {
     expect(SETTINGS_KEYS).toHaveLength(18);
     for (const key of SETTINGS_KEYS) {
-      expect(SETTINGS_DEFAULTS[key]).toBeDefined();
+      if (REQUIRED_SETTINGS_KEYS.includes(key)) expect(SETTINGS_DEFAULTS[key]).toBeUndefined();
+      else expect(SETTINGS_DEFAULTS[key]).toBeDefined();
     }
+    expect(Object.keys(SETTINGS_DEFAULTS)).toHaveLength(12);
+  });
+
+  it('the required (no-default) keys are exactly the legal identity', () => {
+    expect([...REQUIRED_SETTINGS_KEYS].sort()).toEqual([...LEGAL_IDENTITY_KEYS].sort());
+    for (const f of SETTINGS_CATALOG) {
+      // A field is either defaulted or required — never both, never neither.
+      expect(f.required === true).toBe(f.default === undefined);
+    }
+    // No brand's GSTIN / legal name can leak out of the catalog.
+    expect(JSON.stringify(SETTINGS_CATALOG)).not.toMatch(/27AABCK4321M1Z5|Kakao Chocolates/);
   });
 
   it('paise defaults are numbers, not strings', () => {
     expect(typeof SETTINGS_DEFAULTS.shipping_fee_standard_paise).toBe('number');
     expect(SETTINGS_DEFAULTS.shipping_fee_standard_paise).toBe(4900);
     expect(typeof SETTINGS_DEFAULTS.cod_enabled).toBe('boolean');
-    expect(typeof SETTINGS_DEFAULTS.seller_legal_name).toBe('string');
+    expect(typeof SETTINGS_DEFAULTS.support_email).toBe('string');
   });
 });
 

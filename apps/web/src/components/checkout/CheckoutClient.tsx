@@ -39,6 +39,7 @@ import { useToast } from "@kakoa/ui/client";
 import Image from "next/image";
 import type { ProductTone } from "@kakoa/core";
 import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { brand } from "@/lib/brand";
 
 /**
  * Order-line thumbnail: real product photo when the cart line has one
@@ -775,7 +776,7 @@ export function CheckoutClient({
         order_id: razorpay.orderId,
         amount: razorpay.amountPaise,
         currency: razorpay.currency,
-        name: "KAKOA",
+        name: brand.profile.name,
         description: `Order ${orderNumber}`,
         prefill: {
           contact: razorpay.prefill.contact,

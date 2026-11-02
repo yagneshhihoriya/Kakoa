@@ -1,7 +1,8 @@
 /**
  * Session issuance / lookup / revocation — auth-otp.md §1.4, §5.4, §6.
  *
- * `kakoa_session` = 32 random bytes as base64url (43-char opaque token). The
+ * `<cookiePrefix>_session` (kakoa_session for KAKOA) = 32 random bytes as
+ * base64url (43-char opaque token). The
  * DB stores ONLY `sha256(token)` hex in `customer_sessions.token_hash`; the raw
  * token lives solely in the `Set-Cookie` header and the client cookie jar.
  *
@@ -17,6 +18,7 @@ import { customers, customerSessions, db } from '@kakoa/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 
+import { cookieName } from '@/lib/brand';
 import {
   SESSION_TOKEN_RE,
   generateSessionToken,
@@ -26,7 +28,8 @@ import {
 /** A drizzle transaction handle (from `db.transaction(async (tx) => …)`). */
 export type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export const SESSION_COOKIE_NAME = 'kakoa_session';
+/** Brand-prefixed (`<cookiePrefix>_session`) so two brands never share a jar. */
+export const SESSION_COOKIE_NAME: string = cookieName('session');
 
 /** 30 days (§1.4 Max-Age). */
 export const SESSION_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -97,7 +100,7 @@ function toCustomerView(row: {
 }
 
 /**
- * Resolve the authenticated customer from the `kakoa_session` cookie, or
+ * Resolve the authenticated customer from the session cookie, or
  * `null` when there is no valid live session (missing/malformed cookie, hash
  * not found, revoked, or expired — all indistinguishable, §5.4).
  *

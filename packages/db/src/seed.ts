@@ -21,16 +21,13 @@ import {
 
 // ---------------------------------------------------------------------------
 // store_settings — Contract §1.1 v1 policy values (paise integers), sourced
-// from the brand profile's defaults so the seed and the admin catalog can never
-// disagree. Same key set as before the move; a per-brand seed split is Phase 2.
+// from the brand profile so the seed and the admin catalog can never disagree.
+// Policy/fee/support rows come from `defaults`; the legal identity rows come
+// from the SEED-ONLY `seedLegalIdentity` block (the runtime has no fallback for
+// those — a DB without them renders "not configured"). Same key set as before
+// the move; a per-brand seed split is Phase 2.
 // ---------------------------------------------------------------------------
-const SETTING_KEYS = [
-  'fssai_license_number',
-  'seller_gstin',
-  'seller_state_code',
-  'seller_legal_name',
-  'seller_address',
-  'origin_pincode',
+const POLICY_KEYS = [
   'shipping_fee_standard_paise',
   'shipping_fee_express_paise',
   'free_shipping_threshold_paise',
@@ -42,9 +39,15 @@ const SETTING_KEYS = [
   'support_email',
 ] as const satisfies readonly (keyof typeof KAKOA.defaults)[];
 
-const SETTINGS: Record<string, string | number | boolean> = Object.fromEntries(
-  SETTING_KEYS.map((key) => [key, KAKOA.defaults[key]]),
-);
+const LEGAL_IDENTITY = KAKOA.seedLegalIdentity;
+if (LEGAL_IDENTITY === undefined) {
+  throw new Error('The KAKOA profile must carry seedLegalIdentity for the seed to write it.');
+}
+
+const SETTINGS: Record<string, string | number | boolean> = {
+  ...LEGAL_IDENTITY,
+  ...Object.fromEntries(POLICY_KEYS.map((key) => [key, KAKOA.defaults[key]])),
+};
 
 // ---------------------------------------------------------------------------
 // Catalog — 10 prototype products across Bars / Pralines / Signature / Gifts.

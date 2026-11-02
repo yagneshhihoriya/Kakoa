@@ -74,6 +74,30 @@ export interface StorefrontCopy {
   readonly titleTagline: string;
 }
 
+/**
+ * Transactional-email chrome. Email clients cannot read CSS custom properties,
+ * so the pack supplies literal colours (as it does for the Satori renderers);
+ * lib/email/templates.ts paints its inline styles from these.
+ */
+export interface BrandEmailTheme {
+  /** Body text + wordmark + button background. */
+  readonly ink: string;
+  /** Page background behind the card + button text. */
+  readonly cream: string;
+  /** Secondary text (meta lines, footer). */
+  readonly muted: string;
+  /** Hairlines between rows / the card border. */
+  readonly line: string;
+  /** The centred card. */
+  readonly card: string;
+}
+
+export interface BrandEmail {
+  readonly theme: BrandEmailTheme;
+  /** Short brand line under the legal footer (e.g. "Handcrafted in small batches"); null omits it. */
+  readonly footerTagline: string | null;
+}
+
 /** Logo mark — pure SVG coloured via `currentColor`, server-safe. */
 export type BrandMark = ComponentType<{ className?: string }>;
 
@@ -96,5 +120,6 @@ export interface BrandPack {
   readonly copy: StorefrontCopy;
   readonly og: BrandOg;
   readonly icon: BrandIcon;
+  readonly email: BrandEmail;
   readonly fontAttribution: FontAttribution | null;
 }

@@ -15,7 +15,7 @@
  *
  * NEVER logs the raw code / phone / token (§6).
  */
-import { lookupVerifySchema } from '@kakoa/core';
+import { lookupVerifySchema } from '@/lib/brand';
 import { db, orders } from '@kakoa/db';
 import { and, eq } from 'drizzle-orm';
 

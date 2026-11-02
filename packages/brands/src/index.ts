@@ -8,11 +8,14 @@
  */
 export { BRAND_KEYS, isBrandKey, type BrandKey } from './keys';
 export {
+  LEGAL_IDENTITY_KEYS,
   brandProfileSchema,
   presetOverridesSchema,
+  type BrandLegalIdentity,
   type BrandNavLink,
   type BrandProfile,
   type BrandSettingsDefaults,
+  type LegalIdentityKey,
 } from './contract';
 export { KAKOA } from './kakoa/profile';
 

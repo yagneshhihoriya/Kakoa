@@ -27,15 +27,22 @@ export interface SettingMeta {
 }
 
 export interface AllSettings {
-  /** Catalogued key → current stored value (defaults overlaid for missing rows). */
+  /**
+   * Catalogued key → current stored value (brand defaults overlaid for missing
+   * rows). A `required` key with no row is ABSENT — there is no default for
+   * the legal identity — and listed in `missingRequired`.
+   */
   values: Record<string, JsonValue>;
+  /** Required (legal-identity) keys with no stored row — drives the admin banner. */
+  missingRequired: string[];
   /** Catalogued key → last-changed metadata (null when never written / seeded). */
   meta: Record<string, SettingMeta>;
 }
 
 /**
  * Read every catalogued setting, overlaying `SETTINGS_DEFAULTS` for any missing
- * row and dropping stray/legacy keys so the response is exactly the catalog.
+ * row (required keys have none and stay absent) and dropping stray/legacy keys
+ * so the response is exactly the catalog.
  */
 export async function getAllSettings(): Promise<AllSettings> {
   const rows = await db
@@ -53,16 +60,19 @@ export async function getAllSettings(): Promise<AllSettings> {
 
   const values: Record<string, JsonValue> = {};
   const meta: Record<string, SettingMeta> = {};
+  const missingRequired: string[] = [];
   for (const key of SETTINGS_KEYS) {
     const row = byKey.get(key);
-    values[key] =
-      row !== undefined ? (row.value as JsonValue) : SETTINGS_DEFAULTS[key]!;
+    const fallback = SETTINGS_DEFAULTS[key];
+    if (row !== undefined) values[key] = row.value as JsonValue;
+    else if (fallback !== undefined) values[key] = fallback;
+    else missingRequired.push(key);
     meta[key] = {
       updatedAt: row?.updatedAt ? new Date(row.updatedAt).toISOString() : null,
       updatedByEmail: row?.updatedByEmail ?? null,
     };
   }
-  return { values, meta };
+  return { values, meta, missingRequired };
 }
 
 export type UpdateSettingsResult =

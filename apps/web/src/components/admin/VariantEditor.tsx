@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ORDER_NUMBER_PREFIX } from "@/lib/brand";
 
 interface Variant {
   id: string;
@@ -207,7 +208,7 @@ export function VariantEditor({
         <div className="grid grid-cols-2 items-end gap-2 rounded-xl border border-dashed border-[#e2d3bd] p-3 sm:grid-cols-12">
           <div className="sm:col-span-3">
             <label className={LABEL}>SKU</label>
-            <input className={INPUT} value={draft.sku} placeholder="KK-XXX-00"
+            <input className={INPUT} value={draft.sku} placeholder={`${ORDER_NUMBER_PREFIX}-XXX-00`}
               onChange={(e) => setDraft((d) => ({ ...d, sku: e.target.value }))} />
           </div>
           <div className="sm:col-span-3">

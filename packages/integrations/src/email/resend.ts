@@ -18,6 +18,21 @@ import type { EmailProvider } from "./provider";
 const EMAILS_ENDPOINT = "https://api.resend.com/emails";
 const TIMEOUT_MS = 5_000;
 
+/**
+ * Compose the RFC 5322 From header: `Name <address>` when a display name is
+ * available, else the bare address. EMAIL_FROM_NAME (per deployment) wins over
+ * the caller's name (the brand's); header-breaking characters are stripped and
+ * the name is quoted so a legal-entity name with punctuation stays valid.
+ */
+export function composeFrom(
+  address: string,
+  callerName: string | undefined,
+  envName: string | undefined,
+): string {
+  const raw = (envName ?? callerName ?? "").replace(/[\r\n"<>]/g, "").trim();
+  return raw === "" ? address : `"${raw}" <${address}>`;
+}
+
 class TransientResendError extends Error {}
 class PermanentResendError extends Error {}
 
@@ -27,6 +42,7 @@ export class ResendEmailProvider implements EmailProvider {
     subject: string;
     html: string;
     text?: string;
+    fromName?: string;
     idempotencyKey?: string;
   }): Promise<{ providerMessageId: string | null }> {
     const env = parseServerEnv();
@@ -43,7 +59,7 @@ export class ResendEmailProvider implements EmailProvider {
 
     // verify Resend field names at integration (from/to/subject/html/text).
     const body = JSON.stringify({
-      from,
+      from: composeFrom(from, a.fromName, env.EMAIL_FROM_NAME),
       to: a.to,
       subject: a.subject,
       html: a.html,

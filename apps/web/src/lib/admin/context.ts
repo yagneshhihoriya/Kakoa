@@ -98,11 +98,9 @@ export async function buildBusinessContext(
   const profile: BusinessProfile = {
     businessId: 'default',
     name: brandProfile.name,
-    legalName: settings.getString(
-      'legal',
-      'seller_legal_name',
-      brandProfile.defaults.seller_legal_name,
-    ),
+    // Legal identity lives in store_settings only (no brand default) —
+    // `undefined` until the owner configures it in Settings.
+    legalName: settings.getString('legal', 'seller_legal_name'),
     currency: brandProfile.currency,
     country: brandProfile.country,
     locale: brandProfile.locale,

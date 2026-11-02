@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentCustomer } from "@/lib/auth/session";
+import { isOrderNumber } from "@/lib/brand";
 import { loadOwnedOrderDetail } from "@/lib/orders/order-detail-data";
 import { getInvoiceData } from "@/lib/invoice/invoice-data";
 import { InvoiceView } from "@/components/invoice/InvoiceView";
@@ -18,8 +19,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-const ORDER_NUMBER_RE = /^KK-\d{5}$/;
 
 export default async function InvoicePage({
   params,
@@ -33,7 +32,7 @@ export default async function InvoicePage({
 
   const customer = await getCurrentCustomer();
   if (customer === null) redirect("/?login=1");
-  if (!ORDER_NUMBER_RE.test(orderNumber)) notFound();
+  if (!isOrderNumber(orderNumber)) notFound();
 
   const owned = await loadOwnedOrderDetail(orderNumber, customer.id);
   if (owned === null) notFound();

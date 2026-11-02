@@ -55,6 +55,7 @@ import { parseServerEnv } from '@kakoa/config';
 import { getPaymentProvider } from '@kakoa/integrations';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
+import { ORDER_NUMBER_PREFIX } from '@/lib/brand';
 import { readCartToken } from '@/lib/cart/cookies';
 import { getCurrentCustomer } from '@/lib/auth/session';
 import { verifyCode } from '@/lib/auth/otp';
@@ -273,10 +274,14 @@ export async function placeOrder(
     const couponId =
       quote.coupon !== null ? await resolveCouponId(tx, quote.coupon.code) : null;
 
-    // 2. INSERT orders + creation history row.
+    // 2. INSERT orders + creation history row. The human order number is
+    // minted HERE — `<brand prefix>-` + the shared 5-digit sequence — so the
+    // column's historical 'KK-' default is never relied on (KAKOA still gets
+    // 'KK', so existing rows and the tracking contract stay valid).
     const [orderRow] = await tx
       .insert(orders)
       .values({
+        orderNumber: sql`${ORDER_NUMBER_PREFIX}::text || '-' || lpad(nextval('order_number_seq')::text, 5, '0')`,
         customerId,
         cartId: cart.id,
         status,

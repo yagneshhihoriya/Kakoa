@@ -7,10 +7,46 @@
  * profile so no literal brand name is needed outside the pack.
  */
 import { parseServerEnv } from "@kakoa/config";
+import {
+  exampleOrderNumber as exampleOrderNumberFor,
+  makeLookupRequestSchema,
+  makeLookupVerifySchema,
+  makeOrderNumberRegex,
+  makeOrderNumberSchema,
+} from "@kakoa/core";
 import { brand } from "@brand";
 
 export { brand };
 export type { BrandPack } from "@/brands/contract";
+
+/* ── Order / invoice numbers ──────────────────────────────────────────── */
+
+/**
+ * The brand's order-number prefix (`KK` → `KK-48210`). Also the invoice serial
+ * prefix (`KK/26-27/48210`) and what the placement transaction writes.
+ */
+export const ORDER_NUMBER_PREFIX: string = brand.profile.identifierPrefix;
+
+/**
+ * THE order-number schema / regex for this build — every route param, page
+ * param and form field validates against this, never a local literal.
+ */
+export const orderNumberSchema = makeOrderNumberSchema(ORDER_NUMBER_PREFIX);
+export const ORDER_NUMBER_RE: RegExp = makeOrderNumberRegex(ORDER_NUMBER_PREFIX);
+
+/** `true` when `value` is exactly a well-formed order number for this brand. */
+export function isOrderNumber(value: string): boolean {
+  return ORDER_NUMBER_RE.test(value);
+}
+
+/** Example order number for placeholders and error copy (`KK-48210`). */
+export const EXAMPLE_ORDER_NUMBER: string = exampleOrderNumberFor(ORDER_NUMBER_PREFIX);
+
+/** Guest-tracking request bodies bound to this brand's prefix. */
+export const lookupRequestSchema = makeLookupRequestSchema(ORDER_NUMBER_PREFIX);
+export const lookupVerifySchema = makeLookupVerifySchema(ORDER_NUMBER_PREFIX);
+
+/* ── Cookies ──────────────────────────────────────────────────────────── */
 
 /** The brand-prefixed cookie names (`<cookiePrefix>_<suffix>`). */
 export type CookieSuffix = "session" | "cart" | "admin" | "cookie_consent";
@@ -18,6 +54,8 @@ export type CookieSuffix = "session" | "cart" | "admin" | "cookie_consent";
 export function cookieName(suffix: CookieSuffix): string {
   return `${brand.profile.cookiePrefix}_${suffix}`;
 }
+
+/* ── Email / SMS identity ─────────────────────────────────────────────── */
 
 export interface EmailIdentity {
   /** From-header display name — EMAIL_FROM_NAME when set, else the brand's. */

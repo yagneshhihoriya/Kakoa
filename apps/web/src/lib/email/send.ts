@@ -19,6 +19,7 @@ import { formatPaise } from '@kakoa/core';
 import { getEmailProvider, getSmsProvider } from '@kakoa/integrations';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { brand, emailIdentity } from '@/lib/brand';
 import { siteUrl } from '@/lib/seo/site';
 import { recordNotification } from '@/lib/admin/notification-log';
 import { resolveOverrideEmail, resolveOverrideSms } from '@/lib/admin/notification-templates';
@@ -30,6 +31,7 @@ import {
   type FulfilmentStage,
   type OrderEmailModel,
 } from './templates';
+import { loadEmailIdentity } from './identity';
 
 /**
  * Deliver a rendered email + record a masked `notification_log` row. Best-effort:
@@ -48,7 +50,12 @@ async function deliverEmail(
   let providerMessageId: string | null = null;
   let error: string | null = null;
   try {
-    const r = await getEmailProvider().send({ to, ...rendered, idempotencyKey });
+    const r = await getEmailProvider().send({
+      to,
+      ...rendered,
+      fromName: emailIdentity().fromName,
+      idempotencyKey,
+    });
     providerMessageId = r.providerMessageId;
   } catch (cause) {
     status = 'failed';
@@ -170,8 +177,9 @@ export async function sendOrderConfirmation(orderId: string): Promise<void> {
     if (loaded === null) return;
     const vars = orderEmailVars(loaded.model);
     // DB override (if an admin set one) else the rich code template.
-    const override = await resolveOverrideEmail('order_confirmed', vars);
-    const rendered = override ?? orderConfirmationEmail(loaded.model);
+    const identity = await loadEmailIdentity();
+    const override = await resolveOverrideEmail('order_confirmed', vars, identity);
+    const rendered = override ?? orderConfirmationEmail(loaded.model, identity);
     await deliverEmail('order_confirmed', orderId, loaded.to, rendered, `order-confirm-${orderId}`);
   } catch (cause) {
     console.error('email.order_confirmation_failed', {
@@ -199,8 +207,9 @@ export async function sendOrderCancellation(orderId: string): Promise<void> {
   try {
     const loaded = await loadOrderEmailModel(orderId);
     if (loaded === null) return;
-    const override = await resolveOverrideEmail('order_cancelled', orderEmailVars(loaded.model));
-    const rendered = override ?? orderCancelledEmail(loaded.model);
+    const identity = await loadEmailIdentity();
+    const override = await resolveOverrideEmail('order_cancelled', orderEmailVars(loaded.model), identity);
+    const rendered = override ?? orderCancelledEmail(loaded.model, identity);
     await deliverEmail('order_cancelled', orderId, loaded.to, rendered, `order-cancel-${orderId}`);
   } catch (cause) {
     console.error('email.order_cancellation_failed', {
@@ -298,22 +307,27 @@ export async function sendFulfilmentUpdate(
     };
 
     if (order.contactEmail !== null && order.contactEmail !== '') {
-      const override = await resolveOverrideEmail(key, vars);
+      const identity = await loadEmailIdentity();
+      const override = await resolveOverrideEmail(key, vars, identity);
       const rendered =
         override ??
-        orderFulfilmentEmail({ orderNumber: order.orderNumber, customerName: order.shippingAddress.fullName, stage, awb, courierName, etaText, trackUrl });
+        orderFulfilmentEmail(
+          { orderNumber: order.orderNumber, customerName: order.shippingAddress.fullName, stage, awb, courierName, etaText, trackUrl },
+          identity,
+        );
       await deliverEmail(key, orderId, order.contactEmail, rendered, `order-${stage}-${orderId}`);
     }
 
     // Best-effort SMS to the contact phone (Fake in dev; DLT-gated in prod).
     const overrideSms = await resolveOverrideSms(key, vars);
+    const { smsPrefix } = brand.profile.email; // e.g. 'KAKOA: '
     const smsBody =
       overrideSms ??
       (stage === 'delivered'
-        ? `KAKOA: Order ${order.orderNumber} delivered. Enjoy! ${trackUrl}`
+        ? `${smsPrefix}Order ${order.orderNumber} delivered. Enjoy! ${trackUrl}`
         : stage === 'out_for_delivery'
-          ? `KAKOA: Order ${order.orderNumber} is out for delivery today. Track: ${trackUrl}`
-          : `KAKOA: Order ${order.orderNumber} shipped${courierName ? ` via ${courierName}` : ''}${awb ? ` (AWB ${awb})` : ''}. Track: ${trackUrl}`);
+          ? `${smsPrefix}Order ${order.orderNumber} is out for delivery today. Track: ${trackUrl}`
+          : `${smsPrefix}Order ${order.orderNumber} shipped${courierName ? ` via ${courierName}` : ''}${awb ? ` (AWB ${awb})` : ''}. Track: ${trackUrl}`);
     await deliverSms(key, orderId, order.contactPhone, smsBody);
   } catch (cause) {
     console.error('email.order_fulfilment_failed', {
@@ -382,19 +396,20 @@ export async function sendAdminNewOrderAlert(orderId: string): Promise<void> {
     };
 
     if (alertEmail !== '') {
-      const { subject, html, text } = adminNewOrderAlertEmail(model);
+      const { subject, html, text } = adminNewOrderAlertEmail(model, await loadEmailIdentity());
       await getEmailProvider().send({
         to: alertEmail,
         subject,
         html,
         text,
+        fromName: emailIdentity().fromName,
         idempotencyKey: `admin-new-order-${orderId}`,
       });
     }
     if (alertPhone !== '') {
       await sendSmsBestEffort(
         alertPhone,
-        `KAKOA new order ${order.orderNumber}: ₹${(order.totalPaise / 100).toFixed(0)} · ${itemCount} item(s) · ${model.paymentMode.toUpperCase()}`,
+        `${brand.profile.name} new order ${order.orderNumber}: ₹${(order.totalPaise / 100).toFixed(0)} · ${itemCount} item(s) · ${model.paymentMode.toUpperCase()}`,
         'admin_new_order',
       );
     }

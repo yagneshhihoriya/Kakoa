@@ -6,8 +6,10 @@
  *
  * The rich production emails (order confirmation etc.) are still rendered by
  * `lib/email/templates.ts`; THIS catalog's `defaultBody` is the editable
- * starting point an admin overrides, and the source for the live preview.
+ * starting point an admin overrides, and the source for the live preview. The
+ * subject suffix (' · KAKOA') and SMS prefix ('KAKOA: ') are the brand's.
  */
+import { brand } from '@/lib/brand';
 
 export type NotificationChannel = 'email' | 'sms';
 
@@ -23,12 +25,15 @@ export interface TemplateCatalogEntry {
 
 const COMMON = ['orderNumber', 'customerName', 'trackingUrl'];
 
+/** ' · <brand>' on every email subject; '<brand>: ' leading every SMS. */
+const { subjectSuffix: SFX, smsPrefix: SMS } = brand.profile.email;
+
 export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
   {
     key: 'order_confirmed',
     channel: 'email',
     label: 'Order confirmed',
-    defaultSubject: 'Payment received — order {{orderNumber}} · KAKOA',
+    defaultSubject: `Payment received — order {{orderNumber}}${SFX}`,
     defaultBody:
       'Hi {{customerName}},\n\nThank you — your order {{orderNumber}} is confirmed and we\'re getting it ready with care.\n\nTrack it any time: {{trackingUrl}}',
     placeholders: [...COMMON, 'amount'],
@@ -37,7 +42,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_cancelled',
     channel: 'email',
     label: 'Order cancelled',
-    defaultSubject: 'Order {{orderNumber}} cancelled · KAKOA',
+    defaultSubject: `Order {{orderNumber}} cancelled${SFX}`,
     defaultBody:
       'Hi {{customerName}},\n\nWe\'ve cancelled order {{orderNumber}} as requested. Any amount paid is refunded to the original method.',
     placeholders: [...COMMON, 'amount'],
@@ -46,7 +51,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_shipped',
     channel: 'email',
     label: 'Order shipped',
-    defaultSubject: 'Shipped — order {{orderNumber}} is on its way · KAKOA',
+    defaultSubject: `Shipped — order {{orderNumber}} is on its way${SFX}`,
     defaultBody:
       'Hi {{customerName}},\n\nGood news — order {{orderNumber}} has shipped via {{courierName}} (AWB {{awb}}).\n\nTrack it: {{trackingUrl}}',
     placeholders: [...COMMON, 'awb', 'courierName', 'eta'],
@@ -55,15 +60,14 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_shipped',
     channel: 'sms',
     label: 'Order shipped',
-    defaultBody:
-      'KAKOA: Order {{orderNumber}} shipped via {{courierName}} (AWB {{awb}}). Track: {{trackingUrl}}',
+    defaultBody: `${SMS}Order {{orderNumber}} shipped via {{courierName}} (AWB {{awb}}). Track: {{trackingUrl}}`,
     placeholders: [...COMMON, 'awb', 'courierName'],
   },
   {
     key: 'order_out_for_delivery',
     channel: 'email',
     label: 'Out for delivery',
-    defaultSubject: 'Out for delivery — order {{orderNumber}} · KAKOA',
+    defaultSubject: `Out for delivery — order {{orderNumber}}${SFX}`,
     defaultBody:
       'Hi {{customerName}},\n\nYour order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}',
     placeholders: [...COMMON],
@@ -72,14 +76,14 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_out_for_delivery',
     channel: 'sms',
     label: 'Out for delivery',
-    defaultBody: 'KAKOA: Order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}',
+    defaultBody: `${SMS}Order {{orderNumber}} is out for delivery today. Track: {{trackingUrl}}`,
     placeholders: [...COMMON],
   },
   {
     key: 'order_delivered',
     channel: 'email',
     label: 'Order delivered',
-    defaultSubject: 'Delivered — order {{orderNumber}} · KAKOA',
+    defaultSubject: `Delivered — order {{orderNumber}}${SFX}`,
     defaultBody:
       'Hi {{customerName}},\n\nOrder {{orderNumber}} has been delivered. We hope every piece is a delight!',
     placeholders: [...COMMON],
@@ -88,7 +92,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     key: 'order_delivered',
     channel: 'sms',
     label: 'Order delivered',
-    defaultBody: 'KAKOA: Order {{orderNumber}} delivered. Enjoy! {{trackingUrl}}',
+    defaultBody: `${SMS}Order {{orderNumber}} delivered. Enjoy! {{trackingUrl}}`,
     placeholders: [...COMMON],
   },
 ];

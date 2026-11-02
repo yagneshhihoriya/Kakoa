@@ -4,6 +4,7 @@ import {
   BRANDS,
   BRAND_KEYS,
   KAKOA,
+  LEGAL_IDENTITY_KEYS,
   brandProfileSchema,
   getBrandProfile,
   isBrandKey,
@@ -48,6 +49,7 @@ describe('KAKOA profile', () => {
     expect(KAKOA.defaults.shipping_fee_standard_paise).toBe(4900);
     expect(KAKOA.defaults.cod_enabled).toBe(false);
     expect(KAKOA.defaults.support_email).toBe('support@kakoa.in');
+    expect(KAKOA.seedLegalIdentity?.seller_gstin).toBe('27AABCK4321M1Z5');
   });
 
   it('resolves to the untuned chocolate preset (no presetOverrides)', () => {
@@ -80,15 +82,32 @@ describe('brandProfileSchema', () => {
       ...KAKOA,
       identifierPrefix: 'kk',
       themeColor: 'cocoa',
-      defaults: { ...KAKOA.defaults, seller_gstin: 'nope' },
+      seedLegalIdentity: { ...KAKOA.seedLegalIdentity, seller_gstin: 'nope' },
     };
     const result = brandProfileSchema.safeParse(bad);
     expect(result.success).toBe(false);
     if (!result.success) {
       const paths = result.error.issues.map((i) => i.path.join('.'));
       expect(paths).toEqual(
-        expect.arrayContaining(['identifierPrefix', 'themeColor', 'defaults.seller_gstin']),
+        expect.arrayContaining(['identifierPrefix', 'themeColor', 'seedLegalIdentity.seller_gstin']),
       );
     }
+  });
+
+  it('keeps legal identity OUT of the runtime defaults (seed-only block)', () => {
+    for (const key of LEGAL_IDENTITY_KEYS) {
+      expect(key in KAKOA.defaults).toBe(false);
+    }
+    expect(LEGAL_IDENTITY_KEYS).toEqual([
+      'seller_legal_name',
+      'seller_gstin',
+      'seller_state_code',
+      'seller_address',
+      'origin_pincode',
+      'fssai_license_number',
+    ]);
+    // A brand may omit the block entirely (identity entered via the admin).
+    const { seedLegalIdentity: _omitted, ...withoutSeed } = KAKOA;
+    expect(brandProfileSchema.safeParse(withoutSeed).success).toBe(true);
   });
 });

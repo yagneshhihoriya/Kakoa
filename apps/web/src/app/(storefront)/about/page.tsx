@@ -5,6 +5,9 @@ import {
   Eyebrow,
 } from "@/components/content/ContentPageShell";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
+import { brand } from "@/lib/brand";
+
+const BRAND_NAME = brand.profile.name;
 
 /**
  * ABOUT / OUR STORY — the emotional-trust page that justifies premium pricing.
@@ -17,8 +20,7 @@ import { PhotoSlot } from "@/components/home/PhotoSlot";
 
 export const metadata: Metadata = {
   title: "Our Story",
-  description:
-    "How KAKOA makes single-origin, bean-to-bar chocolate by hand in India — direct-trade cacao from four origins, roasted and tempered in small batches, shipped cold and gifting-ready.",
+  description: `How ${BRAND_NAME} makes single-origin, bean-to-bar chocolate by hand in India — direct-trade cacao from four origins, roasted and tempered in small batches, shipped cold and gifting-ready.`,
   alternates: { canonical: "/about" },
 };
 
@@ -106,12 +108,11 @@ const STATS = [
 const ABOUT_JSONLD = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
-  name: "Our Story · KAKOA",
-  description:
-    "How KAKOA makes single-origin, bean-to-bar chocolate by hand in India.",
+  name: `Our Story · ${BRAND_NAME}`,
+  description: `How ${BRAND_NAME} makes single-origin, bean-to-bar chocolate by hand in India.`,
   mainEntity: {
     "@type": "Organization",
-    name: "KAKOA",
+    name: BRAND_NAME,
     description:
       "Single-origin, small-batch, bean-to-bar chocolate made in India. Direct-trade cacao from four origins; roasted, conched and tempered in-house.",
     foundingLocation: { "@type": "Place", name: "India" },

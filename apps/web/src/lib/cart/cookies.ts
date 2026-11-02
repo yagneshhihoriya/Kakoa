@@ -1,20 +1,24 @@
 /**
  * Cart cookie — Module 2 (docs/modules/cart.md §6 "Cookie integrity").
  *
- * `kakoa_cart` = `<cart token uuid>.<base64url HMAC-SHA256>` signed with
+ * `<cookiePrefix>_cart` (kakoa_cart for KAKOA) = `<cart token uuid>.<base64url
+ * HMAC-SHA256>` signed with
  * SESSION_SECRET. HttpOnly / SameSite=Lax / Path=/ / Max-Age 30d. The
  * cookie holds ONLY the signed token — never cart lines (4KB limit +
  * tamper surface; asserted in tests).
  *
  * Tampered / malformed / absent cookie ⇒ `null` ⇒ treated as "no cart" —
- * NEVER an error or a stack (no oracle, spec §1 row `kakoa_cart`).
+ * NEVER an error or a stack (no oracle, spec §1 row `kakoa_cart`, now brand-prefixed).
  *
  * SERVER-ONLY: uses node:crypto + next/headers.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 
-export const CART_COOKIE_NAME = 'kakoa_cart';
+import { cookieName } from '@/lib/brand';
+
+/** Brand-prefixed (`<cookiePrefix>_cart`) so two brands never share a jar. */
+export const CART_COOKIE_NAME: string = cookieName('cart');
 
 /** 30 days — matches `carts.expires_at` default (Contract §1.10). */
 export const CART_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -39,7 +43,7 @@ export function signCartToken(token: string): string {
 }
 
 /**
- * Verify a raw `kakoa_cart` cookie value; returns the cart token uuid or
+ * Verify a raw cart cookie value; returns the cart token uuid or
  * `null` for anything malformed/tampered. Constant-time signature compare.
  */
 export function verifyCartCookieValue(

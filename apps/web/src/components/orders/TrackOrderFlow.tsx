@@ -32,13 +32,13 @@ import {
 } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
+import { EXAMPLE_ORDER_NUMBER, isOrderNumber } from "@/lib/brand";
 import { OrderTrackingView } from "./OrderTrackingView";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { useTracking, type TrackingCredential } from "./useTracking";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
-const ORDER_NUMBER_RE = /^KK-\d{5}$/;
 const SERIF = { fontFamily: "var(--font-display), serif" } as const;
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
@@ -98,7 +98,7 @@ export function TrackOrderFlow({
   // Attempt a direct accessToken load if both params are present & well-formed.
   const directCandidate =
     typeof initialOrderNumber === "string" &&
-    ORDER_NUMBER_RE.test(initialOrderNumber) &&
+    isOrderNumber(initialOrderNumber) &&
     typeof initialAccessToken === "string" &&
     initialAccessToken !== "";
 
@@ -209,8 +209,8 @@ export function TrackOrderFlow({
 
       const num = orderNumberRaw.trim().toUpperCase();
       let invalid = false;
-      if (!ORDER_NUMBER_RE.test(num)) {
-        setOrderError("Enter a valid order number like KK-48210.");
+      if (!isOrderNumber(num)) {
+        setOrderError(`Enter a valid order number like ${EXAMPLE_ORDER_NUMBER}.`);
         invalid = true;
       }
       const normalized = normalizePhoneE164(phoneRaw);
@@ -631,7 +631,7 @@ function LookupCard({
           type="text"
           inputMode="text"
           autoCapitalize="characters"
-          placeholder="KK-48210"
+          placeholder={EXAMPLE_ORDER_NUMBER}
           value={orderNumberRaw}
           onChange={(e) => onOrderChange(e.target.value)}
           aria-invalid={orderError !== null}

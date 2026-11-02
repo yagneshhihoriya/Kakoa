@@ -11,6 +11,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentCustomer } from "@/lib/auth/session";
+import { isOrderNumber } from "@/lib/brand";
 import { loadOwnedOrderDetail } from "@/lib/orders/order-detail-data";
 import { OrderDetailClient } from "@/components/orders/OrderDetailClient";
 
@@ -20,8 +21,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-const ORDER_NUMBER_RE = /^KK-\d{5}$/;
 
 export default async function OrderDetailPage({
   params,
@@ -36,7 +35,7 @@ export default async function OrderDetailPage({
     redirect("/?login=1");
   }
 
-  if (!ORDER_NUMBER_RE.test(orderNumber)) {
+  if (!isOrderNumber(orderNumber)) {
     notFound();
   }
 

@@ -11,7 +11,7 @@
  */
 import { adminAuditLog, adminUsers, db, notificationTemplates } from '@kakoa/db';
 import { and, eq, sql } from 'drizzle-orm';
-import { wrapEmailBody } from '@/lib/email/templates';
+import { wrapEmailBody, type EmailIdentityModel } from '@/lib/email/templates';
 import { withConstraintMapping } from './db-errors';
 import {
   TEMPLATE_CATALOG,
@@ -184,6 +184,7 @@ export async function upsertTemplate(
 export async function resolveOverrideEmail(
   key: string,
   vars: Record<string, string | number | null | undefined>,
+  identity: EmailIdentityModel,
 ): Promise<{ subject: string; html: string; text: string } | null> {
   try {
     const [o] = await db
@@ -200,7 +201,7 @@ export async function resolveOverrideEmail(
     if (!o) return null;
     return {
       subject: renderTemplate(o.subject ?? '', vars, { escapeHtml: false }),
-      html: wrapEmailBody(renderTemplate(o.body, vars, { escapeHtml: true })),
+      html: wrapEmailBody(renderTemplate(o.body, vars, { escapeHtml: true }), identity),
       text: renderTemplate(o.body, vars, { escapeHtml: false }),
     };
   } catch {

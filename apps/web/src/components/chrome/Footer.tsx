@@ -69,7 +69,7 @@ export async function Footer(): Promise<ReactNode> {
   const year = new Date().getFullYear();
 
   const payments = ["UPI", "Cards", "Netbanking", ...(company.codEnabled ? ["Cash on delivery"] : [])];
-  const { fontAttribution } = brand;
+  const { fontAttribution, profile } = brand;
 
   return (
     <footer
@@ -103,25 +103,30 @@ export async function Footer(): Promise<ReactNode> {
               >
                 {company.supportPhone}
               </a>
-              <span className="mt-2 text-[13px] font-light leading-[19.5px] text-field-ink/60">
-                <span className="block font-normal text-field-ink/80">
-                  {company.legalName}
+              {/* Legal identity has no code default — rendered once configured. */}
+              {company.legalName || company.address ? (
+                <span className="mt-2 text-[13px] font-light leading-[19.5px] text-field-ink/60">
+                  {company.legalName ? (
+                    <span className="block font-normal text-field-ink/80">
+                      {company.legalName}
+                    </span>
+                  ) : null}
+                  {company.address}
                 </span>
-                {company.address}
-              </span>
+              ) : null}
             </address>
 
             <div className="mt-6 flex items-center gap-1 max-[749px]:justify-center">
-              <SocialLink label="KAKOA on Instagram" href="https://instagram.com">
+              <SocialLink label={`${profile.name} on Instagram`} href="https://instagram.com">
                 <InstagramIcon />
               </SocialLink>
-              <SocialLink label="KAKOA on Facebook" href="https://facebook.com">
+              <SocialLink label={`${profile.name} on Facebook`} href="https://facebook.com">
                 <FacebookIcon />
               </SocialLink>
-              <SocialLink label="KAKOA on Pinterest" href="https://pinterest.com">
+              <SocialLink label={`${profile.name} on Pinterest`} href="https://pinterest.com">
                 <PinterestIcon />
               </SocialLink>
-              <SocialLink label="KAKOA on YouTube" href="https://youtube.com">
+              <SocialLink label={`${profile.name} on YouTube`} href="https://youtube.com">
                 <YouTubeIcon />
               </SocialLink>
             </div>

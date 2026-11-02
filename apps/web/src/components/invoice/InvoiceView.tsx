@@ -5,6 +5,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { InvoiceDocument } from "./InvoiceDocument";
 import type { InvoiceModel } from "@/lib/invoice/invoice-data";
+import { brand } from "@/lib/brand";
 
 function DownloadIcon(): ReactNode {
   return (
@@ -75,7 +76,7 @@ export function InvoiceView({
             </Link>
             <span className="hidden items-center gap-2 sm:inline-flex">
               <span className="font-display text-[16px] tracking-[0.16em] text-[#8a5a34]">
-                KAKOA
+                {brand.profile.name}
               </span>
               <span className="rounded-pill border border-[#e2d8c6] bg-white px-2.5 py-1 font-mono text-[11px] font-semibold tracking-[0.06em] text-[#6b5844]">
                 {model.orderNumber}

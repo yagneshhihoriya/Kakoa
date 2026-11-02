@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { cx } from "@kakoa/ui";
+import { brand } from "@/lib/brand";
 
 /**
- * Generated, deterministic customer avatar in the KAKOA house style — a
+ * Generated, deterministic customer avatar in the brand house style — a
  * letterpress serif monogram on warm parchment, framed by a fine gold hairline
  * ring, with a slow gloss sweep (light catching a wax seal). The gradient tint
  * is picked from the seed (name → phone → email), so every customer gets a
@@ -59,7 +60,7 @@ export function CustomerAvatar({
   size = 46,
   className,
 }: CustomerAvatarProps): ReactNode {
-  const seed = (name ?? phone ?? email ?? "kakoa").toLowerCase();
+  const seed = (name ?? phone ?? email ?? brand.profile.cookiePrefix).toLowerCase();
   const tint = TINTS[seedIndex(seed)] ?? TINTS[0];
   const from = `var(--color-avatar-${tint})`;
   const to = `var(--color-avatar-${tint}-deep)`;

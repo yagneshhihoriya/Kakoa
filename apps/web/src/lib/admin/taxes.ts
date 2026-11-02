@@ -19,7 +19,7 @@ import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { withConstraintMapping } from './db-errors';
 import { isUuid } from './product-validation';
 import { validateTaxInput, validateRateBp } from './tax-validation';
-import { SETTINGS_DEFAULTS } from './settings-schema';
+import { LEGAL_IDENTITY_KEYS, resolveLegalIdentity, type LegalIdentityKey } from './legal-identity';
 
 export interface TaxGroup {
   hsnCode: string;
@@ -102,32 +102,35 @@ export async function listVariantsForHsn(hsnCode: string): Promise<TaxVariantRow
 }
 
 export interface SellerTaxIdentity {
+  /** `false` while any legal-identity setting is missing — the UI shows a banner. */
+  configured: boolean;
+  /** The missing legal-identity keys (empty when configured). */
+  missing: LegalIdentityKey[];
+  /** `''` when not configured — never a brand default. */
   gstin: string;
   stateCode: string;
   stateName: string | null;
   legalName: string;
 }
 
-/** Seller GST identity from `store_settings` (read-only; edited in Settings). */
+/**
+ * Seller GST identity from `store_settings` (read-only; edited in Settings).
+ * No code fallback: a fresh database reports `configured: false` rather than
+ * another brand's GSTIN.
+ */
 export async function getSellerTaxIdentity(): Promise<SellerTaxIdentity> {
-  const keys = ['seller_gstin', 'seller_state_code', 'seller_legal_name'];
   const rows = await db
     .select({ key: storeSettings.key, value: storeSettings.value })
     .from(storeSettings)
-    .where(inArray(storeSettings.key, keys));
-  const byKey = new Map(rows.map((r) => [r.key, r.value]));
-
-  const str = (key: string): string => {
-    const v = byKey.has(key) ? byKey.get(key) : SETTINGS_DEFAULTS[key];
-    return typeof v === 'string' ? v : String(v ?? '');
-  };
-
-  const stateCode = str('seller_state_code');
+    .where(inArray(storeSettings.key, [...LEGAL_IDENTITY_KEYS]));
+  const legal = resolveLegalIdentity(new Map(rows.map((r) => [r.key, r.value])));
   return {
-    gstin: str('seller_gstin'),
-    stateCode,
-    stateName: stateByCode(stateCode)?.name ?? null,
-    legalName: str('seller_legal_name'),
+    configured: legal.configured,
+    missing: legal.missing,
+    gstin: legal.gstin,
+    stateCode: legal.stateCode,
+    stateName: legal.stateCode === '' ? null : (stateByCode(legal.stateCode)?.name ?? null),
+    legalName: legal.legalName,
   };
 }
 

@@ -1,6 +1,6 @@
 /**
  * Admin session — separate from the customer session (docs/admin-platform §4,
- * admin-staff-roles.md). Distinct cookie (`kakoa_admin`), 12h absolute lifetime,
+ * admin-staff-roles.md). Distinct cookie (`<cookiePrefix>_admin`), 12h absolute lifetime,
  * DB-backed (revocation within one request). DB stores ONLY `sha256(token)`;
  * the raw token lives solely in the cookie.
  *
@@ -19,8 +19,10 @@ import {
 } from '@platform/kernel';
 import { and, eq, sql } from 'drizzle-orm';
 import { generateSessionToken, hashToken } from '@/lib/auth/session-token';
+import { cookieName } from '@/lib/brand';
 
-export const ADMIN_COOKIE_NAME = 'kakoa_admin';
+/** Brand-prefixed (`<cookiePrefix>_admin`) so two brands never share a jar. */
+export const ADMIN_COOKIE_NAME: string = cookieName('admin');
 /** 12h absolute — no sliding renewal (admin-staff-roles.md). */
 export const ADMIN_SESSION_TTL_SECONDS = 12 * 60 * 60;
 
@@ -85,7 +87,7 @@ export async function createAdminSession(input: {
 }
 
 /**
- * Resolve the acting admin from the `kakoa_admin` cookie, or `null` when there
+ * Resolve the acting admin from the admin cookie, or `null` when there
  * is no live session (missing/malformed cookie, revoked/expired session, or a
  * deactivated admin). Loads the admin + role grants in one round-trip.
  */

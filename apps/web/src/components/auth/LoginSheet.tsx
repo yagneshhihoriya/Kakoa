@@ -19,6 +19,7 @@ import {
 import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
 import { useCart } from "@/components/cart/CartProvider";
+import { brand } from "@/lib/brand";
 import { useAuth } from "./AuthProvider";
 
 /* ------------------------------------------------------------------ */
@@ -408,7 +409,7 @@ export function LoginSheet({
         if (result.ok) {
           // Success — reconcile auth + cart, toast, close (stay on page).
           await Promise.all([refreshAuth(), refreshCart()]);
-          toast({ kind: "success", message: "Welcome to KAKOA." });
+          toast({ kind: "success", message: `Welcome to ${brand.profile.name}.` });
           if (result.data.cartMerged) {
             toast({
               kind: "info",
@@ -561,7 +562,7 @@ export function LoginSheet({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Sign in to KAKOA"
+        aria-label={`Sign in to ${brand.profile.name}`}
         tabIndex={-1}
         style={{ fontFamily: "var(--font-ui)" }}
         className={cx(
@@ -722,7 +723,7 @@ export function LoginSheet({
               ) : null}
 
               <p className="mt-5 text-center text-[12px] leading-relaxed text-ink-muted">
-                By continuing you agree to KAKOA's Terms &amp; Privacy Policy.
+                By continuing you agree to {brand.profile.name}&apos;s Terms &amp; Privacy Policy.
               </p>
             </form>
           ) : (

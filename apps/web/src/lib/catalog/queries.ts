@@ -39,6 +39,7 @@ import {
 import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { resolvePreset } from '@platform/kernel';
+import { resolveLegalIdentity } from '@/lib/admin/legal-identity';
 import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
 import { displayReviewerName } from '@/lib/admin/review-format';
 import { brand } from '@/lib/brand';
@@ -817,10 +818,17 @@ export async function getFssaiLicense(): Promise<string | null> {
 /* ------------------------------------------------------------------ */
 
 export interface CompanyInfo {
+  /**
+   * Legal identity straight from store_settings — `''` when the row is missing
+   * (there is NO brand default for these; see lib/admin/legal-identity.ts).
+   * Pages render the GSTIN / legal-name lines only when present.
+   */
   legalName: string;
   address: string;
   gstin: string;
   fssai: string;
+  /** `true` once every legal-identity row exists (admin sees a banner until then). */
+  legalIdentityConfigured: boolean;
   supportEmail: string;
   supportPhone: string;
   supportHours: string;
@@ -837,6 +845,8 @@ const COMPANY_KEYS = [
   'seller_legal_name',
   'seller_address',
   'seller_gstin',
+  'seller_state_code',
+  'origin_pincode',
   'fssai_license_number',
   'support_email',
   'support_phone',
@@ -857,15 +867,19 @@ const getCompanyInfoCached = unstable_cache(
       .from(storeSettings)
       .where(inArray(storeSettings.key, COMPANY_KEYS));
     const byKey = new Map(rows.map((r) => [r.key, r.value]));
+    // Policy / support keys fall back to THIS brand's defaults; the legal
+    // identity never falls back (empty strings + `configured: false`).
     const str = (key: string): string => {
       const v = byKey.has(key) ? byKey.get(key) : SETTINGS_DEFAULTS[key];
       return typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v);
     };
+    const legal = resolveLegalIdentity(byKey);
     return {
-      legalName: str('seller_legal_name'),
-      address: str('seller_address'),
-      gstin: str('seller_gstin'),
-      fssai: str('fssai_license_number'),
+      legalName: legal.legalName,
+      address: legal.address,
+      gstin: legal.gstin,
+      fssai: legal.fssai,
+      legalIdentityConfigured: legal.configured,
       supportEmail: str('support_email'),
       supportPhone: str('support_phone'),
       supportHours: str('support_hours'),
@@ -885,7 +899,8 @@ const getCompanyInfoCached = unstable_cache(
 /**
  * The business's legal identity + contact block for the Contact and policy
  * pages (and PDP country-of-origin). Cached + `settings`-tagged so admin edits
- * propagate. Defaults from the settings catalog when a key is unset.
+ * propagate. Policy/support defaults from the settings catalog when a key is
+ * unset; the legal identity has no default and reads as empty until configured.
  */
 export async function getCompanyInfo(): Promise<CompanyInfo> {
   return getCompanyInfoCached();

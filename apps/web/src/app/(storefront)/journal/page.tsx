@@ -12,11 +12,13 @@ import {
   formatArticleDate,
   type Article,
 } from "@/lib/content/journal";
+import { brand } from "@/lib/brand";
+
+const BRAND_NAME = brand.profile.name;
 
 export const metadata: Metadata = {
   title: "The Journal",
-  description:
-    "Notes from the KAKOA kitchen — original, brand-authored guides to single-origin cacao, the bean-to-bar craft, storing chocolate well, and tasting like a maker.",
+  description: `Notes from the ${BRAND_NAME} kitchen — original, brand-authored guides to single-origin cacao, the bean-to-bar craft, storing chocolate well, and tasting like a maker.`,
   alternates: { canonical: "/journal" },
 };
 
@@ -88,7 +90,7 @@ export default function JournalPage(): ReactNode {
   return (
     <ContentPageShell
       eyebrow="The Journal"
-      title="Notes from the KAKOA kitchen"
+      title={`Notes from the ${BRAND_NAME} kitchen`}
       width="wide"
       lede="Original writing on single-origin cacao, the bean-to-bar craft, and getting the most from every square — written by the people who roast, conch and temper it."
       footer={
