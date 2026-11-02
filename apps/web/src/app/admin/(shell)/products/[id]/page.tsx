@@ -47,6 +47,8 @@ export default async function AdminProductEditPage({
         product={product}
         categories={categories}
         attributeSchema={resolved.ctx.preset.attributeSchema}
+        toneOptions={Object.keys(resolved.ctx.preset.presentation.swatches)}
+        taxDefaults={resolved.ctx.preset.taxDefaults}
         canWrite={resolved.ctx.can("products:write")}
         canPublish={resolved.ctx.can("products:publish")}
       />

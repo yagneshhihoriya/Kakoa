@@ -27,7 +27,6 @@ const card = {
 const detail = {
   ...card,
   description: 'A sixteen-piece box of dark ganache truffles.',
-  tastingNotes: ['cocoa', 'sea salt'],
   ingredients: 'Cocoa mass, cocoa butter, sugar, cream.',
   allergens: 'Contains milk. May contain tree nuts.',
   nutritionFacts: { Energy: '546 kcal', Protein: '6.1 g' },
@@ -78,10 +77,9 @@ describe('productCardSchema', () => {
     expect(productCardSchema.parse(card)).toEqual(card);
   });
 
-  it('rejects an unknown tone', () => {
-    expect(
-      productCardSchema.safeParse({ ...card, tone: 'neon' }).success,
-    ).toBe(false);
+  it('accepts any non-empty swatch key as tone (the preset decides the palette)', () => {
+    expect(productCardSchema.safeParse({ ...card, tone: 'turmeric' }).success).toBe(true);
+    expect(productCardSchema.safeParse({ ...card, tone: '' }).success).toBe(false);
   });
 });
 
@@ -109,6 +107,7 @@ describe('categorySchema', () => {
       name: 'Pralines',
       description: null,
       position: 2,
+      imageUrl: null,
     };
     expect(categorySchema.parse(category)).toEqual(category);
   });

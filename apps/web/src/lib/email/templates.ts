@@ -45,6 +45,8 @@ export interface EmailIdentityModel {
   fssaiLicense: string | null;
   /** Short brand line after the licence (pack copy); null omits it. */
   footerTagline: string | null;
+  /** What one unit of the product is called ('piece', 'pack') — vertical vocabulary. */
+  unitNoun: { one: string; many: string };
   theme: BrandEmailTheme;
 }
 
@@ -418,12 +420,15 @@ export interface FulfilmentEmailModel {
   trackUrl: string;
 }
 
-/** Stage copy; `brand` is the trade name, `n` the order number, `sfx` the subject suffix. */
+/**
+ * Stage copy; `brand` is the trade name, `unit` the vertical's unit noun
+ * ('piece'), `n` the order number, `sfx` the subject suffix.
+ */
 const FULFILMENT_COPY: Record<
   FulfilmentStage,
   {
     headline: string;
-    lede: (brand: string) => string;
+    lede: (brand: string, unit: string) => string;
     subject: (n: string, sfx: string) => string;
   }
 > = {
@@ -439,7 +444,7 @@ const FULFILMENT_COPY: Record<
   },
   delivered: {
     headline: 'Delivered — enjoy!',
-    lede: (brand) => `Your ${brand} order has been delivered. We hope every piece is a delight.`,
+    lede: (brand, unit) => `Your ${brand} order has been delivered. We hope every ${unit} is a delight.`,
     subject: (n, sfx) => `Delivered — order ${n}${sfx}`,
   },
 };
@@ -452,7 +457,7 @@ export function orderFulfilmentEmail(m: FulfilmentEmailModel, id: EmailIdentityM
   const t = id.theme;
   const copy = FULFILMENT_COPY[m.stage];
   const subject = copy.subject(m.orderNumber, id.subjectSuffix);
-  const lede = copy.lede(id.brandName);
+  const lede = copy.lede(id.brandName, id.unitNoun.one);
 
   const courierLine =
     m.awb !== null && m.awb !== ''

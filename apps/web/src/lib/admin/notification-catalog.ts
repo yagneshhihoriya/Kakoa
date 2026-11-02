@@ -9,7 +9,7 @@
  * starting point an admin overrides, and the source for the live preview. The
  * subject suffix (' · KAKOA') and SMS prefix ('KAKOA: ') are the brand's.
  */
-import { brand } from '@/lib/brand';
+import { brand, vocabulary } from '@/lib/brand';
 
 export type NotificationChannel = 'email' | 'sms';
 
@@ -85,7 +85,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
     label: 'Order delivered',
     defaultSubject: `Delivered — order {{orderNumber}}${SFX}`,
     defaultBody:
-      'Hi {{customerName}},\n\nOrder {{orderNumber}} has been delivered. We hope every piece is a delight!',
+      `Hi {{customerName}},\n\nOrder {{orderNumber}} has been delivered. We hope every ${vocabulary.unitNoun.one} is a delight!`,
     placeholders: [...COMMON],
   },
   {

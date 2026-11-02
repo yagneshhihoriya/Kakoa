@@ -16,9 +16,32 @@ export interface AdminCategoryRow {
   slug: string;
   name: string;
   description: string | null;
+  /** Collection tile image (Media Library URL); null → storefront swatch fallback. */
+  imageUrl: string | null;
   position: number;
   active: boolean;
   productCount: number;
+}
+
+/**
+ * A tile image must be an absolute http(s) URL or a same-origin path (`/uploads/…`)
+ * — the same shapes the Media Library hands out. Pure; exported for tests.
+ */
+export function normalizeCategoryImageUrl(
+  value: unknown,
+): { ok: true; value: string | null } | { ok: false } {
+  if (value === undefined || value === null) return { ok: true, value: null };
+  if (typeof value !== 'string') return { ok: false };
+  const s = value.trim();
+  if (s === '') return { ok: true, value: null };
+  if (s.length > 2048) return { ok: false };
+  if (s.startsWith('/') && !s.startsWith('//')) return { ok: true, value: s };
+  try {
+    const url = new URL(s);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? { ok: true, value: s } : { ok: false };
+  } catch {
+    return { ok: false };
+  }
 }
 
 export type CategoryResult =
@@ -41,6 +64,7 @@ export async function listCategories(): Promise<AdminCategoryRow[]> {
       slug: categories.slug,
       name: categories.name,
       description: categories.description,
+      imageUrl: categories.imageUrl,
       position: categories.position,
       active: categories.isActive,
       productCount: sql<number>`count(${products.id})::int`,
@@ -108,12 +132,23 @@ export async function createCategory(
 
 export async function updateCategory(
   id: string,
-  input: { name: string; description?: string; position?: number; active?: boolean },
+  input: {
+    name: string;
+    description?: string;
+    /** `undefined` leaves the image alone; `null` / '' clears it. */
+    imageUrl?: string | null;
+    position?: number;
+    active?: boolean;
+  },
   adminUserId: string,
 ): Promise<CategoryResult> {
   const name = input.name.trim();
   if (name.length < 2 || name.length > 60) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Enter a category name (2–60 characters).' };
+  }
+  const image = input.imageUrl === undefined ? undefined : normalizeCategoryImageUrl(input.imageUrl);
+  if (image !== undefined && !image.ok) {
+    return { ok: false, code: 'VALIDATION_ERROR', message: 'Enter a valid image URL (https://… or /uploads/…).' };
   }
   return db.transaction(async (tx) => {
     const [current] = await tx
@@ -133,6 +168,7 @@ export async function updateCategory(
       .set({
         name,
         description: input.description?.slice(0, 500) ?? null,
+        ...(image !== undefined ? { imageUrl: image.value } : {}),
         ...(position !== undefined ? { position } : {}),
         ...(typeof input.active === 'boolean' ? { isActive: input.active } : {}),
         updatedAt: sql`now()`,

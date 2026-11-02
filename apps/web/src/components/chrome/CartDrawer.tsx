@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { vocabulary } from "@/lib/brand";
 import { useCartChrome, type ChromeCartContext } from "./useCartChrome";
 import { useOverlay } from "./useOverlay";
 
@@ -34,7 +35,7 @@ function BagIcon({ size }: { size: number }): ReactNode {
 
 /**
  * Cart drawer (prototype CART DRAWER aside): right slide-in, 420px, line
- * items with tone thumbnails + qty steppers, subtotal / shipping summary,
+ * items with swatch thumbnails + qty steppers, subtotal / shipping summary,
  * free-ship progress note, checkout + view-full-cart actions.
  *
  * Visual SHELL for Module 2 — reads the pinned CartProvider context through
@@ -142,7 +143,7 @@ export function CartDrawer(): ReactNode {
                 FOCUS_RING,
               )}
             >
-              Browse chocolates
+              Browse {vocabulary.noun.many}
             </button>
           </div>
         ) : (
@@ -166,7 +167,7 @@ export function CartDrawer(): ReactNode {
                         />
                       </div>
                     ) : (
-                      <ChocoPlaceholder tone={line.tone} ratio="7 / 8" />
+                      <ProductPlaceholder tone={line.tone} ratio="7 / 8" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">

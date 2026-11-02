@@ -7,6 +7,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { KAKOA } from '@kakoa/brands';
+import { resolvePreset } from '@platform/kernel';
 import { db, queryClient } from './client';
 import { seedSystemRoles } from './seed-roles';
 import {
@@ -51,9 +52,16 @@ const SETTINGS: Record<string, string | number | boolean> = {
 
 // ---------------------------------------------------------------------------
 // Catalog — 10 prototype products across Bars / Pralines / Signature / Gifts.
-// Prototype USD prices converted to sensible INR MRPs (GST-inclusive,
-// gst_rate_bp 500, HSN 1806).
+// Prototype USD prices converted to sensible INR MRPs (GST-inclusive). The tax
+// class (gst_rate_bp / hsn_code) is the brand's vertical preset `taxDefaults`,
+// written explicitly — the columns have no database default.
 // ---------------------------------------------------------------------------
+const PRESET = resolvePreset(KAKOA);
+const TAX = PRESET.taxDefaults;
+if (TAX.code === undefined) {
+  throw new Error(`The ${PRESET.key} preset has no HSN code; the seed cannot write variants.`);
+}
+const HSN_CODE: string = TAX.code;
 interface VariantSeed {
   sku: string;
   name: string;
@@ -75,6 +83,7 @@ interface ProductSeed {
   category: 'bars' | 'pralines' | 'signature' | 'gifts';
   blurb: string;
   description: string;
+  /** Preset attribute `tasting_notes` (free text) — joined with ', ' on insert. */
   tastingNotes: string[];
   ingredients: string;
   allergens: string;
@@ -494,7 +503,8 @@ async function main(): Promise<void> {
       categoryId,
       blurb: p.blurb,
       description: p.description,
-      tastingNotes: p.tastingNotes,
+      // Preset attributes (docs/admin-platform §2.4) — the former column.
+      attributes: { tasting_notes: p.tastingNotes.join(', ') },
       ingredients: p.ingredients,
       allergens: p.allergens,
       nutritionFacts: {
@@ -517,8 +527,8 @@ async function main(): Promise<void> {
         name: v.name,
         pricePaise: v.pricePaise,
         compareAtPricePaise: v.compareAtPricePaise ?? null,
-        gstRateBp: 500,
-        hsnCode: '1806',
+        gstRateBp: TAX.rateBp,
+        hsnCode: HSN_CODE,
         weightGrams: v.weightGrams,
         shipWeightGrams: v.shipWeightGrams,
         lengthCm: v.lengthCm ?? null,

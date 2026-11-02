@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { KAKOA, brandProfileSchema } from '@kakoa/brands';
+import { PRESETS } from '@platform/kernel';
 import {
   EXAMPLE_ORDER_NUMBER,
   ORDER_NUMBER_PREFIX,
+  SWATCH_KEYS,
   assertBrandMatchesEnv,
   brand,
   cookieName,
@@ -10,6 +12,12 @@ import {
   isOrderNumber,
   lookupRequestSchema,
   orderNumberSchema,
+  preset,
+  presetHas,
+  returnReasonLabel,
+  swatchFor,
+  toTone,
+  vocabulary,
 } from './brand';
 
 /**
@@ -38,6 +46,32 @@ describe('brand pack', () => {
     // Email chrome is literal colour (clients cannot read CSS vars).
     expect(brand.email.theme.ink).toMatch(/^#[0-9a-f]{6}$/i);
     expect(brand.email.footerTagline).toBe('Handcrafted in small batches');
+  });
+});
+
+describe('vertical preset', () => {
+  it('resolves the kakoa profile to the chocolate preset and exposes its vocabulary', () => {
+    expect(preset).toBe(PRESETS.chocolate);
+    expect(vocabulary.coldChain).toBe(true);
+    expect(vocabulary.noun.many).toBe('chocolates');
+    expect(presetHas('veg-mark')).toBe(true);
+    expect(presetHas('menu')).toBe(false);
+  });
+
+  it('toTone keeps a known swatch key and falls back to the default swatch, never throwing', () => {
+    expect(SWATCH_KEYS).toEqual(['dark', 'milk', 'ruby', 'caramel', 'white', 'matcha']);
+    expect(toTone('milk')).toBe('milk');
+    expect(toTone('raspberry')).toBe('dark'); // seeded value outside the palette
+    expect(toTone('')).toBe('dark');
+    expect(toTone(null)).toBe('dark');
+    expect(toTone(undefined)).toBe('dark');
+    expect(swatchFor('nope')).toEqual(swatchFor('dark'));
+    expect(swatchFor('caramel').from).toBe('#e0a457');
+  });
+
+  it('relabels the fixed return_reason enum from the preset', () => {
+    expect(returnReasonLabel('damaged_or_melted')).toBe('Damaged or melted');
+    expect(returnReasonLabel('some_future_reason')).toBe('some future reason');
   });
 });
 

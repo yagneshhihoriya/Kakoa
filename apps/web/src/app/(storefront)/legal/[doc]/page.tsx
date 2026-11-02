@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { getCompanyInfo, type CompanyInfo } from "@/lib/catalog/queries";
-import { brand } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Cold-chain clause variants: the vertical preset decides whether the policies
+ * speak of temperature-sensitive goods and melted deliveries (chocolate) or of
+ * shelf-stable packaged food (snacks). Everything else is shared.
+ */
+const COLD_CHAIN = vocabulary.coldChain;
 
 /**
  * India-market legal pages (Privacy / Terms / Refund-Return-Cancellation /
@@ -202,9 +209,11 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         ],
       },
       {
-        heading: "6. Perishable / food products",
+        heading: COLD_CHAIN ? "6. Perishable / food products" : "6. Food products",
         blocks: [
-          "Our products are food items and may be temperature-sensitive and perishable. Please refer to the storage instructions and use-by information on each product and store them appropriately on receipt. We are an FSSAI-licensed food business" +
+          (COLD_CHAIN
+            ? "Our products are food items and may be temperature-sensitive and perishable. Please refer to the storage instructions and use-by information on each product and store them appropriately on receipt. We are an FSSAI-licensed food business"
+            : "Our products are packaged food items. Please refer to the storage instructions and best-before information on each pack and store them appropriately on receipt. We are an FSSAI-licensed food business") +
             (c.fssai ? ` (FSSAI Lic. No. ${c.fssai}).` : "."),
         ],
       },
@@ -257,11 +266,13 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         ],
       },
       {
-        heading: "2. Returns — perishable food items",
+        heading: COLD_CHAIN ? "2. Returns — perishable food items" : "2. Returns — packaged food items",
         blocks: [
           "Because our products are food items, for hygiene and safety reasons we cannot accept returns of products that have been opened, consumed or tampered with. However, you are fully protected if something is wrong with your order. You are eligible for a replacement or refund if:",
           [
-            "the product arrived damaged, melted, spoilt or leaking;",
+            COLD_CHAIN
+              ? "the product arrived damaged, melted, spoilt or leaking;"
+              : "the product arrived damaged, crushed, stale or leaking;",
             "you received the wrong item; or",
             "the product was past or near its use-by date on arrival.",
           ],
@@ -334,12 +345,19 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         shippingChargeLines(c),
       ],
     },
-    {
-      heading: "5. Perishable / cold-chain handling",
-      blocks: [
-        "Our chocolates are temperature-sensitive. We use protective and, where needed, insulated packaging, and plan dispatch to reduce time in transit. During warmer months or to certain regions we may adjust dispatch scheduling to protect product quality.",
-      ],
-    },
+    COLD_CHAIN
+      ? {
+          heading: "5. Perishable / cold-chain handling",
+          blocks: [
+            `Our ${vocabulary.noun.many} are temperature-sensitive. We use protective and, where needed, insulated packaging, and plan dispatch to reduce time in transit. During warmer months or to certain regions we may adjust dispatch scheduling to protect product quality.`,
+          ],
+        }
+      : {
+          heading: "5. Packaging & handling",
+          blocks: [
+            `Our ${vocabulary.noun.many} are packed to protect them in transit. We use protective packaging sized to the order and plan dispatch to reduce time in transit so every pack arrives crisp and intact.`,
+          ],
+        },
     {
       heading: "6. Tracking your order",
       blocks: [

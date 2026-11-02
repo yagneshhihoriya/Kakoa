@@ -15,13 +15,11 @@
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 
 import {
-  productToneSchema,
   type CategoryView,
   type ProductCardView,
   type ProductDetailView,
   type ProductImageView,
   type ProductListInput,
-  type ProductTone,
   type ProductVariantView,
   type SearchHitView,
 } from '@kakoa/core';
@@ -38,17 +36,13 @@ import {
 } from '@kakoa/db';
 import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { resolvePreset } from '@platform/kernel';
 import { resolveLegalIdentity } from '@/lib/admin/legal-identity';
 import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
 import { displayReviewerName } from '@/lib/admin/review-format';
-import { brand } from '@/lib/brand';
-
-/**
- * The brand's vertical preset (same resolution the admin BusinessContext uses).
- * Drives which product attributes surface on the PDP.
- */
-const PRESET = resolvePreset(brand.profile);
+// `preset` = the brand's vertical preset (same resolution the admin
+// BusinessContext uses) — drives which product attributes surface on the PDP;
+// `toTone` coerces the free-text tone column to one of its swatch keys.
+import { preset, toTone } from '@/lib/brand';
 
 /** Present a stored attribute value (array/number/string) as display text. */
 function formatAttrValue(v: unknown): string {
@@ -70,7 +64,7 @@ function buildPdpAttributes(
   attributes: unknown,
 ): { label: string; value: string; unit: string | null }[] {
   const attrs = (attributes !== null && typeof attributes === 'object' ? attributes : {}) as Record<string, unknown>;
-  return PRESET.attributeSchema
+  return preset.attributeSchema
     .filter((d) => d.showOnPdp === true)
     .map((d) => ({ label: d.label, value: formatAttrValue(attrs[d.key]), unit: d.unit ?? null }))
     .filter((a) => a.value !== '');
@@ -154,12 +148,6 @@ const cardColumns = {
   )`,
 };
 
-/** `products.tone` is a text column — coerce defensively to the enum. */
-function toTone(value: string): ProductTone {
-  const parsed = productToneSchema.safeParse(value);
-  return parsed.success ? parsed.data : 'dark';
-}
-
 function toCard(row: CardRow): ProductCardView {
   return {
     id: row.id,
@@ -202,6 +190,7 @@ const getCategoriesCached = unstable_cache(
         name: categories.name,
         description: categories.description,
         position: categories.position,
+        imageUrl: categories.imageUrl,
       })
       .from(categories)
       .where(eq(categories.isActive, true))
@@ -467,7 +456,6 @@ async function fetchProductDetail(
       ratingCount: products.ratingCount,
       tone: products.tone,
       description: products.description,
-      tastingNotes: products.tastingNotes,
       ingredients: products.ingredients,
       allergens: products.allergens,
       nutritionFacts: products.nutritionFacts,
@@ -591,7 +579,6 @@ async function fetchProductDetail(
     inStock: row.inStock,
     imageUrl: images[0]?.url ?? null,
     description: row.description,
-    tastingNotes: row.tastingNotes,
     ingredients: row.ingredients,
     allergens: row.allergens,
     nutritionFacts: toNutritionFacts(row.nutritionFacts),
@@ -783,6 +770,53 @@ const getCatalogSettingsCached = unstable_cache(
  */
 export async function getCatalogSettings(): Promise<CatalogSettings> {
   return getCatalogSettingsCached();
+}
+
+/* ------------------------------------------------------------------ */
+/* getStorefrontSettings — storefront-namespaced presentation settings */
+/* ------------------------------------------------------------------ */
+
+export interface StorefrontSettings {
+  /**
+   * `storefront.home_hero_product_slug` — the product the home hero spotlights;
+   * null (unset / blank) → the page falls back to the first featured product.
+   */
+  homeHeroProductSlug: string | null;
+}
+
+/**
+ * Read a namespaced setting the way the admin SettingsReader does: the
+ * `namespace.key` row first, then the flat `key` row.
+ */
+function namespaced(byKey: ReadonlyMap<string, unknown>, ns: string, key: string): unknown {
+  return byKey.has(`${ns}.${key}`) ? byKey.get(`${ns}.${key}`) : byKey.get(key);
+}
+
+const getStorefrontSettingsCached = unstable_cache(
+  async (): Promise<StorefrontSettings> => {
+    const rows = await db
+      .select({ key: storeSettings.key, value: storeSettings.value })
+      .from(storeSettings)
+      .where(
+        inArray(storeSettings.key, [
+          'storefront.home_hero_product_slug',
+          'home_hero_product_slug',
+        ]),
+      );
+    const byKey = new Map(rows.map((row) => [row.key, row.value]));
+    const slug = namespaced(byKey, 'storefront', 'home_hero_product_slug');
+    return {
+      homeHeroProductSlug:
+        typeof slug === 'string' && SLUG_RE.test(slug.trim()) ? slug.trim() : null,
+    };
+  },
+  ['storefront-settings'],
+  { tags: ['settings'], revalidate: REVALIDATE_SECONDS },
+);
+
+/** Storefront presentation settings (read-only here; Admin owns writes). */
+export async function getStorefrontSettings(): Promise<StorefrontSettings> {
+  return getStorefrontSettingsCached();
 }
 
 /* ------------------------------------------------------------------ */

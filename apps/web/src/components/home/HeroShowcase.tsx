@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ProductCardView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
-import { TONE_GRADIENTS } from "@/components/catalog/ChocoPlaceholder";
+import { swatchGradient } from "@/components/catalog/ProductPlaceholder";
 
 /** Focus ring for the bespoke floating chip link. */
 const CHIP_FOCUS =
@@ -16,7 +16,7 @@ const CHIP_FOCUS =
  * is the chip product (name / badge / price via `formatPaise`).
  *
  * Hexes are prototype scene lighting — same art-direction carve-out as
- * `ChocoPlaceholder` / `ChocoScene`.
+ * `ProductPlaceholder` / `ChocoScene`.
  */
 
 /** 16 molded pieces, row-major, exact gradient order from the reference. */
@@ -175,7 +175,7 @@ export function HeroShowcase({
               product.imageUrl !== null
                 ? undefined
                 : {
-                    backgroundImage: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%), ${TONE_GRADIENTS[product.tone]}`,
+                    backgroundImage: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%), ${swatchGradient(product.tone)}`,
                   }
             }
           >

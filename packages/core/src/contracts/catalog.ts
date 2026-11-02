@@ -19,16 +19,13 @@ const slugSchema = z.string().regex(/^[a-z0-9-]+$/);
 /** Integer paise (MRP, GST-inclusive). DB CHECK `price_paise > 0`. */
 const paiseSchema = z.number().int().positive();
 
-/** Design-system placeholder tone (`products.tone`, text column). */
-export const PRODUCT_TONES = [
-  'dark',
-  'milk',
-  'caramel',
-  'ruby',
-  'white',
-  'matcha',
-] as const;
-export const productToneSchema = z.enum(PRODUCT_TONES);
+/**
+ * Placeholder swatch key (`products.tone`, text column). An opaque string here:
+ * the vertical preset's `presentation.swatches` names the valid keys and the
+ * storefront falls back to the preset's default swatch for anything else, so
+ * the contract never has to know a vertical's palette.
+ */
+export const productToneSchema = z.string().min(1);
 export type ProductTone = z.infer<typeof productToneSchema>;
 
 export const PRODUCT_SORTS = [
@@ -50,6 +47,8 @@ export const categorySchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   position: z.number().int(),
+  /** Tile image (`categories.image_url`); null → the preset swatch fallback. */
+  imageUrl: z.string().nullable(),
 });
 export type CategoryView = z.infer<typeof categorySchema>;
 
@@ -102,7 +101,6 @@ export type ProductImageView = z.infer<typeof productImageViewSchema>;
 
 export const productDetailSchema = productCardSchema.extend({
   description: z.string(),
-  tastingNotes: z.array(z.string()),
   ingredients: z.string(),
   allergens: z.string(),
   nutritionFacts: z.record(z.string(), z.string()).nullable(),

@@ -2,9 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import type { ProductTone } from "@kakoa/core";
-import { PRODUCT_TONES } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "./ChocoPlaceholder";
+import { SWATCH_KEYS } from "@/lib/brand";
+import { ProductPlaceholder } from "./ProductPlaceholder";
 
 export interface PdpGalleryProps {
   /** Product's own tone — always the first (and default) gallery slot. */
@@ -15,20 +15,20 @@ export interface PdpGalleryProps {
 
 /**
  * Derive the 4 gallery tones deterministically: the product's own tone
- * first, then the next tones in enum order (prototype behavior — products
+ * first, then the next swatches in preset order (prototype behavior — products
  * ship without photography in Phase 1, so the gallery is tone studies).
  */
 function galleryTones(base: ProductTone): [ProductTone, ProductTone, ProductTone, ProductTone] {
-  const start = PRODUCT_TONES.indexOf(base);
+  const start = Math.max(0, SWATCH_KEYS.indexOf(base));
   const rotated = Array.from(
     { length: 4 },
-    (_, i) => PRODUCT_TONES[(start + i) % PRODUCT_TONES.length] as ProductTone,
+    (_, i) => SWATCH_KEYS[(start + i) % SWATCH_KEYS.length] ?? base,
   );
   return rotated as [ProductTone, ProductTone, ProductTone, ProductTone];
 }
 
 /**
- * PDP gallery — main ChocoPlaceholder plus 4 selectable thumbnails.
+ * PDP gallery — main ProductPlaceholder plus 4 selectable thumbnails.
  * Small client island: the only state is which thumbnail is active.
  * Dimension-locked (square main, square thumbs) so selection causes no CLS.
  */
@@ -39,7 +39,7 @@ export function PdpGallery({ tone, name }: PdpGalleryProps): ReactNode {
 
   return (
     <div className="flex flex-col gap-3">
-      <ChocoPlaceholder tone={active} className="rounded-lg" />
+      <ProductPlaceholder tone={active} className="rounded-lg" />
       <div role="group" aria-label={`${name} gallery`} className="grid grid-cols-4 gap-3">
         {tones.map((thumbTone, index) => (
           <button
@@ -58,7 +58,7 @@ export function PdpGallery({ tone, name }: PdpGalleryProps): ReactNode {
                 : "opacity-80 hover:opacity-100",
             )}
           >
-            <ChocoPlaceholder tone={thumbTone} className="rounded-md" />
+            <ProductPlaceholder tone={thumbTone} className="rounded-md" />
           </button>
         ))}
       </div>

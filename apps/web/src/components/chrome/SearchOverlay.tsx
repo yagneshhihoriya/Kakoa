@@ -17,7 +17,8 @@ import {
   type SearchHitView,
 } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { vocabulary } from "@/lib/brand";
 import { useOverlay } from "./useOverlay";
 
 const DEBOUNCE_MS = 200;
@@ -25,14 +26,8 @@ const MIN_QUERY_LENGTH = 2;
 /** Exit-animation duration (must outlast the .24s CSS animation below). */
 const CLOSE_MS = 260;
 
-/** Static idle-state chips (prototype `searchPopular`). */
-const POPULAR_SEARCHES = [
-  "Dark chocolate",
-  "Gift box",
-  "Truffles",
-  "Single origin",
-  "Sea salt",
-] as const;
+/** Idle-state chips (prototype `searchPopular`) — the vertical's vocabulary. */
+const POPULAR_SEARCHES: readonly string[] = vocabulary.popularSearches;
 
 /** Contract §2.1 envelope, narrowed to what this island reads. */
 type Envelope<T> = { ok: true; data: T } | { ok: false };
@@ -315,8 +310,8 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
               }}
               onKeyDown={handleInputKeyDown}
               enterKeyHint="search"
-              placeholder="Search chocolates, gifts, collections…"
-              aria-label="Search chocolates, gifts, collections"
+              placeholder={vocabulary.searchPlaceholder}
+              aria-label={vocabulary.searchPlaceholder.replace(/…$/, "")}
               role="combobox"
               aria-expanded={hasResults}
               aria-controls={hasResults ? "kk-search-results" : undefined}
@@ -373,7 +368,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                         )}
                       >
                         <div className="relative w-12 flex-none overflow-hidden rounded-[9px]">
-                          <ChocoPlaceholder tone={product.tone} ratio="6 / 7" />
+                          <ProductPlaceholder tone={product.tone} ratio="6 / 7" />
                         </div>
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-ink">
@@ -427,7 +422,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                       )}
                     >
                       <div className="relative w-[52px] flex-none overflow-hidden rounded-[10px]">
-                        <ChocoPlaceholder tone={hit.tone} ratio="13 / 15" />
+                        <ProductPlaceholder tone={hit.tone} ratio="13 / 15" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-base font-semibold text-ink">
@@ -484,7 +479,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                   FOCUS_RING,
                 )}
               >
-                Browse all chocolate
+                Browse all {vocabulary.noun.collective}
               </Link>
             </div>
           ) : null}

@@ -10,6 +10,7 @@ import { Footer } from "@/components/chrome/Footer";
 import { Header } from "@/components/chrome/Header";
 import { RevealInit } from "@/components/chrome/RevealInit";
 import { RouteProgress } from "@/components/chrome/RouteProgress";
+import { vocabulary } from "@/lib/brand";
 
 /**
  * Storefront chrome per the prototype (00-global-header-drawers.html +
@@ -50,10 +51,15 @@ export default function StorefrontLayout({
                 <span className="max-[680px]:hidden">
                   Hand-made in small batches
                 </span>
-                <span aria-hidden="true" className="text-field-ink/45 max-[680px]:hidden">
-                  ✦
-                </span>
-                <span className="max-[680px]:hidden">Ships cold &amp; safe</span>
+                {/* Cold-chain claim only where the vertical ships cold. */}
+                {vocabulary.coldChain ? (
+                  <>
+                    <span aria-hidden="true" className="text-field-ink/45 max-[680px]:hidden">
+                      ✦
+                    </span>
+                    <span className="max-[680px]:hidden">Ships cold &amp; safe</span>
+                  </>
+                ) : null}
               </div>
 
               <Header />

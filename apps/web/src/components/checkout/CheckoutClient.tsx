@@ -38,12 +38,12 @@ import { Skeleton } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
 import Image from "next/image";
 import type { ProductTone } from "@kakoa/core";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
-import { brand } from "@/lib/brand";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { brand, vocabulary } from "@/lib/brand";
 
 /**
  * Order-line thumbnail: real product photo when the cart line has one
- * (`imageUrl`), else the design-system tone placeholder. Keeps the same 44/52
+ * (`imageUrl`), else the preset swatch placeholder. Keeps the same 44/52
  * aspect box so the summary layout is unchanged either way.
  */
 function LineThumb({
@@ -62,7 +62,7 @@ function LineThumb({
       </div>
     );
   }
-  return <ChocoPlaceholder tone={tone} ratio="44 / 52" />;
+  return <ProductPlaceholder tone={tone} ratio="44 / 52" />;
 }
 import { useCart } from "@/components/cart/CartProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -1730,7 +1730,9 @@ function Step2Delivery({
                   <span className="block font-body text-[13px] text-ink-muted">
                     {opt.option === "express"
                       ? "Priority handling & tracking"
-                      : "Insulated, ships cold & safe"}
+                      : vocabulary.coldChain
+                        ? "Insulated, ships cold & safe"
+                        : "Tracked, packed with care"}
                   </span>
                 </span>
                 <span

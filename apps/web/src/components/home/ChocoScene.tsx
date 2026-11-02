@@ -7,7 +7,7 @@ import type { CSSProperties, ReactNode } from "react";
  * (`position: absolute; inset: 0`) — callers own aspect-ratio + radius + clip.
  *
  * All hexes here are prototype art direction (scene lighting), not palette
- * tokens — same carve-out as `ChocoPlaceholder`.
+ * tokens — same carve-out as `ProductPlaceholder`.
  */
 
 export type ChocoSceneKind = "hero" | "sourcing" | "tempering" | "story";

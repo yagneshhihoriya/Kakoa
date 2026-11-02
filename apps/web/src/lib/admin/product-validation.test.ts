@@ -102,6 +102,32 @@ describe('validateVariantInput (guards the product_variants check constraints)',
     expect(validateVariantInput({ ...good, stockQuantity: -1 }).ok).toBe(false);
   });
 
+  it('leaves the tax class undefined when absent so the data layer applies the preset default', () => {
+    const r = validateVariantInput(good);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect('gstRateBp' in r.value).toBe(false);
+      expect('hsnCode' in r.value).toBe(false);
+    }
+    const blank = validateVariantInput({ ...good, gstRateBp: '', hsnCode: '' });
+    expect(blank.ok).toBe(true);
+    if (blank.ok) expect('hsnCode' in blank.value).toBe(false);
+  });
+
+  it('validates an explicit tax class (0–28% in bp; 4/6/8-digit HSN)', () => {
+    const r = validateVariantInput({ ...good, gstRateBp: 0, hsnCode: '1905' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value).toMatchObject({ gstRateBp: 0, hsnCode: '1905' });
+    expect(validateVariantInput({ ...good, gstRateBp: 2801 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, gstRateBp: -1 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, gstRateBp: 5.5 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, hsnCode: '19' }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, hsnCode: 'ABCD' }).ok).toBe(false);
+    const eight = validateVariantInput({ ...good, hsnCode: ' 19059010 ' });
+    expect(eight.ok).toBe(true);
+    if (eight.ok) expect(eight.value.hsnCode).toBe('19059010');
+  });
+
   it('honours explicit isActive / isDefault flags', () => {
     const r = validateVariantInput({ ...good, isActive: false, isDefault: true });
     expect(r.ok).toBe(true);

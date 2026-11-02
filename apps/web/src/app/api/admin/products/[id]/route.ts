@@ -69,7 +69,10 @@ export async function PATCH(
       description: typeof b.description === 'string' ? b.description : '',
       categoryId: b.categoryId,
       attributes,
-      content: coerceProductContent(body),
+      content: coerceProductContent(body, {
+        options: Object.keys(auth.value.ctx.preset.presentation.swatches),
+        fallback: auth.value.ctx.preset.presentation.defaultSwatch,
+      }),
       expectedUpdatedAt: b.expectedUpdatedAt,
     },
     auth.value.admin.id,

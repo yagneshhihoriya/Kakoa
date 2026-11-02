@@ -24,6 +24,8 @@ describe('buildEmailIdentity', () => {
     expect(id.subjectSuffix).toBe(' · KAKOA');
     expect(id.footerTagline).toBe('Handcrafted in small batches');
     expect(id.theme.ink).toBe('#1a1a1a');
+    // The vertical's unit noun rides along so the delivered lede never hardcodes "piece".
+    expect(id.unitNoun).toEqual({ one: 'piece', many: 'pieces' });
     expect(id.supportEmail).toBe('help@example.com');
   });
 

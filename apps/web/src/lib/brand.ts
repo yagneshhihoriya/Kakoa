@@ -14,10 +14,67 @@ import {
   makeOrderNumberRegex,
   makeOrderNumberSchema,
 } from "@kakoa/core";
+import {
+  resolvePreset,
+  type Capability,
+  type StorefrontVocabulary,
+  type Swatch,
+  type VerticalPreset,
+} from "@platform/kernel";
 import { brand } from "@brand";
 
 export { brand };
 export type { BrandPack } from "@/brands/contract";
+
+/* ── Vertical preset ──────────────────────────────────────────────────── */
+
+/**
+ * The brand's vertical preset — `getPreset(profile.vertical)` tuned by the
+ * profile's `presetOverrides` — the SAME resolution the admin BusinessContext
+ * performs. Storefront code reads vocabulary, swatches and capabilities from
+ * here; the admin additionally layers `capability.<key>.enabled` settings on
+ * top (lib/admin/context.ts), which is why `presetHas` is preset-level only.
+ */
+export const preset: VerticalPreset = resolvePreset(brand.profile);
+
+/** Shorthand for the vocabulary block (nouns, cold-chain flag, search copy). */
+export const vocabulary: StorefrontVocabulary = preset.storefront;
+
+/** Whether the preset turns a capability on (before per-business overrides). */
+export function presetHas(capability: Capability): boolean {
+  return preset.capabilities.includes(capability);
+}
+
+/**
+ * Swatch keys in preset order — the admin tone picker's options and the
+ * deterministic by-index fallbacks (home collection tiles, gallery studies).
+ */
+export const SWATCH_KEYS: readonly string[] = Object.keys(preset.presentation.swatches);
+
+/**
+ * Coerce a stored `products.tone` to a swatch key this preset knows, falling
+ * back to the preset's default swatch. Never throws: the column is free text
+ * and a value from another vertical (or a typo) must still render.
+ */
+export function toTone(value: string | null | undefined): string {
+  return value !== null && value !== undefined && value in preset.presentation.swatches
+    ? value
+    : preset.presentation.defaultSwatch;
+}
+
+/** The gradient stops for a tone (default swatch for an unknown key). */
+export function swatchFor(tone: string): Swatch {
+  const { swatches, defaultSwatch } = preset.presentation;
+  return swatches[tone] ?? swatches[defaultSwatch] ?? { from: "#5b6470", to: "#2f3640" };
+}
+
+/**
+ * Customer-facing label for a `return_reason` enum value — the Postgres enum
+ * keeps `damaged_or_melted`; the preset decides whether that reads "melted".
+ */
+export function returnReasonLabel(reason: string): string {
+  return vocabulary.returnReasonLabels[reason] ?? reason.replace(/_/g, " ");
+}
 
 /* ── Order / invoice numbers ──────────────────────────────────────────── */
 

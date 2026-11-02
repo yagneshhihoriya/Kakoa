@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import type { CartView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { Skeleton, cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { vocabulary } from "@/lib/brand";
 import { useCart } from "@/components/cart/CartProvider";
 
 type CartLine = CartView["lines"][number];
@@ -126,7 +127,7 @@ function CartEmpty(): ReactNode {
         href="/shop"
         className={cx("rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field no-underline", FOCUS_RING)}
       >
-        Browse chocolates
+        Browse {vocabulary.noun.many}
       </Link>
     </div>
   );
@@ -252,7 +253,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
             className="object-cover transition-transform duration-[var(--duration-base)] ease-brand group-hover:scale-[1.04] motion-reduce:transition-none"
           />
         ) : (
-          <ChocoPlaceholder tone={line.tone} ratio="6 / 7" />
+          <ProductPlaceholder tone={line.tone} ratio="6 / 7" />
         )}
       </Link>
 
@@ -359,7 +360,8 @@ function TrustLine(): ReactNode {
   const items: { icon: ReactNode; label: string }[] = [
     { icon: <LockIcon />, label: "Secure checkout" },
     { icon: <HeartIcon />, label: "Satisfaction promise" },
-    { icon: <SnowIcon />, label: "Ships cold & insulated" },
+    // Cold-chain claim only where the vertical ships cold.
+    ...(vocabulary.coldChain ? [{ icon: <SnowIcon />, label: "Ships cold & insulated" }] : []),
   ];
   return (
     <ul className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-5">

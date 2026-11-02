@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
+import { vocabulary } from "@/lib/brand";
 
 /**
  * Desktop "Shop" mega-menu panel (≥1000px). A full-width cream panel that drops
@@ -16,7 +17,7 @@ const FOCUS_RING =
 /** Collections surfaced in the panel — hrefs mirror the mobile drill-down.
  * `as const` keeps each href a literal so Next's typed routes accept it. */
 const COLLECTIONS = [
-  { href: "/shop", label: "All chocolate", desc: "The full collection" },
+  { href: "/shop", label: `All ${vocabulary.noun.collective}`, desc: "The full collection" },
   { href: "/shop?category=bars", label: "Bars", desc: "Single-origin & flavoured" },
   { href: "/shop?category=pralines", label: "Pralines", desc: "Filled & ganache" },
   { href: "/shop?category=signature", label: "Signature", desc: "Tasting boxes" },

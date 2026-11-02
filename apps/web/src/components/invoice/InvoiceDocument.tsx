@@ -2,7 +2,12 @@ import type { CSSProperties, ReactNode } from "react";
 import { formatPaise } from "@kakoa/core";
 import type { AddressSnapshot } from "@kakoa/db";
 import type { InvoiceModel } from "@/lib/invoice/invoice-data";
-import { brand } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
+
+/** Returns caveat — the vertical decides whether "temperature-sensitive" applies. */
+const RETURNS_CAVEAT = vocabulary.coldChain
+  ? "perishable/temperature-sensitive items may be non-returnable."
+  : "opened food items may be non-returnable.";
 
 const BRAND_NAME = brand.profile.name;
 
@@ -312,7 +317,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
         <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with {BRAND_NAME} 🍫</div>
         <div>
           This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds are governed by our
-          published policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.
+          published policy; {RETURNS_CAVEAT} For help, contact {m.seller.supportEmail}.
         </div>
         <div style={{ marginTop: 4 }}>Registered under GSTIN {m.seller.gstin}. Whole amounts are in Indian Rupees (₹).</div>
       </div>

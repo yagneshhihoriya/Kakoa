@@ -32,7 +32,7 @@ import {
 } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
-import { EXAMPLE_ORDER_NUMBER, isOrderNumber } from "@/lib/brand";
+import { EXAMPLE_ORDER_NUMBER, isOrderNumber, vocabulary } from "@/lib/brand";
 import { OrderTrackingView } from "./OrderTrackingView";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { useTracking, type TrackingCredential } from "./useTracking";
@@ -471,7 +471,7 @@ export function TrackOrderFlow({
       </h1>
       <p className="mb-8 font-body text-[15px] text-espresso">
         {step === "tracking"
-          ? "Here's where your chocolate is right now."
+          ? `Here's where your ${vocabulary.noun.collective} is right now.`
           : "Enter your order number and the mobile number you used at checkout."}
       </p>
 

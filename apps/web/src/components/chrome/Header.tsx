@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
 import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
-import { brand } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
 import { BrandLockup } from "./BrandMark";
 import { MegaMenu } from "./MegaMenu";
 import { SearchOverlay } from "./SearchOverlay";
@@ -34,7 +34,7 @@ const MOBILE_PRIMARY = [
     label: "Shop",
     href: "/shop",
     children: [
-      { href: "/shop", label: "All chocolate" },
+      { href: "/shop", label: `All ${vocabulary.noun.collective}` },
       { href: "/shop?category=bars", label: "Bars" },
       { href: "/shop?category=pralines", label: "Pralines" },
       { href: "/shop?category=signature", label: "Signature" },
@@ -516,7 +516,7 @@ export function Header(): ReactNode {
               )}
             >
               <SearchIcon />
-              Search chocolate…
+              Search {vocabulary.noun.collective}…
             </button>
 
             {/* Primary — serif list, hairline dividers, collections accordion. */}

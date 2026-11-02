@@ -59,7 +59,15 @@ describe('buildAdhocOrderBody', () => {
       { name: 'Sea Salt', sku: 'KK-SS', units: 1, sellingPricePaise: 99900 },
     ],
     weightGrams: 350,
+    lengthCm: 12,
+    breadthCm: 9,
+    heightCm: 4,
   };
+
+  it('declares the parcel dimensions the caller resolved (never a provider default)', () => {
+    const body = buildAdhocOrderBody(base);
+    expect(body).toMatchObject({ length: 12, breadth: 9, height: 4 });
+  });
 
   it('sends sub_total in RUPEES (not paise, not zero)', () => {
     const body = buildAdhocOrderBody(base);

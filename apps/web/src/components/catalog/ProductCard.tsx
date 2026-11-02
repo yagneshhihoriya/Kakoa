@@ -6,7 +6,7 @@ import { Price, StarRating, cx } from "@kakoa/ui";
 import { AddToBagButton } from "@/components/cart/AddToBagButton";
 import { ADD_TO_BAG_CLASSES } from "@/components/cart/add-to-bag-classes";
 import { WishlistHeartButton } from "@/components/auth/WishlistHeartButton";
-import { ChocoPlaceholder } from "./ChocoPlaceholder";
+import { ProductPlaceholder } from "./ProductPlaceholder";
 
 export interface ProductCardProps {
   product: ProductCardView;
@@ -25,7 +25,7 @@ export interface ProductCardProps {
  * heart, serif name, 2-line blurb, stars, and the price / Add row. The whole
  * card is a stretched link to the PDP; the heart and Add CTA layer above it.
  * Server component — imagery is `product.imageUrl` first (real photos drop in
- * with zero markup change), tone gradient as the art-directed fallback.
+ * with zero markup change), swatch gradient as the art-directed fallback.
  */
 export function ProductCard({
   product,
@@ -59,7 +59,7 @@ export function ProductCard({
             />
             </div>
           ) : (
-            <ChocoPlaceholder
+            <ProductPlaceholder
               tone={product.tone}
               ratio="4 / 5"
               className="rounded-none!"

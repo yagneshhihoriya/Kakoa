@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { TaxDefault } from "@platform/kernel";
 import { ORDER_NUMBER_PREFIX } from "@/lib/brand";
+import { GST_RATE_PRESETS_BP } from "@/lib/admin/tax-validation";
 
 interface Variant {
   id: string;
@@ -11,6 +13,9 @@ interface Variant {
   pricePaise: number;
   weightGrams: number;
   stockQuantity: number;
+  /** Tax class — basis points (500 = 5%) + HSN; no DB default, always explicit. */
+  gstRateBp: number;
+  hsnCode: string;
   isDefault: boolean;
   isActive: boolean;
 }
@@ -20,6 +25,12 @@ interface Row extends Variant {
   priceRupees: string;
   makeDefault: boolean;
 }
+
+/** GST rate choices shared with the Taxes module (0 / 5 / 12 / 18 / 28 %). */
+const GST_OPTIONS: readonly { bp: number; label: string }[] = GST_RATE_PRESETS_BP.map((bp) => ({
+  bp,
+  label: `${bp / 100}%`,
+}));
 
 const INPUT =
   "w-full rounded-lg border border-[#eadbc6] bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-[#c69a4c]";
@@ -32,10 +43,13 @@ function toRow(v: Variant): Row {
 export function VariantEditor({
   productId,
   initial,
+  taxDefaults,
   canWrite,
 }: {
   productId: string;
   initial: Variant[];
+  /** The preset's tax class — pre-fills new variants (the server applies it when omitted). */
+  taxDefaults: TaxDefault;
   canWrite: boolean;
 }): React.ReactNode {
   const router = useRouter();
@@ -48,8 +62,17 @@ export function VariantEditor({
     setRows(initial.map(toRow));
   }, [initial]);
 
-  // New-variant draft.
-  const [draft, setDraft] = useState({ sku: "", name: "", priceRupees: "", weightGrams: "", stockQuantity: "0" });
+  // New-variant draft — tax class pre-filled from the vertical preset.
+  const emptyDraft = {
+    sku: "",
+    name: "",
+    priceRupees: "",
+    weightGrams: "",
+    stockQuantity: "0",
+    gstRateBp: String(taxDefaults.rateBp),
+    hsnCode: taxDefaults.code ?? "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
   const [adding, setAdding] = useState(false);
 
   function patchRow(id: string, next: Partial<Row>): void {
@@ -69,6 +92,8 @@ export function VariantEditor({
           pricePaise: Math.round(Number(row.priceRupees) * 100),
           weightGrams: Number(row.weightGrams),
           stockQuantity: Number(row.stockQuantity),
+          gstRateBp: row.gstRateBp,
+          hsnCode: row.hsnCode.trim(),
           isActive: row.isActive,
           isDefault: row.makeDefault || row.isDefault,
         }),
@@ -100,6 +125,8 @@ export function VariantEditor({
           pricePaise: Math.round(Number(draft.priceRupees) * 100),
           weightGrams: Number(draft.weightGrams),
           stockQuantity: Number(draft.stockQuantity || "0"),
+          gstRateBp: Number(draft.gstRateBp),
+          hsnCode: draft.hsnCode.trim(),
           isActive: true,
         }),
       });
@@ -108,7 +135,7 @@ export function VariantEditor({
         setMsg({ kind: "err", text: data.error?.message ?? "Could not add the variant." });
         return;
       }
-      setDraft({ sku: "", name: "", priceRupees: "", weightGrams: "", stockQuantity: "0" });
+      setDraft(emptyDraft);
       setMsg({ kind: "ok", text: "Variant added." });
       router.refresh();
     } catch {
@@ -161,6 +188,22 @@ export function VariantEditor({
                 <label className={LABEL}>Stock</label>
                 <input type="number" className={INPUT} value={r.stockQuantity} disabled={!canWrite}
                   onChange={(e) => patchRow(r.id, { stockQuantity: Number(e.target.value) || 0 })} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className={LABEL}>GST</label>
+                <select className={INPUT} value={r.gstRateBp} disabled={!canWrite}
+                  onChange={(e) => patchRow(r.id, { gstRateBp: Number(e.target.value) })}>
+                  {GST_OPTIONS.map((o) => <option key={o.bp} value={o.bp}>{o.label}</option>)}
+                  {!GST_RATE_PRESETS_BP.includes(r.gstRateBp as (typeof GST_RATE_PRESETS_BP)[number]) ? (
+                    <option value={r.gstRateBp}>{r.gstRateBp / 100}%</option>
+                  ) : null}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className={LABEL}>HSN</label>
+                <input className={INPUT} value={r.hsnCode} disabled={!canWrite} inputMode="numeric"
+                  onChange={(e) => patchRow(r.id, { hsnCode: e.target.value })} />
               </div>
 
               <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-12">
@@ -230,6 +273,18 @@ export function VariantEditor({
             <label className={LABEL}>Stock</label>
             <input type="number" className={INPUT} value={draft.stockQuantity}
               onChange={(e) => setDraft((d) => ({ ...d, stockQuantity: e.target.value }))} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={LABEL}>GST</label>
+            <select className={INPUT} value={draft.gstRateBp}
+              onChange={(e) => setDraft((d) => ({ ...d, gstRateBp: e.target.value }))}>
+              {GST_OPTIONS.map((o) => <option key={o.bp} value={o.bp}>{o.label}</option>)}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label className={LABEL}>HSN</label>
+            <input className={INPUT} value={draft.hsnCode} inputMode="numeric" placeholder={taxDefaults.code ?? "e.g. 1905"}
+              onChange={(e) => setDraft((d) => ({ ...d, hsnCode: e.target.value }))} />
           </div>
           <div className="col-span-2 sm:col-span-12">
             <button type="button" disabled={adding}

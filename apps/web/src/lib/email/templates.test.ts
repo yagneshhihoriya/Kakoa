@@ -37,6 +37,7 @@ const ID: EmailIdentityModel = {
   legalAddress: '1 Market Road, Ahmedabad 380001, Gujarat, India',
   fssaiLicense: '10025023000841',
   footerTagline: 'Baked fresh weekly',
+  unitNoun: { one: 'loaf', many: 'loaves' },
   theme: { ink: '#111111', cream: '#fffdf7', muted: '#777777', line: '#dddddd', card: '#ffffff' },
 };
 

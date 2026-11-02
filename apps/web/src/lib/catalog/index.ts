@@ -9,7 +9,8 @@ export {
   getProductBySlug,
   getProducts,
   getPublishedProductSlugs,
+  getStorefrontSettings,
   revalidateCatalog,
   searchProducts,
 } from './queries';
-export type { CatalogSettings, PublishedProductSlug } from './queries';
+export type { CatalogSettings, PublishedProductSlug, StorefrontSettings } from './queries';

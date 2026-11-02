@@ -5,7 +5,7 @@ import type { ProductDetailView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { StarRating } from "@kakoa/ui";
 import { absoluteUrl } from "@/lib/seo/site";
-import { brand } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
 import {
   getCatalogSettings,
   getCategories,
@@ -187,7 +187,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   /** "What you'll get" — admin copy (attributes.whatYoullGet) or a graceful default. */
   const whatYoullGet =
     product.whatYoullGet ??
-    "Freshly made in small batches and packed ready to enjoy or gift. Every order ships cold and insulated so it arrives in perfect condition.";
+    (vocabulary.coldChain
+      ? "Freshly made in small batches and packed ready to enjoy or gift. Every order ships cold and insulated so it arrives in perfect condition."
+      : "Freshly made in small batches and packed ready to enjoy or gift. Every order is packed securely so it arrives in perfect condition.");
 
   /** FBT bundle math — default-variant price + the smallest size of each. */
   const defaultVariant =

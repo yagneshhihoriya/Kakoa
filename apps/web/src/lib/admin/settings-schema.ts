@@ -31,7 +31,9 @@ export type SettingType =
   | 'email'
   | 'int-paise'
   | 'int'
-  | 'bool';
+  | 'bool'
+  /** A product/category slug, or blank for "unset". */
+  | 'slug';
 
 export interface SettingField {
   key: string;
@@ -60,6 +62,7 @@ export const SETTING_GROUPS = [
   'Fees & shipping',
   'Payments',
   'Support',
+  'Storefront',
 ] as const;
 export type SettingGroup = (typeof SETTING_GROUPS)[number];
 
@@ -237,6 +240,15 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     hint: 'e.g. Mon–Sat, 10:00–18:00 IST — shown on the Contact page.',
     default: DEFAULTS.support_hours,
   },
+  // ── Storefront (namespaced keys; the SettingsReader resolves `ns.key` first) ─
+  {
+    key: 'storefront.home_hero_product_slug',
+    group: 'Storefront',
+    label: 'Home hero product (slug)',
+    type: 'slug',
+    hint: 'The product the home hero spotlights, by URL slug. Blank = the first featured product.',
+    default: '',
+  },
 ];
 
 export const CATALOG_BY_KEY: ReadonlyMap<string, SettingField> = new Map(
@@ -275,6 +287,8 @@ const PINCODE_RE = /^[1-9][0-9]{5}$/;
 const FSSAI_RE = /^[0-9]{14}$/;
 const PHONE_RE = /^\+91[6-9][0-9]{9}$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+/** Matches the DB CHECK `slug ~ '^[a-z0-9-]+$'` (max 120). */
+const SLUG_RE = /^[a-z0-9-]{1,120}$/;
 
 export type SettingsPatchResult =
   | { ok: true; value: Record<string, JsonValue> }
@@ -398,6 +412,15 @@ export function validateSettingsPatch(patch: unknown): SettingsPatchResult {
         const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
         if (s.length === 0 || s.length > 254 || !EMAIL_RE.test(s)) {
           return { ok: false, message: 'Enter a valid support email.' };
+        }
+        out[key] = s;
+        break;
+      }
+      case 'slug': {
+        // Blank is a valid "unset"; anything else must be a well-formed slug.
+        const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+        if (s !== '' && !SLUG_RE.test(s)) {
+          return { ok: false, message: `${field.label} must be a URL slug (lowercase letters, digits, dashes).` };
         }
         out[key] = s;
         break;

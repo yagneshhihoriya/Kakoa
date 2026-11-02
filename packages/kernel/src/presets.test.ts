@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { CAPABILITY_KEYS, type Capability } from './capabilities';
-import { PRESETS, PRESET_KEYS, getPreset, resolvePreset, type PresetKey } from './presets';
+import {
+  GENERAL_PRESENTATION,
+  GENERAL_VOCABULARY,
+  PRESETS,
+  PRESET_KEYS,
+  getPreset,
+  resolvePreset,
+  type PresetKey,
+} from './presets';
 
 describe('vertical presets', () => {
   it('getPreset returns the requested preset', () => {
@@ -42,6 +50,63 @@ describe('vertical presets', () => {
     expect(general.capabilities).not.toContain('veg-mark');
     expect(general.capabilities).not.toContain('perishable');
     expect(general.attributeSchema).toHaveLength(0);
+  });
+
+  it('every preset carries a complete storefront vocabulary and a swatch palette', () => {
+    for (const preset of Object.values(PRESETS)) {
+      const { storefront, presentation } = preset;
+      expect(storefront.noun.one).not.toBe('');
+      expect(storefront.noun.many).not.toBe('');
+      expect(storefront.noun.collective).not.toBe('');
+      expect(storefront.unitNoun.one).not.toBe('');
+      expect(storefront.searchPlaceholder).not.toBe('');
+      expect(typeof storefront.coldChain).toBe('boolean');
+      // Every fixed return_reason enum value has a label.
+      for (const reason of ['damaged_or_melted', 'wrong_item', 'quality_issue', 'changed_mind', 'other']) {
+        expect(storefront.returnReasonLabels[reason]).toBeTruthy();
+      }
+      for (const dim of Object.values(storefront.defaultParcelCm)) expect(dim).toBeGreaterThan(0);
+      expect(Object.keys(presentation.swatches).length).toBeGreaterThan(0);
+      expect(presentation.swatches[presentation.defaultSwatch]).toBeDefined();
+      for (const swatch of Object.values(presentation.swatches)) {
+        expect(swatch.from).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(swatch.to).toMatch(/^#[0-9a-f]{6}$/i);
+      }
+    }
+  });
+
+  it('the general fallback is brand- and vertical-neutral', () => {
+    expect(getPreset('nope' as PresetKey).storefront).toBe(GENERAL_VOCABULARY);
+    expect(getPreset('nope' as PresetKey).presentation).toBe(GENERAL_PRESENTATION);
+    expect(GENERAL_VOCABULARY.coldChain).toBe(false);
+    // Values only — the fixed enum KEY `damaged_or_melted` is allowed to exist.
+    const { returnReasonLabels, ...rest } = GENERAL_VOCABULARY;
+    expect(JSON.stringify([rest, Object.values(returnReasonLabels)])).not.toMatch(/chocolate|cocoa|melt/i);
+  });
+
+  it('chocolate keeps the cold chain and its tone studies; snacks is shelf-stable', () => {
+    const choc = PRESETS.chocolate;
+    expect(choc.storefront.coldChain).toBe(true);
+    expect(choc.storefront.noun).toEqual({ one: 'chocolate', many: 'chocolates', collective: 'chocolate' });
+    expect(choc.storefront.unitNoun).toEqual({ one: 'piece', many: 'pieces' });
+    expect(choc.storefront.returnReasonLabels.damaged_or_melted).toBe('Damaged or melted');
+    expect(Object.keys(choc.presentation.swatches)).toEqual(['dark', 'milk', 'ruby', 'caramel', 'white', 'matcha']);
+    expect(choc.presentation.defaultSwatch).toBe('dark');
+
+    const snacks = PRESETS.snacks;
+    expect(snacks.capabilities).not.toContain('cold-chain');
+    expect(snacks.capabilities).toEqual(
+      expect.arrayContaining(['variants', 'perishable', 'veg-mark', 'allergens', 'weight-shipping', 'serviceability', 'tax-inclusive', 'hsn-codes']),
+    );
+    expect(snacks.storefront.coldChain).toBe(false);
+    expect(snacks.storefront.returnReasonLabels.damaged_or_melted).not.toMatch(/melt/i);
+    expect(snacks.units).toBe('weight');
+    expect(snacks.taxDefaults).toEqual({ category: 'Khakhra / bakery products', rateBp: 0, codeSystem: 'HSN', code: '1905' });
+    const keys = snacks.attributeSchema.map((a) => a.key);
+    for (const k of ['pack_size', 'flavour', 'spice_level', 'region', 'serving_suggestion', 'whatYoullGet', 'shipping']) {
+      expect(keys).toContain(k);
+    }
+    expect(snacks.categoryTaxonomy?.length).toBe(4);
   });
 });
 
@@ -111,6 +176,38 @@ describe('resolvePreset', () => {
     expect(tone?.options).toEqual(['matte', 'gloss']);
     expect(tone?.showOnPdp).toBe(base[toneIndex]?.showOnPdp); // untouched field survives
     expect(resolved.attributeSchema.at(-1)?.key).toBe('spice_level');
+  });
+
+  it('merges storefront vocabulary field by field and swatches by key', () => {
+    const resolved = resolvePreset({
+      vertical: 'snacks',
+      presetOverrides: {
+        storefront: {
+          noun: { one: 'khakhra', many: 'khakhras', collective: 'khakhra' },
+          returnReasonLabels: { damaged_or_melted: 'Arrived broken' },
+          coldChain: undefined,
+        },
+        presentation: { swatches: { saffron: { from: '#f4a300', to: '#9a5f00' } }, defaultSwatch: 'saffron' },
+      },
+    });
+    const base = PRESETS.snacks;
+    expect(resolved.storefront.noun.one).toBe('khakhra');
+    expect(resolved.storefront.unitNoun).toBe(base.storefront.unitNoun); // untouched
+    expect(resolved.storefront.coldChain).toBe(false); // undefined never blanks a field
+    expect(resolved.storefront.searchPlaceholder).toBe(base.storefront.searchPlaceholder);
+    expect(resolved.storefront.returnReasonLabels).toEqual({
+      ...base.storefront.returnReasonLabels,
+      damaged_or_melted: 'Arrived broken',
+    });
+    expect(Object.keys(resolved.presentation.swatches)).toEqual([
+      ...Object.keys(base.presentation.swatches),
+      'saffron',
+    ]);
+    expect(resolved.presentation.defaultSwatch).toBe('saffron');
+    // Nothing to override → the base blocks are returned by reference.
+    const untouched = resolvePreset({ vertical: 'snacks', presetOverrides: { label: 'x' } });
+    expect(untouched.storefront).toBe(base.storefront);
+    expect(untouched.presentation).toBe(base.presentation);
   });
 
   it('does not mutate the shipped preset', () => {

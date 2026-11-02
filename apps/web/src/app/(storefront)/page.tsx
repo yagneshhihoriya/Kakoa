@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import type { ProductTone } from "@kakoa/core";
-import { PRODUCT_TONES } from "@kakoa/core";
+import type { ProductCardView } from "@kakoa/core";
 import { EmptyState } from "@kakoa/ui";
 import { assets } from "@brand/assets";
-import { getCategories, getProducts } from "@/lib/catalog/queries";
+import { SWATCH_KEYS, toTone, vocabulary } from "@/lib/brand";
+import {
+  getCategories,
+  getProductBySlug,
+  getProducts,
+  getStorefrontSettings,
+} from "@/lib/catalog/queries";
 import { getDefaultVariantIds } from "./shop/default-variants";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ChocoScene } from "@/components/home/ChocoScene";
 import { PhotoSlot } from "@/components/home/PhotoSlot";
@@ -15,25 +21,22 @@ import { SectionReveal } from "@/components/home/SectionReveal";
 /** ISR — 5-min time fallback; tag-based revalidation purges sooner. */
 export const revalidate = 300;
 
-/** Seeded category slugs → placeholder tones (prototype art direction). */
-const CATEGORY_TONES: Record<string, ProductTone> = {
-  bars: "dark",
-  pralines: "milk",
-  signature: "ruby",
-  gifts: "caramel",
-};
-
-function categoryTone(slug: string, index: number): ProductTone {
-  return (
-    CATEGORY_TONES[slug] ?? PRODUCT_TONES[index % PRODUCT_TONES.length] ?? "dark"
-  );
+/**
+ * Collection tiles without an image (`categories.image_url`) fall back to the
+ * preset's swatches by position — the chocolate palette is ordered so the
+ * seeded collections keep their prototype tones.
+ */
+function categorySwatch(index: number): string {
+  return toTone(SWATCH_KEYS[index % Math.max(1, SWATCH_KEYS.length)]);
 }
 
 /** Trust triad — a slim reassurance band shown high on the page. Icons are
- * inline thin-stroke SVGs (no imagery); copy stays presentational. */
+ * inline thin-stroke SVGs (no imagery); copy stays presentational. Items
+ * flagged `coldChain` render only where the vertical ships cold. */
 const TRUST_SIGNALS = [
   {
     key: "cool",
+    coldChain: true,
     title: "Kept cool, guaranteed",
     body: "Insulated, temperature-controlled packing — or we make it right.",
   },
@@ -95,8 +98,9 @@ const MARQUEE_WORDS = [
   "Small-batch",
   "Ethically sourced",
   "Hand-finished",
-  "Ships cold & safe",
 ] as const;
+/** Appended to the marquee only where the vertical ships cold. */
+const COLD_CHAIN_MARQUEE_WORDS = ["Ships cold & safe"] as const;
 
 /** Bean-to-bar process — the provenance narrative, four movements. */
 const PROCESS = [
@@ -138,10 +142,23 @@ const GIFT_FEATURES = [
   },
   {
     key: "cold" as const,
+    coldChain: true,
     title: "Ships cold, across India",
-    body: "Temperature-controlled packing keeps every piece perfect — door to door.",
+    body: `Temperature-controlled packing keeps every ${vocabulary.unitNoun.one} perfect — door to door.`,
   },
 ];
+
+/** Drop the items flagged `coldChain: true` unless the vertical actually ships cold. */
+function withoutColdChain<T extends object>(items: readonly T[]): T[] {
+  return items.filter(
+    (item) => vocabulary.coldChain || !("coldChain" in item && item.coldChain === true),
+  );
+}
+const trustSignals = withoutColdChain(TRUST_SIGNALS);
+const giftFeatures = withoutColdChain(GIFT_FEATURES);
+const marqueeWords: readonly string[] = vocabulary.coldChain
+  ? [...MARQUEE_WORDS, ...COLD_CHAIN_MARQUEE_WORDS]
+  : MARQUEE_WORDS;
 
 /** Thin-stroke line icons for the gifting band — decorative, brand-neutral. */
 function GiftIcon({ name }: { name: (typeof GIFT_FEATURES)[number]["key"] }): ReactNode {
@@ -210,9 +227,12 @@ function Eyebrow({
 }
 
 export default async function HomePage() {
-  const [categories, { products: featured }] = await Promise.all([
+  const [categories, { products: featured }, storefront] = await Promise.all([
     getCategories(),
     getProducts({ sort: "featured", page: 1, pageSize: 4 }),
+    getStorefrontSettings().catch((): { homeHeroProductSlug: null } => ({
+      homeHeroProductSlug: null,
+    })),
   ]);
 
   // Per-category product counts for the category strip ("N pieces") — cheap
@@ -235,10 +255,16 @@ export default async function HomePage() {
     .map((category, index) => ({ category, count: categoryCounts[index] ?? 0 }))
     .filter((entry) => entry.count > 0);
 
-  // Floating hero chip — prototype spotlights the ruby "new this season"
-  // product; fall back to the top featured item.
-  const heroProduct =
-    featured.find((product) => product.tone === "ruby") ?? featured[0] ?? null;
+  // Hero spotlight — the product the owner picked in Settings
+  // (storefront.home_hero_product_slug), else the top featured item.
+  const heroSlug = storefront.homeHeroProductSlug;
+  const heroProduct: ProductCardView | null =
+    (heroSlug !== null
+      ? (featured.find((product) => product.slug === heroSlug) ??
+        (await getProductBySlug(heroSlug).catch(() => null)))
+      : null) ??
+    featured[0] ??
+    null;
 
   // Default variant per featured product so the card's "Add to Cart" is a real
   // one-tap add (and fires the mobile added-to-bag sheet) instead of a PDP link.
@@ -325,7 +351,7 @@ export default async function HomePage() {
         className="overflow-hidden border-y border-line bg-cream-2 py-[15px]"
       >
         <div className="kk-marquee">
-          {[...MARQUEE_WORDS, ...MARQUEE_WORDS, ...MARQUEE_WORDS].map(
+          {[...marqueeWords, ...marqueeWords, ...marqueeWords].map(
             (word, index) => (
               <span
                 key={index}
@@ -345,7 +371,7 @@ export default async function HomePage() {
         className="mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 lg:pt-[72px]"
       >
         <ul className="grid gap-px overflow-hidden rounded-[22px] border border-line bg-line shadow-soft sm:grid-cols-3">
-          {TRUST_SIGNALS.map((signal) => (
+          {trustSignals.map((signal) => (
             <li
               key={signal.key}
               className="flex items-start gap-3.5 bg-cream-2 px-6 py-6 sm:px-7 sm:py-7"
@@ -391,7 +417,7 @@ export default async function HomePage() {
               href="/shop"
               className={`hidden items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold text-ink transition-[gap] hover:gap-2.5 sm:flex ${FOCUS_RING}`}
             >
-              All chocolate <span aria-hidden="true">→</span>
+              All {vocabulary.noun.collective} <span aria-hidden="true">→</span>
             </Link>
           </div>
           <ul className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-[18px]">
@@ -403,11 +429,23 @@ export default async function HomePage() {
                 >
                   <div className="overflow-hidden">
                     <div className="transition-transform duration-[700ms] ease-brand group-hover:scale-[1.06] motion-reduce:group-hover:scale-100">
-                      <ChocoPlaceholder
-                        tone={categoryTone(category.slug, index)}
-                        ratio="4 / 5"
-                        className="rounded-none!"
-                      />
+                      {category.imageUrl !== null ? (
+                        <div className="relative aspect-[4/5] w-full overflow-hidden">
+                          <Image
+                            src={category.imageUrl}
+                            alt=""
+                            fill
+                            sizes="(max-width: 1024px) 50vw, 25vw"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <ProductPlaceholder
+                          tone={categorySwatch(index)}
+                          ratio="4 / 5"
+                          className="rounded-none!"
+                        />
+                      )}
                     </div>
                   </div>
                   <div
@@ -420,7 +458,7 @@ export default async function HomePage() {
                         {category.name}
                       </div>
                       <div className="font-mono text-[11px] font-medium tracking-[0.1em] opacity-85">
-                        {count} {count === 1 ? "piece" : "pieces"}
+                        {count} {count === 1 ? vocabulary.unitNoun.one : vocabulary.unitNoun.many}
                       </div>
                     </div>
                     <span
@@ -476,7 +514,7 @@ export default async function HomePage() {
         ) : (
           <EmptyState
             title="The first batch is still tempering"
-            description="New chocolates land here soon — check back shortly."
+            description={`New ${vocabulary.noun.many} land here soon — check back shortly.`}
             cta={{ label: "Browse the shop", href: "/shop" }}
           />
         )}
@@ -599,7 +637,7 @@ export default async function HomePage() {
               </Link>
             </div>
             <ul className="grid gap-3.5">
-              {GIFT_FEATURES.map((feature) => (
+              {giftFeatures.map((feature) => (
                 <li
                   key={feature.key}
                   className="flex items-start gap-4 rounded-[16px] border border-line-soft bg-cream/70 px-5 py-4"

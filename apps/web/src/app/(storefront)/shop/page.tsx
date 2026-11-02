@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ProductListInput, ProductSort } from "@kakoa/core";
 import { productListInputSchema } from "@kakoa/core";
 import { EmptyState, cx } from "@kakoa/ui";
+import { vocabulary } from "@/lib/brand";
 import { getCategories, getProducts } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { SortDropdown } from "@/components/catalog/SortDropdown";
@@ -213,7 +214,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </h1>
           <p className="max-w-[52ch] font-body text-lead text-ink-soft">
             {activeCategory?.description ??
-              `${total} chocolate${total === 1 ? "" : "s"}, all made by hand this week.`}
+              `${total} ${total === 1 ? vocabulary.noun.one : vocabulary.noun.many}, all made by hand this week.`}
           </p>
         </div>
         <SortDropdown value={input.sort} />
@@ -256,8 +257,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         aria-live="polite"
       >
         {total === 0
-          ? "0 chocolates"
-          : `Showing ${rangeStart}–${rangeEnd} of ${total} chocolate${total === 1 ? "" : "s"}`}
+          ? `0 ${vocabulary.noun.many}`
+          : `Showing ${rangeStart}–${rangeEnd} of ${total} ${total === 1 ? vocabulary.noun.one : vocabulary.noun.many}`}
         {input.q !== undefined ? ` for “${input.q}”` : ""}
       </p>
 
@@ -276,11 +277,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </ul>
       ) : (
         <EmptyState
-          title="No chocolates match"
+          title={`No ${vocabulary.noun.many} match`}
           description={
             hasFilters
               ? "Try clearing your filters — the good stuff is one tap away."
-              : "New chocolates land here soon — check back shortly."
+              : `New ${vocabulary.noun.many} land here soon — check back shortly.`
           }
           cta={{ label: "Reset filters", href: "/shop" }}
         />

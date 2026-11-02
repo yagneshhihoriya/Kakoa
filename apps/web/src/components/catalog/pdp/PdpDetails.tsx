@@ -3,6 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
+import { presetHas, vocabulary } from "@/lib/brand";
 
 export interface PdpReview {
   id: string;
@@ -242,11 +243,16 @@ export function PdpDetails({
           <div className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-espresso uppercase">
             Product information
           </div>
-          <DetailRow
-            label={isVeg ? "Vegetarian" : "Non-vegetarian"}
-            value="MRP inclusive of all taxes"
-            icon={<VegMark isVeg={isVeg} />}
-          />
+          {/* FSSAI veg / non-veg mark only where the vertical declares it. */}
+          {presetHas("veg-mark") ? (
+            <DetailRow
+              label={isVeg ? "Vegetarian" : "Non-vegetarian"}
+              value="MRP inclusive of all taxes"
+              icon={<VegMark isVeg={isVeg} />}
+            />
+          ) : (
+            <DetailRow label="Pricing" value="MRP inclusive of all taxes" />
+          )}
           <DetailRow label="Net quantity" value={netQuantities} />
           <DetailRow label="Country of origin" value={countryOfOrigin} />
           {shelfLifeDays !== null ? (
@@ -274,11 +280,20 @@ export function PdpDetails({
           </p>
         ) : (
           <ul className="max-w-[62ch] space-y-2.5 font-body text-[15px] leading-[1.6] text-ink-soft">
-            <li>Ships cold &amp; insulated — packed with ice packs so every piece arrives perfect.</li>
+            {vocabulary.coldChain ? (
+              <li>
+                Ships cold &amp; insulated — packed with ice packs so every{" "}
+                {vocabulary.unitNoun.one} arrives perfect.
+              </li>
+            ) : (
+              <li>Packed securely so every {vocabulary.unitNoun.one} arrives in perfect condition.</li>
+            )}
             <li>
               {freeShippingThresholdPaise !== null
                 ? `Free shipping on orders over ${formatPaise(freeShippingThresholdPaise)}.`
-                : "Flat-rate insulated delivery across India."}
+                : vocabulary.coldChain
+                  ? "Flat-rate insulated delivery across India."
+                  : "Flat-rate delivery across India."}
             </li>
             <li>Dispatched in 1–2 business days.</li>
             <li>

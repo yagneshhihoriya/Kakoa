@@ -8,7 +8,12 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { formatPaise } from "@kakoa/core";
 import type { AddressSnapshot } from "@kakoa/db";
 import type { InvoiceModel } from "@/lib/invoice/invoice-data";
-import { brand } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
+
+/** Returns caveat — the vertical decides whether "temperature-sensitive" applies. */
+const RETURNS_CAVEAT = vocabulary.coldChain
+  ? "perishable/temperature-sensitive items may be non-returnable."
+  : "opened food items may be non-returnable.";
 
 const BRAND_NAME = brand.profile.name;
 
@@ -193,7 +198,7 @@ export function InvoicePdf({ model: m }: { model: InvoiceModel }) {
           <Text style={{ color: INK, fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 }}>Thank you for shopping with {BRAND_NAME}</Text>
           <Text>
             This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds follow our published
-            policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.
+            policy; {RETURNS_CAVEAT} For help, contact {m.seller.supportEmail}.
           </Text>
           <Text style={{ marginTop: 3 }}>Registered under GSTIN {m.seller.gstin}. Amounts are in Indian Rupees.</Text>
         </View>

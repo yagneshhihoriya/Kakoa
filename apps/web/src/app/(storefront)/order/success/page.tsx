@@ -16,6 +16,7 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { formatPaise, formatIST, type ApiResult } from "@kakoa/core";
+import { vocabulary } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "Order confirmed",
@@ -190,7 +191,7 @@ export default async function OrderSuccessPage({
       <p className="mx-auto mb-2 max-w-[440px] font-body text-[16px] leading-relaxed text-espresso">
         {isCod
           ? "We'll call to confirm your Cash on Delivery order before we hand-pack it."
-          : "Your chocolates are being hand-packed. A confirmation is on its way to your inbox."}
+          : `Your ${vocabulary.noun.many} are being hand-packed. A confirmation is on its way to your inbox.`}
       </p>
 
       {orderNumber !== "" ? (

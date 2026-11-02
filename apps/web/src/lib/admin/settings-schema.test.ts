@@ -16,13 +16,18 @@ import {
 } from './settings-schema';
 
 describe('catalog', () => {
-  it('has all 18 keys; policy keys carry a brand default, legal identity has none', () => {
-    expect(SETTINGS_KEYS).toHaveLength(18);
+  it('has all 19 keys; policy keys carry a brand default, legal identity has none', () => {
+    expect(SETTINGS_KEYS).toHaveLength(19);
     for (const key of SETTINGS_KEYS) {
       if (REQUIRED_SETTINGS_KEYS.includes(key)) expect(SETTINGS_DEFAULTS[key]).toBeUndefined();
       else expect(SETTINGS_DEFAULTS[key]).toBeDefined();
     }
-    expect(Object.keys(SETTINGS_DEFAULTS)).toHaveLength(12);
+    expect(Object.keys(SETTINGS_DEFAULTS)).toHaveLength(13);
+  });
+
+  it('storefront keys are namespaced so the SettingsReader resolves them first', () => {
+    expect(SETTINGS_KEYS).toContain('storefront.home_hero_product_slug');
+    expect(SETTINGS_DEFAULTS['storefront.home_hero_product_slug']).toBe('');
   });
 
   it('the required (no-default) keys are exactly the legal identity', () => {
@@ -40,6 +45,23 @@ describe('catalog', () => {
     expect(SETTINGS_DEFAULTS.shipping_fee_standard_paise).toBe(4900);
     expect(typeof SETTINGS_DEFAULTS.cod_enabled).toBe('boolean');
     expect(typeof SETTINGS_DEFAULTS.support_email).toBe('string');
+  });
+});
+
+describe('slug', () => {
+  it('accepts blank (unset) and a well-formed slug, lowercasing on the way in', () => {
+    const blank = validateSettingsPatch({ 'storefront.home_hero_product_slug': '  ' });
+    expect(blank.ok).toBe(true);
+    if (blank.ok) expect(blank.value['storefront.home_hero_product_slug']).toBe('');
+    const r = validateSettingsPatch({ 'storefront.home_hero_product_slug': ' Midnight-72-Dark ' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value['storefront.home_hero_product_slug']).toBe('midnight-72-dark');
+  });
+
+  it('rejects anything that is not a slug', () => {
+    expect(validateSettingsPatch({ 'storefront.home_hero_product_slug': 'has space' }).ok).toBe(false);
+    expect(validateSettingsPatch({ 'storefront.home_hero_product_slug': '/product/x' }).ok).toBe(false);
+    expect(validateSettingsPatch({ 'storefront.home_hero_product_slug': 'x'.repeat(121) }).ok).toBe(false);
   });
 });
 

@@ -26,6 +26,7 @@ export async function PATCH(
   const b = body as {
     name?: unknown;
     description?: unknown;
+    imageUrl?: unknown;
     position?: unknown;
     active?: unknown;
   };
@@ -38,6 +39,8 @@ export async function PATCH(
     {
       name: b.name,
       description: typeof b.description === 'string' ? b.description : undefined,
+      // `null` clears the tile image; a string sets it; absent leaves it alone.
+      imageUrl: typeof b.imageUrl === 'string' || b.imageUrl === null ? b.imageUrl : undefined,
       position: typeof b.position === 'number' ? b.position : undefined,
       active: typeof b.active === 'boolean' ? b.active : undefined,
     },

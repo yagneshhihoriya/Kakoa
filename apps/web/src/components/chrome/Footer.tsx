@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { getCompanyInfo, getFssaiLicense } from "@/lib/catalog/queries";
-import { brand } from "@/lib/brand";
+import { brand, vocabulary } from "@/lib/brand";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { BrandLockup } from "./BrandMark";
 
@@ -16,7 +16,7 @@ interface FooterLink {
 }
 
 const SHOP_LINKS: FooterLink[] = [
-  { href: "/shop" as Route, label: "All chocolate" },
+  { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}` },
   { href: "/shop?category=bars" as Route, label: "Bars" },
   { href: "/shop?category=pralines" as Route, label: "Pralines" },
   { href: "/shop?category=signature" as Route, label: "Signature" },

@@ -29,20 +29,13 @@ export default function ProductLoading() {
           <Skeleton variant="card" className="order-1 aspect-square w-full md:order-none" />
         </div>
 
-        {/* Right column: eyebrow, serif name, stars, blurb, notes, panel */}
+        {/* Right column: eyebrow, serif name, stars, blurb, panel */}
         <div>
           <Skeleton variant="text" width={130} className="mb-3" />
           <Skeleton variant="line" width="75%" height={46} className="mb-3.5" />
           <Skeleton variant="text" width={180} className="mb-5" />
           <Skeleton variant="text" width="92%" className="mb-2" />
           <Skeleton variant="text" width="70%" className="mb-6" />
-
-          {/* Tasting-note chips */}
-          <div className="mb-[26px] flex gap-2">
-            <Skeleton variant="circle" width={92} height={33} />
-            <Skeleton variant="circle" width={80} height={33} />
-            <Skeleton variant="circle" width={104} height={33} />
-          </div>
 
           {/* Price row */}
           <Skeleton variant="line" width={150} height={30} className="mb-2" />

@@ -9,7 +9,7 @@
  * never another brand's registered details.
  */
 import { resolveLegalIdentity } from '@/lib/admin/legal-identity';
-import { brand } from '@/lib/brand';
+import { brand, vocabulary } from '@/lib/brand';
 import type { EmailIdentityModel } from './templates';
 
 /** jsonb value → trimmed non-empty string, else `null`. */
@@ -35,6 +35,7 @@ export function buildEmailIdentity(rows: ReadonlyMap<string, unknown>): EmailIde
     legalAddress: legal.configured ? legal.address : null,
     fssaiLicense: legal.configured ? legal.fssai : null,
     footerTagline: email.footerTagline,
+    unitNoun: { one: vocabulary.unitNoun.one, many: vocabulary.unitNoun.many },
     theme: email.theme,
   };
 }

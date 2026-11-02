@@ -45,6 +45,27 @@ const categorySeedSchema = z.object({
   description: z.string(),
 });
 
+const nounFormsSchema = z.object({ one: nonEmpty, many: nonEmpty, collective: nonEmpty });
+
+const storefrontVocabularySchema = z.object({
+  noun: nounFormsSchema,
+  unitNoun: nounFormsSchema.pick({ one: true, many: true }),
+  coldChain: z.boolean(),
+  searchPlaceholder: nonEmpty,
+  popularSearches: z.array(nonEmpty).readonly(),
+  returnReasonLabels: z.record(z.string(), nonEmpty),
+  defaultParcelCm: z.object({
+    length: z.number().positive(),
+    breadth: z.number().positive(),
+    height: z.number().positive(),
+  }),
+});
+
+const presentationSchema = z.object({
+  swatches: z.record(z.string(), z.object({ from: hexColour, to: hexColour })),
+  defaultSwatch: nonEmpty,
+});
+
 export const presetOverridesSchema = z.object({
   label: nonEmpty.optional(),
   capabilities: z.array(z.enum(CAPABILITY_KEYS)).readonly().optional(),
@@ -52,6 +73,8 @@ export const presetOverridesSchema = z.object({
   taxDefaults: taxDefaultSchema.partial().optional(),
   categoryTaxonomy: z.array(categorySeedSchema).readonly().optional(),
   units: z.enum(['weight', 'volume', 'count']).optional(),
+  storefront: storefrontVocabularySchema.partial().optional(),
+  presentation: presentationSchema.partial().optional(),
 }) satisfies z.ZodType<PresetOverrides>;
 
 /* ── Navigation / social ───────────────────────────────────────────────── */
