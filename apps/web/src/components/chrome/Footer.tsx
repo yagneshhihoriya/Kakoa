@@ -45,7 +45,7 @@ const LEGAL_LINKS: FooterLink[] = [
 
 /**
  * Global storefront footer — styled to match the Valrhona reference 1:1:
- * flat #683126 field, #FCF5E8 text, Poppins (via --font-footer), underlined
+ * flat `field` band with `field-ink` text, Poppins (via --font-ui), underlined
  * links at 75% opacity that brighten on hover, square bordered email input and
  * a solid cream rectangular submit. Mobile centres the brand, socials and
  * signup, as the reference does below 750px.
@@ -73,7 +73,7 @@ export async function Footer(): Promise<ReactNode> {
 
   return (
     <footer
-      className="relative overflow-hidden bg-[#683126] text-[#FCF5E8]"
+      className="relative overflow-hidden bg-field text-field-ink"
       style={{ fontFamily: "var(--font-ui)" }}
     >
       <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8">
@@ -82,10 +82,10 @@ export async function Footer(): Promise<ReactNode> {
           {/* Brand · about · contact · social */}
           <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:flex max-[749px]:flex-col max-[749px]:items-center max-[749px]:text-center">
             <BrandLockup size="footer" />
-            <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-[#FCF5E8]">
+            <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-field-ink">
               Chocolate that tastes of somewhere.
             </p>
-            <p className="mt-2 max-w-[320px] text-[13px] leading-[19.5px] tracking-[0.4px] text-[#FCF5E8]/75">
+            <p className="mt-2 max-w-[320px] text-[13px] leading-[19.5px] tracking-[0.4px] text-field-ink/75">
               Small-batch, single-origin chocolate, roasted and hand-finished in
               our own kitchen.
             </p>
@@ -93,18 +93,18 @@ export async function Footer(): Promise<ReactNode> {
             <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic max-[749px]:items-center">
               <a
                 href={`mailto:${company.supportEmail}`}
-                className="w-fit tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                className="w-fit tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
               >
                 {company.supportEmail}
               </a>
               <a
                 href={`tel:${company.supportPhone.replace(/\s/g, "")}`}
-                className="w-fit tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                className="w-fit tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
               >
                 {company.supportPhone}
               </a>
-              <span className="mt-2 text-[13px] font-light leading-[19.5px] text-[#FCF5E8]/60">
-                <span className="block font-normal text-[#FCF5E8]/80">
+              <span className="mt-2 text-[13px] font-light leading-[19.5px] text-field-ink/60">
+                <span className="block font-normal text-field-ink/80">
                   {company.legalName}
                 </span>
                 {company.address}
@@ -133,10 +133,10 @@ export async function Footer(): Promise<ReactNode> {
 
           {/* Newsletter — inline final column */}
           <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:text-center">
-            <p className="text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase">
+            <p className="text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
               The KAKOA Club
             </p>
-            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase max-[749px]:mx-auto">
+            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase max-[749px]:mx-auto">
               15% off your first box
             </p>
             <div className="mt-4">
@@ -146,23 +146,23 @@ export async function Footer(): Promise<ReactNode> {
         </div>
 
         {/* ---- Legal bar ---- */}
-        <div className="flex flex-col gap-3 border-t border-[#FCF5E8]/15 py-6 max-[749px]:items-center max-[749px]:text-center sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light tracking-[0.4px] text-[#FCF5E8]/60 max-[749px]:justify-center">
+        <div className="flex flex-col gap-3 border-t border-field-ink/15 py-6 max-[749px]:items-center max-[749px]:text-center sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light tracking-[0.4px] text-field-ink/60 max-[749px]:justify-center">
             <span>© {year} KAKOA Chocolates. All rights reserved.</span>
             {LEGAL_LINKS.map((link) => (
               <span key={link.label} className="flex items-center gap-x-2.5">
-                <span aria-hidden="true" className="text-[#FCF5E8]/25">
+                <span aria-hidden="true" className="text-field-ink/25">
                   ·
                 </span>
                 <Link
                   href={link.href}
-                  className="tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                  className="tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
                 >
                   {link.label}
                 </Link>
               </span>
             ))}
-            <span aria-hidden="true" className="text-[#FCF5E8]/25">
+            <span aria-hidden="true" className="text-field-ink/25">
               ·
             </span>
             <span>
@@ -171,14 +171,14 @@ export async function Footer(): Promise<ReactNode> {
             </span>
             {fontAttribution !== null ? (
               <>
-                <span aria-hidden="true" className="text-[#FCF5E8]/25">
+                <span aria-hidden="true" className="text-field-ink/25">
                   ·
                 </span>
                 <a
                   href={fontAttribution.href}
                   target="_blank"
                   rel="license noopener noreferrer"
-                  className="tracking-[0.4px] text-[#FCF5E8]/60 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                  className="tracking-[0.4px] text-field-ink/60 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
                 >
                   {fontAttribution.text}
                 </a>
@@ -187,11 +187,11 @@ export async function Footer(): Promise<ReactNode> {
           </div>
 
           {/* Accepted payment methods — text, not vendor logos */}
-          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-[#FCF5E8]/55 max-[749px]:justify-center">
+          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-field-ink/55 max-[749px]:justify-center">
             {payments.map((method, i) => (
               <span key={method} className="flex items-center gap-x-2">
                 {i > 0 && (
-                  <span aria-hidden="true" className="text-[#FCF5E8]/25">
+                  <span aria-hidden="true" className="text-field-ink/25">
                     ·
                   </span>
                 )}
@@ -218,7 +218,7 @@ function FooterColumn({
 }): ReactNode {
   return (
     <nav aria-label={heading} className="max-[749px]:text-center">
-      <div className="mb-4 text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase">
+      <div className="mb-4 text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
         {heading}
       </div>
       <ul className="flex flex-col gap-1">
@@ -226,7 +226,7 @@ function FooterColumn({
           <li key={link.label}>
             <Link
               href={link.href}
-              className="inline-block w-fit py-[5px] text-[13px] font-light leading-[19.5px] tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+              className="inline-block w-fit py-[5px] text-[13px] font-light leading-[19.5px] tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
             >
               {link.label}
             </Link>
@@ -252,7 +252,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="grid h-11 w-11 place-items-center text-[#FCF5E8]/75 transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+      className="grid h-11 w-11 place-items-center text-field-ink/75 transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
     >
       {children}
     </a>

@@ -24,9 +24,10 @@ export const KAKOA = {
   locale: 'en-IN',
   availableLanguages: ['en', 'hi'],
 
-  // Cocoa / cream — manifest + <meta theme-color>.
+  // Ink / cream — <meta theme-color> and the manifest background_color. The
+  // background is the page field (`--color-cream` in the pack's theme.css).
   themeColor: '#2A1D12',
-  backgroundColor: '#FBF6EF',
+  backgroundColor: '#FEF6EB',
 
   seo: {
     description:

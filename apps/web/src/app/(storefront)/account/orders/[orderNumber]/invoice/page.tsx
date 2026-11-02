@@ -44,9 +44,9 @@ export default async function InvoicePage({
   if (!result.eligible) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="text-[20px] font-semibold text-[#2a1d12]">Invoice not available yet</h1>
+        <h1 className="text-[20px] font-semibold text-ink">Invoice not available yet</h1>
         <p className="mt-2 text-[14px] text-[#6b5844]">{result.reason}</p>
-        <a href={`/account/orders/${orderNumber}`} className="mt-4 inline-block text-[13px] font-medium text-[#8a5a34] hover:underline">
+        <a href={`/account/orders/${orderNumber}`} className="mt-4 inline-block text-[13px] font-medium text-espresso hover:underline">
           ← Back to order
         </a>
       </div>

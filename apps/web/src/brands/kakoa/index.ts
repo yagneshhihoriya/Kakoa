@@ -1,7 +1,7 @@
 import { KAKOA } from "@kakoa/brands/kakoa";
 import type { BrandPack } from "../contract";
 import { copy } from "./copy";
-import { og } from "./og";
+import { icon, og } from "./og";
 
 /**
  * The KAKOA pack. Fonts (`./fonts`), the logo mark (`./Mark`) and imagery
@@ -13,6 +13,7 @@ export const brand = {
   profile: KAKOA,
   copy,
   og,
+  icon,
   // Infini is CC BY-ND 3.0 — attribution is a licence condition, rendered in
   // the footer legal bar (see fonts.ts).
   fontAttribution: {

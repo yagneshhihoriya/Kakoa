@@ -54,6 +54,7 @@ function siteOrigin(): string {
  * One-shot celebratory confetti burst behind the success badge. Pure CSS,
  * server-rendered (no client JS): a fixed set of pieces with staggered
  * colours / offsets / delays fall once and fade. Hidden for reduced-motion.
+ * Colours are the `--color-confetti-*` tokens so the brand pack re-tints them.
  */
 const CONFETTI_PIECES: {
   left: number;
@@ -63,18 +64,18 @@ const CONFETTI_PIECES: {
   size: number;
   round: boolean;
 }[] = [
-  { left: -70, color: "#d9ac5e", delay: 0, duration: 1.5, size: 8, round: false },
-  { left: -48, color: "#7C8A4E", delay: 0.18, duration: 1.7, size: 7, round: true },
-  { left: -30, color: "#b5472f", delay: 0.06, duration: 1.4, size: 9, round: false },
-  { left: -12, color: "#E9C46A", delay: 0.28, duration: 1.8, size: 6, round: true },
-  { left: 6, color: "#8a5a34", delay: 0.12, duration: 1.55, size: 8, round: false },
-  { left: 24, color: "#7C8A4E", delay: 0.32, duration: 1.65, size: 7, round: false },
-  { left: 42, color: "#d9ac5e", delay: 0.04, duration: 1.75, size: 9, round: true },
-  { left: 60, color: "#b5472f", delay: 0.22, duration: 1.45, size: 6, round: false },
-  { left: 78, color: "#E9C46A", delay: 0.1, duration: 1.6, size: 8, round: false },
-  { left: -58, color: "#b5472f", delay: 0.4, duration: 1.85, size: 6, round: true },
-  { left: -2, color: "#d9ac5e", delay: 0.36, duration: 1.5, size: 7, round: false },
-  { left: 52, color: "#8a5a34", delay: 0.46, duration: 1.7, size: 8, round: true },
+  { left: -70, color: "var(--color-confetti-gold)", delay: 0, duration: 1.5, size: 8, round: false },
+  { left: -48, color: "var(--color-confetti-pistachio)", delay: 0.18, duration: 1.7, size: 7, round: true },
+  { left: -30, color: "var(--color-confetti-brick)", delay: 0.06, duration: 1.4, size: 9, round: false },
+  { left: -12, color: "var(--color-confetti-sun)", delay: 0.28, duration: 1.8, size: 6, round: true },
+  { left: 6, color: "var(--color-confetti-espresso)", delay: 0.12, duration: 1.55, size: 8, round: false },
+  { left: 24, color: "var(--color-confetti-pistachio)", delay: 0.32, duration: 1.65, size: 7, round: false },
+  { left: 42, color: "var(--color-confetti-gold)", delay: 0.04, duration: 1.75, size: 9, round: true },
+  { left: 60, color: "var(--color-confetti-brick)", delay: 0.22, duration: 1.45, size: 6, round: false },
+  { left: 78, color: "var(--color-confetti-sun)", delay: 0.1, duration: 1.6, size: 8, round: false },
+  { left: -58, color: "var(--color-confetti-brick)", delay: 0.4, duration: 1.85, size: 6, round: true },
+  { left: -2, color: "var(--color-confetti-gold)", delay: 0.36, duration: 1.5, size: 7, round: false },
+  { left: 52, color: "var(--color-confetti-espresso)", delay: 0.46, duration: 1.7, size: 8, round: true },
 ];
 
 function Confetti() {
@@ -153,7 +154,7 @@ export default async function OrderSuccessPage({
       {/* Success badge + one-shot confetti burst */}
       <div className="relative mx-auto mb-6 h-[84px] w-[84px]">
         <Confetti />
-        <div className="relative z-10 grid h-[84px] w-[84px] origin-center animate-[kk-badgepop_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both] place-items-center rounded-pill bg-[#7C8A4E] text-card shadow-[0_14px_34px_rgba(124,138,78,.34)] motion-reduce:animate-none">
+        <div className="relative z-10 grid h-[84px] w-[84px] origin-center animate-[kk-badgepop_0.5s_cubic-bezier(0.34,1.56,0.64,1)_both] place-items-center rounded-pill bg-pistachio text-card shadow-[0_14px_34px_color-mix(in_srgb,var(--color-pistachio)_34%,transparent)] motion-reduce:animate-none">
           <svg
             width="40"
             height="40"
@@ -176,7 +177,7 @@ export default async function OrderSuccessPage({
         </div>
       </div>
 
-      <p className="mb-3.5 font-mono text-[12px] uppercase tracking-[0.2em] text-[#8a5a34]">
+      <p className="mb-3.5 font-mono text-[12px] uppercase tracking-[0.2em] text-espresso">
         {isCod ? "Order placed" : "Order confirmed"}
       </p>
       <h1
@@ -194,16 +195,16 @@ export default async function OrderSuccessPage({
 
       {orderNumber !== "" ? (
         <p className="mb-8 font-body text-[14px] font-semibold text-ink">
-          Order <span className="text-[#8a5a34]">#{orderNumber}</span>
+          Order <span className="text-espresso">#{orderNumber}</span>
         </p>
       ) : null}
 
       {summary !== null ? (
         <div className="mb-6 rounded-[20px] border border-line bg-card p-6 text-left">
           {/* Order meta */}
-          <div className="mb-5 grid grid-cols-1 gap-[18px] border-b border-[#EADBC6] pb-5 sm:grid-cols-2">
+          <div className="mb-5 grid grid-cols-1 gap-[18px] border-b border-line pb-5 sm:grid-cols-2">
             <div>
-              <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.1em] text-[#8a5a34]">
+              <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.1em] text-espresso">
                 Items
               </p>
               <p className="font-body text-[16px] font-semibold text-ink">
@@ -212,7 +213,7 @@ export default async function OrderSuccessPage({
               </p>
             </div>
             <div>
-              <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.1em] text-[#8a5a34]">
+              <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.1em] text-espresso">
                 Payment
               </p>
               <p className="font-body text-[14.5px] leading-relaxed text-ink">
@@ -231,11 +232,11 @@ export default async function OrderSuccessPage({
             </span>
           </div>
           {safePlacedIST(summary.placedAt) !== null ? (
-            <p className="mt-2 font-body text-[12.5px] text-[#8a7a68]">
+            <p className="mt-2 font-body text-[12.5px] text-ink-muted">
               Placed {safePlacedIST(summary.placedAt)}
             </p>
           ) : null}
-          <p className="mt-1 font-body text-[12.5px] text-[#8a7a68]">
+          <p className="mt-1 font-body text-[12.5px] text-ink-muted">
             We&apos;ll email your delivery window and full order details
             shortly.
           </p>
@@ -253,13 +254,13 @@ export default async function OrderSuccessPage({
       <div className="flex flex-col justify-center gap-3 sm:flex-row">
         <Link
           href={trackHref}
-          className="rounded-pill bg-ink px-7 py-[15px] font-body text-[15px] font-bold text-card no-underline transition-colors hover:bg-[#3f2c1b]"
+          className="rounded-pill bg-ink px-7 py-[15px] font-body text-[15px] font-bold text-card no-underline transition-colors hover:bg-ink-hover"
         >
           Track my order
         </Link>
         <Link
           href="/shop"
-          className="rounded-pill border-[1.5px] border-[#E0CFB6] px-7 py-[15px] font-body text-[15px] font-bold text-ink no-underline transition-colors hover:bg-[#F3E7D5]"
+          className="rounded-pill border-[1.5px] border-line-strong px-7 py-[15px] font-body text-[15px] font-bold text-ink no-underline transition-colors hover:bg-card"
         >
           Continue shopping
         </Link>

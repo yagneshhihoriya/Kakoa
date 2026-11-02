@@ -17,7 +17,7 @@ export default function NotFound() {
             viewBox="0 0 132 112"
             fill="none"
             aria-hidden="true"
-            className="drop-shadow-[0_18px_28px_rgba(42,29,18,0.28)]"
+            className="drop-shadow-[0_18px_28px_rgb(var(--shadow-tint)_/_0.28)]"
           >
             <defs>
               <linearGradient id="kk-404-bar" x1="0" y1="0" x2="0" y2="1">
@@ -44,7 +44,7 @@ export default function NotFound() {
       </div>
 
       <div className="animate-[kk-rise_0.6s_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none">
-        <p className="mb-3 font-mono text-[12px] font-semibold uppercase tracking-[0.28em] text-[#8a5a34]">
+        <p className="mb-3 font-mono text-[12px] font-semibold uppercase tracking-[0.28em] text-espresso">
           404
         </p>
         <h1
@@ -60,13 +60,13 @@ export default function NotFound() {
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/shop"
-            className="inline-flex items-center justify-center rounded-pill bg-ink px-7 py-[14px] font-body text-[15px] font-bold text-card no-underline shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#3f2c1b] hover:shadow-md active:translate-y-0 active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none"
+            className="inline-flex items-center justify-center rounded-pill bg-ink px-7 py-[14px] font-body text-[15px] font-bold text-card no-underline shadow-sm transition-all hover:-translate-y-0.5 hover:bg-ink-hover hover:shadow-md active:translate-y-0 active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none"
           >
             Explore the collection
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center rounded-pill border-[1.5px] border-[#E0CFB6] px-7 py-[14px] font-body text-[15px] font-bold text-ink no-underline transition-all hover:-translate-y-0.5 hover:bg-[#F3E7D5] active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
+            className="inline-flex items-center justify-center rounded-pill border-[1.5px] border-line-strong px-7 py-[14px] font-body text-[15px] font-bold text-ink no-underline transition-all hover:-translate-y-0.5 hover:bg-card active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
           >
             Back home
           </Link>

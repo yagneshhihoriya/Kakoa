@@ -35,7 +35,7 @@ export function BackToTop(): ReactNode {
         })
       }
       className={
-        "fixed bottom-5 right-5 z-40 grid h-11 w-11 place-items-center rounded-pill bg-ink text-cream shadow-[0_10px_28px_-6px_rgba(42,29,18,0.5)] transition-all duration-300 ease-brand hover:-translate-y-0.5 hover:bg-[#3f2c1b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream motion-reduce:transition-none " +
+        "fixed bottom-5 right-5 z-40 grid h-11 w-11 place-items-center rounded-pill bg-ink text-cream shadow-[0_10px_28px_-6px_rgb(var(--shadow-tint)_/_0.5)] transition-all duration-300 ease-brand hover:-translate-y-0.5 hover:bg-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream motion-reduce:transition-none " +
         (visible
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-3 opacity-0")

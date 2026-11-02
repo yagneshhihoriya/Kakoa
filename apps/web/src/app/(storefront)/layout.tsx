@@ -41,16 +41,16 @@ export default function StorefrontLayout({
 
               {/* ANNOUNCEMENT (prototype ribbon; free-ship copy kept price-free —
                   the threshold is data-driven and rendered inside the cart). */}
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-[#683126] px-3 py-2 text-center text-[12px] font-medium leading-tight tracking-[1.2px] text-[#FCF5E8] sm:px-4"
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-field px-3 py-2 text-center text-[12px] font-medium leading-tight tracking-[1.2px] text-field-ink sm:px-4"
                 style={{ fontFamily: "var(--font-ui)" }}>
                 <span>Complimentary shipping on qualifying orders</span>
-                <span aria-hidden="true" className="text-[#FCF5E8]/45 max-[680px]:hidden">
+                <span aria-hidden="true" className="text-field-ink/45 max-[680px]:hidden">
                   ✦
                 </span>
                 <span className="max-[680px]:hidden">
                   Hand-made in small batches
                 </span>
-                <span aria-hidden="true" className="text-[#FCF5E8]/45 max-[680px]:hidden">
+                <span aria-hidden="true" className="text-field-ink/45 max-[680px]:hidden">
                   ✦
                 </span>
                 <span className="max-[680px]:hidden">Ships cold &amp; safe</span>

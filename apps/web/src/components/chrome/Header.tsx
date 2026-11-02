@@ -53,7 +53,7 @@ const MOBILE_SECONDARY = [
 ] as const;
 
 const ICON_BUTTON_CLASSES = cx(
-  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-[#683126]",
+  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field",
   FOCUS_RING,
 );
 
@@ -311,7 +311,7 @@ export function Header(): ReactNode {
       aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
       onClick={openCart}
       className={cx(
-        "relative flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-[#683126]",
+        "relative flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field",
         FOCUS_RING,
       )}
     >
@@ -320,7 +320,7 @@ export function Header(): ReactNode {
         {count > 0 ? (
           <span
             className={cx(
-              "absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-pill bg-[#683126] px-1 text-[10px] font-medium text-[#FCF5E8]",
+              "absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-pill bg-field px-1 text-[10px] font-medium text-field-ink",
               pop && "animate-[kk-pop_.45s_ease]",
             )}
           >
@@ -336,8 +336,8 @@ export function Header(): ReactNode {
     <>
       <header
         className={cx(
-          "sticky top-0 z-40 bg-[#FEF6EB] transition-shadow duration-300",
-          scrolled ? "shadow-[0_4px_16px_rgba(42,29,18,0.10)]" : "shadow-none",
+          "sticky top-0 z-40 bg-cream transition-shadow duration-300",
+          scrolled ? "shadow-[0_4px_16px_rgb(var(--shadow-tint)_/_0.10)]" : "shadow-none",
         )}
         style={{ fontFamily: "var(--font-ui)" }}
       >
@@ -375,7 +375,7 @@ export function Header(): ReactNode {
                     {...megaProps}
                     className={cx(
                       "relative flex items-center p-[10px] text-[14px] font-medium tracking-normal uppercase no-underline transition-colors",
-                      active ? "text-[#683126]" : "text-[#000] hover:text-[#683126]",
+                      active ? "text-field" : "text-[#000] hover:text-field",
                       FOCUS_RING,
                     )}
                   >
@@ -410,7 +410,7 @@ export function Header(): ReactNode {
                 aria-label="Shop menu"
                 onMouseEnter={openMega}
                 onMouseLeave={closeMegaSoon}
-                className="absolute inset-x-0 top-full z-40 border-b border-line bg-cream shadow-[0_22px_44px_-18px_rgba(42,29,18,0.30)] animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none"
+                className="absolute inset-x-0 top-full z-40 border-b border-line bg-cream shadow-[0_22px_44px_-18px_rgb(var(--shadow-tint)_/_0.30)] animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none"
               >
                 <MegaMenu onNavigate={closeMegaNow} />
               </div>
@@ -510,7 +510,7 @@ export function Header(): ReactNode {
                 setSearchOpen(true);
               }}
               className={cx(
-                "mb-6 flex w-full items-center gap-3 rounded-none border border-[#683126] bg-transparent px-4 py-3 text-left text-[13px] font-light tracking-[0.4px] text-[#000]/60 transition-colors hover:border-[#000]",
+                "mb-6 flex w-full items-center gap-3 rounded-none border border-field bg-transparent px-4 py-3 text-left text-[13px] font-light tracking-[0.4px] text-[#000]/60 transition-colors hover:border-[#000]",
                 FOCUS_RING,
               )}
             >
@@ -533,7 +533,7 @@ export function Header(): ReactNode {
                         }}
                         aria-current={isActive([item.href]) ? "page" : undefined}
                         className={cx(
-                          "flex-1 py-5 text-[14px] font-medium tracking-[0.42px] text-[#000] uppercase no-underline transition-colors hover:text-[#683126]",
+                          "flex-1 py-5 text-[14px] font-medium tracking-[0.42px] text-[#000] uppercase no-underline transition-colors hover:text-field",
                           FOCUS_RING,
                         )}
                       >
@@ -548,7 +548,7 @@ export function Header(): ReactNode {
                             setOpenSection(expanded ? null : item.label);
                           }}
                           className={cx(
-                            "-mr-1.5 grid h-12 w-12 place-items-center text-[#000] transition-colors hover:text-[#683126]",
+                            "-mr-1.5 grid h-12 w-12 place-items-center text-[#000] transition-colors hover:text-field",
                             FOCUS_RING,
                           )}
                         >
@@ -566,7 +566,7 @@ export function Header(): ReactNode {
                                 setMenuOpen(false);
                               }}
                               className={cx(
-                                "block py-2.5 text-[13px] font-light tracking-[0.4px] text-[#000]/70 no-underline transition-colors hover:text-[#683126]",
+                                "block py-2.5 text-[13px] font-light tracking-[0.4px] text-[#000]/70 no-underline transition-colors hover:text-field",
                                 FOCUS_RING,
                               )}
                             >
@@ -591,7 +591,7 @@ export function Header(): ReactNode {
                     setMenuOpen(false);
                   }}
                   className={cx(
-                    "py-1.5 text-[13px] font-light tracking-[0.4px] text-[#683126] underline underline-offset-[3px] transition-colors hover:text-[#000]",
+                    "py-1.5 text-[13px] font-light tracking-[0.4px] text-field underline underline-offset-[3px] transition-colors hover:text-[#000]",
                     FOCUS_RING,
                   )}
                 >

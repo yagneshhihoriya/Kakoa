@@ -129,7 +129,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
               className={cx(
                 "min-w-0 outline-none",
                 square
-                  ? "w-full border border-[#FCF5E8]/70 bg-transparent px-[15px] py-[10px] text-[13px] tracking-[0.4px] text-[#FCF5E8] placeholder:text-[#FCF5E8]/55 focus-visible:border-[#FCF5E8]"
+                  ? "w-full border border-field-ink/70 bg-transparent px-[15px] py-[10px] text-[13px] tracking-[0.4px] text-field-ink placeholder:text-field-ink/55 focus-visible:border-field-ink"
                   : "flex-1 rounded-pill border-none bg-cream px-[18px] py-3.5 font-body text-sm font-medium text-ink placeholder:text-espresso/60 focus-visible:ring-2 focus-visible:ring-gold",
               )}
             />
@@ -139,7 +139,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
               className={cx(
                 "whitespace-nowrap transition-colors disabled:opacity-60",
                 square
-                  ? "w-fit border border-[#683126] bg-[#FCF5E8] px-5 py-[11px] text-[14px] tracking-[1.4px] text-[#683126] uppercase hover:bg-[#683126] hover:text-[#FCF5E8] focus-visible:ring-2 focus-visible:ring-[#FCF5E8] focus-visible:outline-none max-[749px]:mx-auto"
+                  ? "w-fit border border-field bg-field-ink px-5 py-[11px] text-[14px] tracking-[1.4px] text-field uppercase hover:bg-field hover:text-field-ink focus-visible:ring-2 focus-visible:ring-field-ink focus-visible:outline-none max-[749px]:mx-auto"
                   : "rounded-pill bg-gold-soft px-[22px] py-3.5 font-body text-sm font-bold text-ink hover:bg-gold focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cocoa focus-visible:outline-none",
               )}
             >

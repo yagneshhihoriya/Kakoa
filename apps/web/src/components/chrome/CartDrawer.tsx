@@ -102,7 +102,7 @@ export function CartDrawer(): ReactNode {
         aria-label="Your bag"
         tabIndex={-1}
         style={{ fontFamily: "var(--font-ui)" }}
-        className="fixed inset-y-0 right-0 z-[61] flex w-[420px] max-w-[92vw] flex-col bg-[#FCF5E8] shadow-[-24px_0_60px_rgba(42,29,18,.24)] animate-[kk-drawer_.34s_cubic-bezier(.2,.7,.3,1)] motion-reduce:animate-none focus-visible:outline-none"
+        className="fixed inset-y-0 right-0 z-[61] flex w-[420px] max-w-[92vw] flex-col bg-field-ink shadow-[-24px_0_60px_rgb(var(--shadow-tint)_/_.24)] animate-[kk-drawer_.34s_cubic-bezier(.2,.7,.3,1)] motion-reduce:animate-none focus-visible:outline-none"
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-[22px]">
           <span className="text-[30px] font-medium leading-none text-[#000]">Your bag</span>
@@ -138,7 +138,7 @@ export function CartDrawer(): ReactNode {
                 goTo("/shop");
               }}
               className={cx(
-                "rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]",
+                "rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field",
                 FOCUS_RING,
               )}
             >
@@ -204,7 +204,7 @@ export function CartDrawer(): ReactNode {
                       <div
                         role="group"
                         aria-label={`Quantity for ${line.name}`}
-                        className="flex items-center overflow-hidden rounded-none border border-[#683126]"
+                        className="flex items-center overflow-hidden rounded-none border border-field"
                       >
                         <button
                           type="button"
@@ -318,7 +318,7 @@ export function CartDrawer(): ReactNode {
                   goTo("/checkout");
                 }}
                 className={cx(
-                  "w-full rounded-none bg-[#683126] py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:opacity-60",
+                  "w-full rounded-none bg-field py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >

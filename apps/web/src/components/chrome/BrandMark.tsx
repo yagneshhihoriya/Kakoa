@@ -30,7 +30,7 @@ export function BrandLockup({
         )}
       >
         <Mark
-          className={cx("h-auto text-[#e8c9a0]", isHeader ? "w-[22px]" : "w-[19px]")}
+          className={cx("h-auto text-gold-soft", isHeader ? "w-[22px]" : "w-[19px]")}
         />
       </span>
       <span

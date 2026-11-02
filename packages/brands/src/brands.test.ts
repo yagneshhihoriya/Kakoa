@@ -44,7 +44,7 @@ describe('KAKOA profile', () => {
     expect(KAKOA.cookiePrefix).toBe('kakoa');
     expect(KAKOA.vertical).toBe('chocolate');
     expect(KAKOA.themeColor).toBe('#2A1D12');
-    expect(KAKOA.backgroundColor).toBe('#FBF6EF');
+    expect(KAKOA.backgroundColor).toBe('#FEF6EB');
     expect(KAKOA.defaults.shipping_fee_standard_paise).toBe(4900);
     expect(KAKOA.defaults.cod_enabled).toBe(false);
     expect(KAKOA.defaults.support_email).toBe('support@kakoa.in');

@@ -259,7 +259,7 @@ export default async function HomePage() {
 
       {/* ============================ HERO ============================ */}
       <section
-        className="relative isolate overflow-hidden bg-[#683126] text-[#FCF5E8] md:flex md:aspect-[1989/791] md:items-center"
+        className="relative isolate overflow-hidden bg-field text-field-ink md:flex md:aspect-[1989/791] md:items-center"
         style={{ fontFamily: "var(--font-ui)" }}
       >
 
@@ -270,7 +270,7 @@ export default async function HomePage() {
           aria-hidden="true"
           className="relative aspect-square w-full sm:aspect-[1989/791] md:absolute md:inset-0 md:-z-10 md:aspect-auto"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_74%_38%,#8a4a33_0%,#683126_46%,#3c1c12_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_74%_38%,var(--color-field-light)_0%,var(--color-field)_46%,var(--color-field-deep)_100%)]" />
           {heroPhoto !== null ? (
             /* <picture> rather than next/image: the two crops are art direction,
                not resolution switching, and <source media> downloads exactly one
@@ -296,19 +296,19 @@ export default async function HomePage() {
             <div className="mb-6">
               <Eyebrow tone="gold">Small-batch · Single origin</Eyebrow>
             </div>
-            <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance text-[#FCF5E8] md:text-[34px] md:leading-[1.15]">
+            <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance text-field-ink md:text-[34px] md:leading-[1.15]">
               {heroProduct !== null
                 ? `${heroProduct.name}: our house dark.`
                 : "Chocolate worth slowing down for."}
             </h1>
-            <p className="mb-8 max-w-[52ch] text-[14px] leading-[21px] font-light tracking-[0.7px] text-[#FCF5E8]/85">
+            <p className="mb-8 max-w-[52ch] text-[14px] leading-[21px] font-light tracking-[0.7px] text-field-ink/85">
               {heroProduct?.blurb ??
                 "Ethically sourced cacao, roasted in-house and finished by hand. Tasting notes you can actually taste — no shortcuts, no fillers."}
             </p>
             <div className="mb-9 flex flex-wrap gap-3.5">
               <Link
                 href={heroProduct !== null ? `/product/${heroProduct.slug}` : "/shop"}
-                className={`rounded-none border border-[#FCF5E8] bg-[#FCF5E8] px-5 py-3 text-[14px] tracking-[1.4px] text-[#683126] uppercase no-underline transition-colors hover:bg-transparent hover:text-[#FCF5E8] ${FOCUS_RING}`}
+                className={`rounded-none border border-field-ink bg-field-ink px-5 py-3 text-[14px] tracking-[1.4px] text-field uppercase no-underline transition-colors hover:bg-transparent hover:text-field-ink ${FOCUS_RING}`}
               >
                 {heroProduct !== null
                   ? `Discover ${heroProduct.name}`

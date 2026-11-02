@@ -44,7 +44,19 @@ export interface FontAttribution {
   readonly href: string;
 }
 
-/** Default social-share card (app/opengraph-image.tsx). */
+/**
+ * Generated app icons (favicon / apple-touch / manifest PNGs via lib/seo/icon.tsx).
+ * Satori renders these at build time and cannot resolve CSS custom properties,
+ * so the pack supplies literal colours here rather than tokens.
+ */
+export interface BrandIcon {
+  /** CSS background for the icon square (gradient or colour). */
+  readonly background: string;
+  /** Colour of the brand initial. */
+  readonly ink: string;
+}
+
+/** Default social-share card (app/opengraph-image.tsx). Satori-rendered, literal colours. */
 export interface BrandOg {
   readonly alt: string;
   readonly tagline: string;
@@ -83,5 +95,6 @@ export interface BrandPack {
   readonly profile: BrandProfile;
   readonly copy: StorefrontCopy;
   readonly og: BrandOg;
+  readonly icon: BrandIcon;
   readonly fontAttribution: FontAttribution | null;
 }

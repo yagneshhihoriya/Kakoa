@@ -23,11 +23,11 @@ export default function CartPage() {
     >
       <nav
         aria-label="Breadcrumb"
-        className="mb-[22px] text-[13px] font-light tracking-[0.4px] text-[#8a7a68]"
+        className="mb-[22px] text-[13px] font-light tracking-[0.4px] text-ink-muted"
       >
         <Link
           href="/"
-          className="text-[#8a7a68] no-underline transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none"
+          className="text-ink-muted no-underline transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none"
         >
           Home
         </Link>

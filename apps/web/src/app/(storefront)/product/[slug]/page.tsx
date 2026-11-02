@@ -306,7 +306,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
       </div>
 
-      {/* Frequently bought together — reference `#F6EEE1` band. Degrades to
+      {/* Frequently bought together — reference `cream-2` band. Degrades to
           omission when the co-occurrence query returned []. */}
       {product.frequentlyBoughtTogether.length > 0 ? (
         <Reveal index={2} className="mt-16">

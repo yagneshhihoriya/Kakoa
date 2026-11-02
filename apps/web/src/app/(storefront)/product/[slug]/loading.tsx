@@ -97,7 +97,7 @@ export default function ProductLoading() {
           {RELATED_SLOTS.map((slot) => (
             <div
               key={slot}
-              className="overflow-hidden rounded-[18px] border border-[#EEE1CE] bg-white"
+              className="overflow-hidden rounded-[18px] border border-line-soft bg-white"
             >
               <Skeleton variant="card" className="aspect-[4/5] w-full" />
               <div className="flex flex-col gap-2 px-4 pt-4 pb-[18px]">

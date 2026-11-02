@@ -1,10 +1,72 @@
 /*
- * KAKOA palette override. Imported by the root layout AFTER globals.css: Tailwind
- * v4 emits @theme variables inside @layer theme, so this unlayered :root rule
- * wins and re-skins every token-backed utility without touching
- * packages/ui/src/tokens.css. Token NAMES stay shared across brands; only
- * VALUES move here. KAKOA is the palette the shared tokens already describe, so
- * there is nothing to override yet — the tokenisation increment fills this in.
+ * KAKOA palette. Imported by the root layout AFTER globals.css: Tailwind v4
+ * emits @theme variables inside @layer theme, so this unlayered :root rule wins
+ * and re-skins every token-backed utility without touching
+ * packages/ui/src/tokens.css. Token NAMES are shared across brands; only the
+ * VALUES live here, and every brand pack declares this same set. Spacing, type
+ * scale, radius and motion are platform tokens and are not re-declared.
+ *
+ * KAKOA is also the default palette tokens.css ships, so these values match it
+ * exactly (brands/kakoa/theme.test.ts asserts the parity) — the override is
+ * what proves the mechanism a second brand relies on.
  */
 :root {
+  /* ---- Brand palette ---- */
+  --color-ink: #2a1d12;
+  --color-cocoa: #4a2e1c;
+  --color-espresso: #8a5a34;
+  --color-cream: #fef6eb;
+  --color-card: #f3e7d5;
+  --color-line: #eadbc6;
+  --color-gold: #c69a4c;
+  --color-caramel: #ce8a3e;
+  --color-raspberry: #c25b5b;
+  --color-pistachio: #7c8a4e;
+  --color-plum: #8a5a78;
+
+  /* ---- Semantic neutrals ---- */
+  --color-ink-soft: #5c4b3a;
+  --color-ink-muted: #8a7a68;
+  --color-ink-hover: #3f2c1b;
+  --color-ink-body: #4c3b2a;
+  --color-cocoa-deep: #2c150a;
+  --color-surface: #ffffff;
+  --color-cream-2: #f6eee1;
+  --color-line-soft: #eee1ce;
+  --color-line-strong: #e0cfb6;
+  --color-gold-soft: #e8c9a0;
+  --color-pistachio-deep: #4c5a2b;
+
+  /* ---- Site chrome field (announcement ribbon, footer, square buttons) ---- */
+  --color-field: #683126;
+  --color-field-ink: #fcf5e8;
+  --color-field-light: #8a4a33;
+  --color-field-deep: #3c1c12;
+
+  /* ---- Selection, scrollbar, shadow hue ---- */
+  --color-selection: #e8c9a0;
+  --color-scrollbar: #dcc6a2;
+  --color-scrollbar-hover: #c9a878;
+  --shadow-tint: 42 29 18;
+
+  /* ---- Customer avatar gradient pairs ---- */
+  --color-avatar-honey: #f1dcb0;
+  --color-avatar-honey-deep: #dfbb84;
+  --color-avatar-almond: #ecdcc2;
+  --color-avatar-almond-deep: #d6bb93;
+  --color-avatar-rose: #edcbc2;
+  --color-avatar-rose-deep: #d9a99e;
+  --color-avatar-sage: #dbe0c0;
+  --color-avatar-sage-deep: #bfc894;
+  --color-avatar-caramel: #efd4ae;
+  --color-avatar-caramel-deep: #ddb57e;
+  --color-avatar-clay: #e9cdb4;
+  --color-avatar-clay-deep: #d3ac8b;
+
+  /* ---- Order-success confetti ---- */
+  --color-confetti-gold: #d9ac5e;
+  --color-confetti-pistachio: #7c8a4e;
+  --color-confetti-brick: #b5472f;
+  --color-confetti-sun: #e9c46a;
+  --color-confetti-espresso: #8a5a34;
 }

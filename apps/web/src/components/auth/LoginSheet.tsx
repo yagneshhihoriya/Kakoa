@@ -565,7 +565,7 @@ export function LoginSheet({
         tabIndex={-1}
         style={{ fontFamily: "var(--font-ui)" }}
         className={cx(
-          "absolute flex flex-col bg-[#FEF6EB] shadow-[0_30px_70px_rgba(42,29,18,.28)] focus-visible:outline-none",
+          "absolute flex flex-col bg-cream shadow-[0_30px_70px_rgb(var(--shadow-tint)_/_.28)] focus-visible:outline-none",
           // Desktop: right panel. Mobile: bottom sheet.
           "inset-y-0 right-0 w-full max-w-[440px]",
           "max-[560px]:inset-x-0 max-[560px]:inset-y-auto max-[560px]:bottom-0 max-[560px]:max-h-[92vh] max-[560px]:w-full max-[560px]:max-w-none max-[560px]:rounded-t-[26px]",
@@ -578,7 +578,7 @@ export function LoginSheet({
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#683126]/15 px-7 py-5">
+        <div className="flex items-center justify-between border-b border-field/15 px-7 py-5">
           <span className="text-[30px] font-medium text-[#000] leading-none">
             {step === "phone" ? "Sign in" : "Enter code"}
           </span>
@@ -617,17 +617,17 @@ export function LoginSheet({
 
               <label
                 htmlFor="login-phone"
-                className="mb-2 block text-[13px] font-semibold text-[#5C4B3A]"
+                className="mb-2 block text-[13px] font-semibold text-ink-soft"
               >
                 Mobile number
               </label>
               <div
                 className={cx(
-                  "flex items-center overflow-hidden rounded-none border bg-[#FEF6EB] transition-colors focus-within:ring-2 focus-within:ring-[#683126]",
-                  phoneError !== null ? "border-danger" : "border-[#683126]",
+                  "flex items-center overflow-hidden rounded-none border bg-cream transition-colors focus-within:ring-2 focus-within:ring-field",
+                  phoneError !== null ? "border-danger" : "border-field",
                 )}
               >
-                <span className="select-none border-r border-[#683126] px-4 py-[14px] text-[15px] font-normal text-[#683126]">
+                <span className="select-none border-r border-field px-4 py-[14px] text-[15px] font-normal text-field">
                   +91
                 </span>
                 <input
@@ -701,7 +701,7 @@ export function LoginSheet({
                 type="submit"
                 disabled={requesting || rateCountdown.remaining > 0}
                 className={cx(
-                  "mt-6 flex w-full items-center justify-center gap-2 rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:cursor-not-allowed disabled:opacity-60",
+                  "mt-6 flex w-full items-center justify-center gap-2 rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field disabled:cursor-not-allowed disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >
@@ -721,7 +721,7 @@ export function LoginSheet({
                 </p>
               ) : null}
 
-              <p className="mt-5 text-center text-[12px] leading-relaxed text-[#8a7a68]">
+              <p className="mt-5 text-center text-[12px] leading-relaxed text-ink-muted">
                 By continuing you agree to KAKOA's Terms &amp; Privacy Policy.
               </p>
             </form>
@@ -760,8 +760,8 @@ export function LoginSheet({
                     onKeyDown={(event) => handleBoxKeyDown(index, event)}
                     onPaste={handlePaste}
                     className={cx(
-                      "h-[54px] w-full rounded-none border bg-[#FEF6EB] text-center text-[22px] font-medium text-[#000] outline-none transition-colors focus:ring-2 focus:ring-[#683126] disabled:opacity-60",
-                      otpError !== null ? "border-danger" : "border-[#683126]",
+                      "h-[54px] w-full rounded-none border bg-cream text-center text-[22px] font-medium text-[#000] outline-none transition-colors focus:ring-2 focus:ring-field disabled:opacity-60",
+                      otpError !== null ? "border-danger" : "border-field",
                     )}
                   />
                 ))}
@@ -790,7 +790,7 @@ export function LoginSheet({
                 onClick={() => void submitOtp(code)}
                 disabled={verifying || !otpComplete}
                 className={cx(
-                  "mt-6 flex w-full items-center justify-center gap-2 rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:cursor-not-allowed disabled:opacity-60",
+                  "mt-6 flex w-full items-center justify-center gap-2 rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field disabled:cursor-not-allowed disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >
@@ -798,7 +798,7 @@ export function LoginSheet({
               </button>
 
               {/* Resend countdown */}
-              <div className="mt-5 text-center text-[13px] text-[#8a7a68]">
+              <div className="mt-5 text-center text-[13px] text-ink-muted">
                 {resendCountdown.remaining > 0 ? (
                   <span>
                     Resend code in{" "}

@@ -22,7 +22,7 @@ body {
 
 /* Prototype selection + type polish (00-global-header-drawers.html) */
 ::selection {
-  background: #e8c9a0;
+  background: var(--color-selection);
   color: var(--color-ink);
 }
 h1,
@@ -47,12 +47,12 @@ a {
   height: 12px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dcc6a2;
+  background: var(--color-scrollbar);
   border-radius: 999px;
   border: 3px solid var(--color-cream);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c9a878;
+  background: var(--color-scrollbar-hover);
 }
 ::-webkit-scrollbar-track {
   background: var(--color-cream);

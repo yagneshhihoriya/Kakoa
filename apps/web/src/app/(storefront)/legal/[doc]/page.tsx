@@ -398,7 +398,7 @@ export default async function LegalPage({
       <h1 className="mt-2 text-[34px] leading-tight text-ink md:text-[40px]" style={{ fontFamily: "var(--font-display), serif" }}>
         {DOC_TITLES[key]}
       </h1>
-      <p className="mt-2 font-body text-[13px] text-[#8a7a68]">Effective date: {EFFECTIVE}</p>
+      <p className="mt-2 font-body text-[13px] text-ink-muted">Effective date: {EFFECTIVE}</p>
 
       <div className="mt-8 flex flex-col gap-7">
         {sections.map((section) => (
@@ -407,13 +407,13 @@ export default async function LegalPage({
             <div className="flex flex-col gap-3">
               {section.blocks.map((block, i) =>
                 Array.isArray(block) ? (
-                  <ul key={i} className="ml-5 flex list-disc flex-col gap-1.5 font-body text-[14.5px] leading-[1.7] text-[#4C3B2A]">
+                  <ul key={i} className="ml-5 flex list-disc flex-col gap-1.5 font-body text-[14.5px] leading-[1.7] text-ink-body">
                     {block.map((li, j) => (
                       <li key={j}>{li}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p key={i} className="font-body text-[14.5px] leading-[1.75] text-[#4C3B2A]">
+                  <p key={i} className="font-body text-[14.5px] leading-[1.75] text-ink-body">
                     {block}
                   </p>
                 ),
@@ -423,7 +423,7 @@ export default async function LegalPage({
         ))}
       </div>
 
-      <p className="mt-10 border-t border-[#EEE1CE] pt-5 font-body text-[13px] text-[#8a7a68]">
+      <p className="mt-10 border-t border-line-soft pt-5 font-body text-[13px] text-ink-muted">
         Questions about this policy? Email{" "}
         <a href={`mailto:${company.supportEmail}`} className="font-semibold text-espresso underline">
           {company.supportEmail}

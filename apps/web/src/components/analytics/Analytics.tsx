@@ -69,9 +69,9 @@ export function Analytics(): ReactNode {
         <div
           role="dialog"
           aria-label="Cookie consent"
-          className="fixed inset-x-4 bottom-4 z-[300] mx-auto max-w-[560px] rounded-2xl border border-[#EEE1CE] bg-white p-4 shadow-[0_16px_40px_rgba(42,29,18,0.18)] sm:left-auto sm:right-4"
+          className="fixed inset-x-4 bottom-4 z-[300] mx-auto max-w-[560px] rounded-2xl border border-line-soft bg-white p-4 shadow-[0_16px_40px_rgb(var(--shadow-tint)_/_0.18)] sm:left-auto sm:right-4"
         >
-          <p className="font-body text-[13.5px] leading-relaxed text-[#4C3B2A]">
+          <p className="font-body text-[13.5px] leading-relaxed text-ink-body">
             We use analytics cookies to improve your experience. Essential cookies (cart, sign-in)
             are always on. See our{" "}
             <Link href="/legal/privacy" className="font-semibold underline">Privacy Policy</Link>.
@@ -80,14 +80,14 @@ export function Analytics(): ReactNode {
             <button
               type="button"
               onClick={() => choose("granted")}
-              className="rounded-pill bg-[#2a1d12] px-5 py-2 font-body text-[13px] font-bold text-[#f3e7d5]"
+              className="rounded-pill bg-ink px-5 py-2 font-body text-[13px] font-bold text-card"
             >
               Accept
             </button>
             <button
               type="button"
               onClick={() => choose("denied")}
-              className="rounded-pill border border-[#e0cfb6] px-5 py-2 font-body text-[13px] font-semibold text-[#5c4b3a]"
+              className="rounded-pill border border-line-strong px-5 py-2 font-body text-[13px] font-semibold text-ink-soft"
             >
               Decline
             </button>

@@ -1,8 +1,15 @@
 /**
- * KAKOA design tokens — the ONLY file in the workspace allowed to contain
+ * Design tokens — the ONLY shared file in the workspace allowed to contain
  * raw hex values (design-system.md §1.1). Components consume semantic
  * aliases (`--color-bg`, `--color-danger`, `--color-success`) and the
  * Tailwind utilities generated from this `@theme` block — never literals.
+ *
+ * Token NAMES are shared by every brand; token VALUES are per brand. The
+ * values here are the defaults (KAKOA's palette), and the active brand pack
+ * re-declares them from `apps/web/src/brands/<key>/theme.css`, an unlayered
+ * `:root` rule imported after globals.css. Tailwind emits this `@theme` inside
+ * `@layer theme`, so the pack's rule wins and every `text-ink` / `bg-field`
+ * utility (compiled to `var(--color-*)`) re-skins without touching this file.
  *
  * Font variables are consumed from `next/font` CSS variables set by the
  * app (`apps/web/app/layout.tsx`); `packages/ui` never imports `next/font`.
@@ -16,7 +23,7 @@
   --color-ink: #2a1d12;
   --color-cocoa: #4a2e1c;
   --color-espresso: #8a5a34;
-  --color-cream: #fef6eb; /* matches the Valrhona page field (#FEF6EB) */
+  --color-cream: #fef6eb; /* page field — also the manifest background_color */
   --color-card: #f3e7d5;
   --color-line: #eadbc6;
   --color-gold: #c69a4c;
@@ -85,12 +92,14 @@
   --text-hero--line-height: 0.96;
   --text-hero--letter-spacing: -0.022em;
 
-  /* ---- Warm cocoa-tinted elevation (all shadows share the ink hue so
-   * cards feel like they sit on paper, never a cold grey UI). ---- */
-  --shadow-soft: 0 1px 2px rgba(42, 29, 18, 0.05), 0 2px 8px rgba(42, 29, 18, 0.05);
-  --shadow-card: 0 2px 6px rgba(42, 29, 18, 0.06), 0 14px 30px rgba(42, 29, 18, 0.09);
-  --shadow-lift: 0 8px 18px rgba(42, 29, 18, 0.10), 0 24px 50px rgba(42, 29, 18, 0.14);
-  --shadow-float: 0 22px 60px rgba(42, 29, 18, 0.22);
+  /* ---- Warm cocoa-tinted elevation (all shadows share one hue so cards
+   * feel like they sit on paper, never a cold grey UI). The hue is the
+   * `--shadow-tint` RGB triplet below; arbitrary shadows in page code use the
+   * same `rgb(var(--shadow-tint) / a)` form so a brand re-tints them at once. ---- */
+  --shadow-soft: 0 1px 2px rgb(var(--shadow-tint) / 0.05), 0 2px 8px rgb(var(--shadow-tint) / 0.05);
+  --shadow-card: 0 2px 6px rgb(var(--shadow-tint) / 0.06), 0 14px 30px rgb(var(--shadow-tint) / 0.09);
+  --shadow-lift: 0 8px 18px rgb(var(--shadow-tint) / 0.10), 0 24px 50px rgb(var(--shadow-tint) / 0.14);
+  --shadow-float: 0 22px 60px rgb(var(--shadow-tint) / 0.22);
   --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.09);
 
   /* ---- Motion. House easing is the prototype curve; -entrance is a softer
@@ -113,4 +122,54 @@
   --color-line-soft: #eee1ce; /* hairline on white cards */
   --color-gold-soft: #e8c9a0; /* seal / on-ink caramel accent */
   --color-pistachio-deep: #4c5a2b; /* AA-contrast green — verified/success text on tinted pills */
+  --color-ink-body: #4c3b2a; /* long-form body copy (legal, contact, consent banner) */
+  --color-line-strong: #e0cfb6; /* 1.5px outline-button hairline on cream */
+}
+
+/* ================================================================== */
+/* Brand surface tokens — the values a brand pack's theme.css is expected */
+/* to re-declare alongside the palette above. `static` because several are */
+/* consumed from inline styles (confetti, avatar) and from globals.css,     */
+/* which Tailwind's class scanner cannot see, so they must always be       */
+/* emitted rather than tree-shaken as "unused".                            */
+/* ================================================================== */
+@theme static {
+  /* ---- Site chrome field: the flat dark band of the announcement ribbon,
+   * footer and the square chrome buttons, and the light ink set on it. ---- */
+  --color-field: #683126;
+  --color-field-ink: #fcf5e8;
+  /* Highlight / shade stops of the hero's radial field gradient. */
+  --color-field-light: #8a4a33;
+  --color-field-deep: #3c1c12;
+
+  /* ---- Text selection and the custom scrollbar (globals.css). ---- */
+  --color-selection: #e8c9a0;
+  --color-scrollbar: #dcc6a2;
+  --color-scrollbar-hover: #c9a878;
+
+  /* ---- Shadow hue as an RGB triplet, consumed as rgb(var(--shadow-tint) / a).
+   * Defaults to the ink hue (#2a1d12). ---- */
+  --shadow-tint: 42 29 18;
+
+  /* ---- Generated customer avatar: warm parchment gradient pairs picked by
+   * seed; `-deep` is the gradient end. ---- */
+  --color-avatar-honey: #f1dcb0;
+  --color-avatar-honey-deep: #dfbb84;
+  --color-avatar-almond: #ecdcc2;
+  --color-avatar-almond-deep: #d6bb93;
+  --color-avatar-rose: #edcbc2;
+  --color-avatar-rose-deep: #d9a99e;
+  --color-avatar-sage: #dbe0c0;
+  --color-avatar-sage-deep: #bfc894;
+  --color-avatar-caramel: #efd4ae;
+  --color-avatar-caramel-deep: #ddb57e;
+  --color-avatar-clay: #e9cdb4;
+  --color-avatar-clay-deep: #d3ac8b;
+
+  /* ---- Order-success confetti pieces. ---- */
+  --color-confetti-gold: #d9ac5e;
+  --color-confetti-pistachio: #7c8a4e;
+  --color-confetti-brick: #b5472f;
+  --color-confetti-sun: #e9c46a;
+  --color-confetti-espresso: #8a5a34;
 }

@@ -287,7 +287,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
           if (closing && event.target === event.currentTarget) finishClose();
         }}
         className={cx(
-          "fixed inset-x-0 top-0 z-[71] flex max-h-[90vh] flex-col bg-[#FEF6EB] shadow-[0_24px_60px_rgba(42,29,18,.26)] focus-visible:outline-none",
+          "fixed inset-x-0 top-0 z-[71] flex max-h-[90vh] flex-col bg-cream shadow-[0_24px_60px_rgb(var(--shadow-tint)_/_.26)] focus-visible:outline-none",
           panelClass,
         )}
       >
@@ -350,7 +350,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                       setQuery(label);
                     }}
                     className={cx(
-                      "rounded-none border border-[#683126] bg-transparent px-[18px] py-2.5 text-[13px] tracking-[0.4px] text-[#683126] transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
+                      "rounded-none border border-field bg-transparent px-[18px] py-2.5 text-[13px] tracking-[0.4px] text-field transition-colors hover:bg-field hover:text-field-ink",
                       FOCUS_RING,
                     )}
                   >
@@ -453,7 +453,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                 type="button"
                 onClick={goToShop}
                 className={cx(
-                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-[#683126] bg-transparent px-4 py-3 text-[13px] tracking-[0.4px] text-[#683126] uppercase transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
+                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-field bg-transparent px-4 py-3 text-[13px] tracking-[0.4px] text-field uppercase transition-colors hover:bg-field hover:text-field-ink",
                   FOCUS_RING,
                 )}
               >
@@ -480,7 +480,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                 href="/shop"
                 onClick={onClose}
                 className={cx(
-                  "inline-block rounded-none border border-[#683126] bg-[#683126] px-5 py-3 text-[14px] tracking-[1.4px] text-[#FCF5E8] uppercase no-underline transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]",
+                  "inline-block rounded-none border border-field bg-field px-5 py-3 text-[14px] tracking-[1.4px] text-field-ink uppercase no-underline transition-colors hover:bg-field-ink hover:text-field",
                   FOCUS_RING,
                 )}
               >

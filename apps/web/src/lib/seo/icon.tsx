@@ -3,12 +3,13 @@ import { brand } from "@/lib/brand";
 
 /**
  * Shared brand-mark renderer for all generated icon routes (favicon, apple
- * touch icon, PWA manifest icons). The brand's initial on a themeColor gradient
- * square — no binary assets shipped; every icon is produced at build via
- * ImageResponse.
+ * touch icon, PWA manifest icons). The brand's initial on the pack's icon
+ * gradient square — no binary assets shipped; every icon is produced at build
+ * via ImageResponse. Colours come from `brand.icon` (literal — Satori cannot
+ * resolve CSS custom properties).
  */
 export function renderBrandIcon(size: number): ImageResponse {
-  const { profile } = brand;
+  const { profile, icon } = brand;
   return new ImageResponse(
     (
       <div
@@ -18,8 +19,8 @@ export function renderBrandIcon(size: number): ImageResponse {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `linear-gradient(145deg, ${profile.themeColor} 0%, #4A331F 100%)`,
-          color: profile.backgroundColor,
+          background: icon.background,
+          color: icon.ink,
           fontSize: Math.round(size * 0.62),
           fontWeight: 700,
           fontFamily: "Georgia, 'Times New Roman', serif",
