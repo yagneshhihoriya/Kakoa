@@ -16,11 +16,18 @@
       ],
       "env": [
         "BRAND_KEY",
+        "APP_ENV",
+        "NEXT_PUBLIC_SITE_URL",
         "S3_ENDPOINT",
         "S3_REGION",
         "S3_BUCKET",
         "S3_PUBLIC_BASE_URL",
         "S3_LEGACY_PUBLIC_HOSTS"
+      ],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "SESSION_SECRET",
+        "OTP_PEPPER"
       ]
     },
     "dev": {

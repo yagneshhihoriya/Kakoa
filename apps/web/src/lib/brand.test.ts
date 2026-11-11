@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { KAKOA, brandProfileSchema } from '@kakoa/brands';
+import { BRANDS, BRAND_KEYS, KAKOA, brandProfileSchema } from '@kakoa/brands';
 import { PRESETS } from '@platform/kernel';
 import {
   EXAMPLE_ORDER_NUMBER,
@@ -131,5 +133,29 @@ describe('emailIdentity / assertBrandMatchesEnv', () => {
 
   it('the boot assert passes when BRAND_KEY names the bundled pack', () => {
     expect(() => withEnv(FAKE_ENV, assertBrandMatchesEnv)).not.toThrow();
+  });
+});
+
+/**
+ * The repo enumerates its brands in four places that cannot import each
+ * other: the registry (packages/brands), the seed dispatcher, the brand-gate
+ * script and the CI matrix. The first two are typed against BRAND_KEYS; this
+ * keeps the two text files in step, so registering a brand without gating and
+ * building it fails a test instead of passing silently.
+ */
+describe('brand enumerations outside TypeScript', () => {
+  const read = (relative: string) =>
+    readFileSync(fileURLToPath(new URL(`../../../../${relative}`, import.meta.url)), 'utf8');
+
+  it('scripts/brand-gate.sh exempts exactly the registered seed files and anchors every identifier prefix', () => {
+    const gate = read('scripts/brand-gate.sh');
+    expect(gate).toContain(`\nBRAND_KEYS='${BRAND_KEYS.join('|')}'\n`);
+    const prefixes = Object.values(BRANDS).map((profile) => profile.identifierPrefix);
+    expect(gate).toContain(`SKU_PATTERN='\\b(${prefixes.join('|')})-[A-Z0-9]'`);
+  });
+
+  it('.github/workflows/ci.yml builds every registered brand', () => {
+    const matrix = /^\s*brand:\s*\[([^\]]+)\]\s*$/m.exec(read('.github/workflows/ci.yml'));
+    expect(matrix?.[1]?.split(',').map((key) => key.trim()).sort()).toEqual([...BRAND_KEYS].sort());
   });
 });

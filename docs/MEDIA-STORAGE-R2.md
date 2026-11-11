@@ -22,6 +22,10 @@ Website: next/image  ·  Admin: <img>      (public objects — no signed URLs, n
 Locally, with no `S3_*` vars set, uploads go to `apps/web/public/uploads`
 (`LocalMediaProvider`) — no bucket needed for day-to-day development.
 
+**One bucket per brand.** Each brand deployment (docs/brands/PROVISIONING.md)
+has its own bucket, token and public host — §10. The walkthrough below uses
+KAKOA's `kakoa-media`; substitute `<key>-media` for another brand.
+
 ## 1. Prerequisites
 
 - A Cloudflare account with R2 enabled.
@@ -176,3 +180,23 @@ site — decide separately whether to retire the AWS bucket.
 Point the `S3_*` vars back at the AWS bucket (unset `S3_ENDPOINT` /
 `S3_PUBLIC_BASE_URL`) and add the R2 public host to `S3_LEGACY_PUBLIC_HOSTS` so
 anything uploaded to R2 in the meantime keeps rendering.
+
+## 10. One bucket per brand
+
+A brand deployment never shares a bucket: the admin's Media Library lists every
+object its credentials can reach, and a shared public host would let one
+brand's storefront hot-link another's photography. Per brand:
+
+| | KAKOA | Any other brand (`<key>`) |
+|---|---|---|
+| Bucket | `kakoa-media` | `<key>-media` (`npx wrangler r2 bucket create <key>-media`) |
+| API token | Object Read & Write, **scoped to `kakoa-media`** | a second token, scoped to `<key>-media` only — never the account-wide token |
+| Public host | custom domain on the KAKOA zone | `media.<brand-domain>` connected to `<key>-media` (§4); r2.dev only while the domain is pending |
+| Env | the six `S3_*` vars on the KAKOA Vercel project | the same six names, different values, on that brand's Vercel project (`S3_BUCKET=<key>-media`, `S3_PUBLIC_BASE_URL=https://media.<brand-domain>`) |
+| Legacy hosts | the old AWS bucket in `S3_LEGACY_PUBLIC_HOSTS` | none — a brand born on R2 has no legacy rows |
+
+Object keys (`media/<uuid>.<ext>`), the `Cache-Control` policy, the upload
+pipeline and `next.config.ts` `remotePatterns` are identical for every brand —
+only the environment differs. The seed's `placehold.co` images are not stored
+in any bucket; they are replaced through the Media Library before launch
+(PROVISIONING.md §7).

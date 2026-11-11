@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@brand": [
+        "./src/brands/khakhra/index.ts"
+      ],
+      "@brand/*": [
+        "./src/brands/khakhra/*"
+      ]
+    }
+  }
+}

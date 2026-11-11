@@ -8,17 +8,29 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+# The brand keys the repo ships — mirrors BRAND_KEYS in packages/brands/src/keys.ts
+# (the gate cannot import it; packages/brands/src/brands.test.ts keeps the two
+# in step). Names the per-brand seed files below.
+BRAND_KEYS='kakoa|khakhra'
+
 # The words that may only appear inside a brand pack (case-insensitive) — for
 # every shipped brand (KAKOA's chocolate, Khakhra House's khakhra) — plus the
 # identifiers Phase 1 retired (a reintroduction is a leak, not a revival).
 PATTERN='KAKOA|kakoa|chocolate|cocoa|cacao|praline|truffle|bean-to-bar|ships cold|khakhra|ChocoScene|HeroShowcase|SEEDED_SLUGS|lib/content/journal'
+# Brand identifier prefixes (profile.identifierPrefix — order numbers, SKUs:
+# KK-M72-70G, KH-PLAIN-200). Case-SENSITIVE and word-anchored, unlike PATTERN:
+# a lower-case "kh-" is an ordinary substring, an upper-case KH- is a brand.
+SKU_PATTERN='\b(KK|KH)-[A-Z0-9]'
 
 # Paths that are allowed to carry a brand: every presentation pack
 # (apps/web/src/brands/<key>/), every profile directory and the shared seller
 # fixture (packages/brands/src/<dir>/), the brand registry (the ONE place that
-# enumerates brand keys), the brand seeds, the kernel preset catalogue (vertical
-# templates), tests, docs, CI config and the local editor launch config.
-EXEMPT_PATHS='^(apps/web/src/brands/[a-z0-9-]+/|packages/brands/src/[a-z0-9-]+/|packages/brands/src/(index|keys)\.ts$|packages/db/src/seed[^/]*\.ts$|packages/db/src/seeds/|packages/kernel/src/presets\.ts$|docs/|\.github/|\.claude/|scripts/brand-gate\.sh$)'
+# enumerates brand keys), the seed dispatcher (the registry of seeds) and the
+# per-brand seed content files (packages/db/src/seeds/<key>.ts — the writer,
+# spec and legal-identity modules beside them are brand-neutral and ARE
+# scanned), the kernel preset catalogue (vertical templates), tests, docs, CI
+# config and the local editor launch config.
+EXEMPT_PATHS="^(apps/web/src/brands/[a-z0-9-]+/|packages/brands/src/[a-z0-9-]+/|packages/brands/src/(index|keys)\.ts$|packages/db/src/seed[^/]*\.ts$|packages/db/src/seeds/(${BRAND_KEYS})\.ts$|packages/kernel/src/presets\.ts$|docs/|\.github/|\.claude/|scripts/brand-gate\.sh$)"
 # File kinds that are not source: tests, markdown, lockfiles/manifests (the
 # `@kakoa/*` package scope and the kakoa tsconfig/alias defaults live there),
 # binary assets.
@@ -48,11 +60,13 @@ list_files() {
 
 scanned=$(list_files | wc -l | tr -d ' ')
 
-# grep narrows to candidate lines; perl strips comments + allowlisted tokens and
-# re-tests, so a mention that only explains history does not fail the gate.
+# grep narrows to candidate lines (case-insensitively, so it over-matches the
+# prefixes); perl strips comments + allowlisted tokens and re-tests — PATTERN
+# case-insensitively, SKU_PATTERN exactly — so a mention that only explains
+# history does not fail the gate.
 hits=$(
-  list_files | tr '\n' '\0' | xargs -0 grep -nIiE -- "$PATTERN" 2>/dev/null |
-    PATTERN="$PATTERN" ALLOW="$(IFS='|'; echo "${ALLOW_TOKENS[*]}")" perl -ne '
+  list_files | tr '\n' '\0' | xargs -0 grep -nIiE -- "$PATTERN|(KK|KH)-" 2>/dev/null |
+    PATTERN="$PATTERN" SKU="$SKU_PATTERN" ALLOW="$(IFS='|'; echo "${ALLOW_TOKENS[*]}")" perl -ne '
       chomp;
       my ($file, $line, $text) = /^(.+?):(\d+):(.*)$/ or next;
       my $s = $text;
@@ -66,7 +80,7 @@ hits=$(
       $s =~ s{(^|\s)--.*$}{} if $file =~ /\.sql$/;
       # allowlisted identifiers
       $s =~ s{$ENV{ALLOW}}{}gi;
-      print "$file:$line: $text\n" if $s =~ /$ENV{PATTERN}/i;
+      print "$file:$line: $text\n" if $s =~ /$ENV{PATTERN}/i || $s =~ /$ENV{SKU}/;
     '
 ) || true
 
