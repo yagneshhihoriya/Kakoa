@@ -287,6 +287,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             codEnabled={settings.codEnabled}
             ingredients={product.ingredients}
             allergens={product.allergens}
+            declaredAllergens={product.declaredAllergens}
             nutritionFacts={product.nutritionFacts}
             isVeg={product.isVeg}
             netQuantities={netQuantities}

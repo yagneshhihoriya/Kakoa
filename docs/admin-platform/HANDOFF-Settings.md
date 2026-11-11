@@ -282,7 +282,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 | route guard + envelope | `app/api/admin/inventory/[variantId]/adjust/route.ts` |
 | settings table + reader | `packages/db/src/schema/settings.ts`, `apps/web/src/lib/admin/context.ts` (`makeSettingsReader`) |
 | settings consumers (don't break) | `apps/web/src/lib/checkout/quote.ts` |
-| seed defaults (the 15 keys) | `packages/db/src/seed.ts` (`const SETTINGS`) |
+| seed defaults (the 15 keys) | `packages/db/src/seeds/spec.ts` (`storeSettingsRows` — legal identity + `POLICY_KEYS`, per brand) |
 
 After Settings, the remaining modules are **Shipping** (Shiprocket — external/mocked,
 `shipments` table), **Taxes** (GST rate/HSN config), **Media** (uploads — needs

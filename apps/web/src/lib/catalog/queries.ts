@@ -49,7 +49,7 @@ import { displayReviewerName } from '@/lib/admin/review-format';
 // `preset` = the brand's vertical preset (same resolution the admin
 // BusinessContext uses) — drives which product attributes surface on the PDP;
 // `toTone` coerces the free-text tone column to one of its swatch keys.
-import { preset, toTone } from '@/lib/brand';
+import { preset, presetHas, toTone } from '@/lib/brand';
 
 /** Present a stored attribute value (array/number/string) as display text. */
 function formatAttrValue(v: unknown): string {
@@ -64,6 +64,19 @@ function attrString(attributes: unknown, key: string): string | null {
   if (attributes === null || typeof attributes !== "object") return null;
   const value = (attributes as Record<string, unknown>)[key];
   return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+/**
+ * The allergens a product declares through the preset's `allergens` attribute
+ * (multi-enum → string[]). Empty unless the vertical has the capability, so
+ * the PDP never renders a declaration list a business cannot maintain.
+ */
+function declaredAllergens(attributes: unknown): string[] {
+  if (!presetHas('allergens') || attributes === null || typeof attributes !== 'object') return [];
+  const value = (attributes as Record<string, unknown>).allergens;
+  return Array.isArray(value)
+    ? value.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+    : [];
 }
 
 /** Resolve preset attributes flagged showOnPdp into label/value/unit rows. */
@@ -592,6 +605,7 @@ async function fetchProductDetail(
     description: row.description,
     ingredients: row.ingredients,
     allergens: row.allergens,
+    declaredAllergens: declaredAllergens(row.attributes),
     nutritionFacts: toNutritionFacts(row.nutritionFacts),
     shelfLifeDays: row.shelfLifeDays,
     storageInstructions: row.storageInstructions,

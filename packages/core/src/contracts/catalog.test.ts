@@ -29,6 +29,7 @@ const detail = {
   description: 'A sixteen-piece box of dark ganache truffles.',
   ingredients: 'Cocoa mass, cocoa butter, sugar, cream.',
   allergens: 'Contains milk. May contain tree nuts.',
+  declaredAllergens: ['Milk'],
   nutritionFacts: { Energy: '546 kcal', Protein: '6.1 g' },
   shelfLifeDays: 90,
   storageInstructions: 'Store below 20°C away from sunlight.',

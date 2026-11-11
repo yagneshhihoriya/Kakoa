@@ -18,7 +18,7 @@ PATTERN='KAKOA|kakoa|chocolate|cocoa|cacao|praline|truffle|bean-to-bar|ships col
 # fixture (packages/brands/src/<dir>/), the brand registry (the ONE place that
 # enumerates brand keys), the brand seeds, the kernel preset catalogue (vertical
 # templates), tests, docs, CI config and the local editor launch config.
-EXEMPT_PATHS='^(apps/web/src/brands/[a-z0-9-]+/|packages/brands/src/[a-z0-9-]+/|packages/brands/src/(index|keys)\.ts$|packages/db/src/seed[^/]*\.ts$|packages/kernel/src/presets\.ts$|docs/|\.github/|\.claude/|scripts/brand-gate\.sh$)'
+EXEMPT_PATHS='^(apps/web/src/brands/[a-z0-9-]+/|packages/brands/src/[a-z0-9-]+/|packages/brands/src/(index|keys)\.ts$|packages/db/src/seed[^/]*\.ts$|packages/db/src/seeds/|packages/kernel/src/presets\.ts$|docs/|\.github/|\.claude/|scripts/brand-gate\.sh$)'
 # File kinds that are not source: tests, markdown, lockfiles/manifests (the
 # `@kakoa/*` package scope and the kakoa tsconfig/alias defaults live there),
 # binary assets.

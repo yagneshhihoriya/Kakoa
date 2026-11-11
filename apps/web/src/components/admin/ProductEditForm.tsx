@@ -7,7 +7,7 @@ import type { AttributeDef, TaxDefault } from "@platform/kernel";
 import { VariantEditor } from "@/components/admin/VariantEditor";
 import { ProductImagesCard } from "@/components/admin/ProductImagesCard";
 import { PRODUCT_BADGES } from "@/lib/admin/product-validation";
-import { vocabulary } from "@/lib/brand";
+import { presetHas, vocabulary } from "@/lib/brand";
 
 /** Attribute keys that have dedicated content editors — hide from the generic list. */
 const CONTENT_ATTR_KEYS = new Set([
@@ -296,24 +296,30 @@ export function ProductEditForm({
                 Existing values are preserved via the seeded state above +
                 save() payload. Tasting notes are a preset attribute now
                 (Attributes card). */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className={LABEL} htmlFor="p-shelf">Shelf life (days)</label>
-                <input id="p-shelf" type="number" min={1} className={INPUT} value={shelfLifeDays} disabled={!canWrite}
-                  onChange={(e) => setShelfLifeDays(e.target.value)} />
+            {/* Perishable verticals only — the PDP's "Shelf life / Best before /
+                Storage" rows render from these (PdpDetails). */}
+            {presetHas("perishable") ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={LABEL} htmlFor="p-shelf">Shelf life (days from packing)</label>
+                  <input id="p-shelf" type="number" min={1} className={INPUT} value={shelfLifeDays} disabled={!canWrite}
+                    onChange={(e) => setShelfLifeDays(e.target.value)} />
+                </div>
+                <div>
+                  <label className={LABEL} htmlFor="p-storage">Storage</label>
+                  <input id="p-storage" className={INPUT} value={storage} disabled={!canWrite}
+                    placeholder="Store in a cool, dry place, away from sunlight"
+                    onChange={(e) => setStorage(e.target.value)} />
+                </div>
               </div>
-              <div>
-                <label className={LABEL} htmlFor="p-storage">Storage</label>
-                <input id="p-storage" className={INPUT} value={storage} disabled={!canWrite}
-                  placeholder="Store below 18°C, away from sunlight"
-                  onChange={(e) => setStorage(e.target.value)} />
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-[13px] text-[#5c4b3a]">
-              <input type="checkbox" className="h-4 w-4 accent-[#2a1d12]" checked={isVeg} disabled={!canWrite}
-                onChange={(e) => setIsVeg(e.target.checked)} />
-              Vegetarian (green FSSAI mark)
-            </label>
+            ) : null}
+            {presetHas("veg-mark") ? (
+              <label className="flex items-center gap-2 text-[13px] text-[#5c4b3a]">
+                <input type="checkbox" className="h-4 w-4 accent-[#2a1d12]" checked={isVeg} disabled={!canWrite}
+                  onChange={(e) => setIsVeg(e.target.checked)} />
+                Vegetarian (green FSSAI mark)
+              </label>
+            ) : null}
           </div>
         </Card>
 

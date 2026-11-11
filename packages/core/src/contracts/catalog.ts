@@ -103,6 +103,13 @@ export const productDetailSchema = productCardSchema.extend({
   description: z.string(),
   ingredients: z.string(),
   allergens: z.string(),
+  /**
+   * Allergens declared through the preset's `allergens` multi-enum attribute
+   * (`attributes.allergens`) — `[]` when the vertical has no `allergens`
+   * capability or the product declares none. `allergens` above remains the
+   * free-text advisory ("Made on lines that also handle…").
+   */
+  declaredAllergens: z.array(z.string()),
   nutritionFacts: z.record(z.string(), z.string()).nullable(),
   shelfLifeDays: z.number().int().positive().nullable(),
   storageInstructions: z.string().nullable(),

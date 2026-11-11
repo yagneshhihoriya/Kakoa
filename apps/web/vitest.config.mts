@@ -11,6 +11,9 @@ import { defineConfig } from 'vitest/config';
  * pack the typecheck proves, not the BRAND_KEY of the shell they run in.
  */
 export default defineConfig({
+  // Components are authored with the automatic runtime (Next's `jsx: preserve`
+  // leaves it to the bundler); vitest's esbuild must do the same.
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: {
       '@brand': path.resolve(__dirname, 'src/brands/kakoa'),
