@@ -244,7 +244,7 @@ export function ProductEditForm({
               <textarea id="p-wyg" rows={4} className={INPUT}
                 value={typeof attrs.whatYoullGet === "string" ? attrs.whatYoullGet : ""}
                 disabled={!canWrite}
-                placeholder={"One 70 g bar, individually wrapped and ready to enjoy or gift."}
+                placeholder={vocabulary.packaging.whatYoullGet}
                 onChange={(e) => setAttr("whatYoullGet", e.target.value)} />
               <p className="mt-1 text-[11px] text-[#8a7a68]">Shown in the “What You’ll Get” accordion. Leave blank for a default line.</p>
             </div>

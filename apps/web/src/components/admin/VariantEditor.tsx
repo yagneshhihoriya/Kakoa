@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TaxDefault } from "@platform/kernel";
-import { ORDER_NUMBER_PREFIX } from "@/lib/brand";
+import { ORDER_NUMBER_PREFIX, vocabulary } from "@/lib/brand";
 import { GST_RATE_PRESETS_BP } from "@/lib/admin/tax-validation";
 
 interface Variant {
@@ -256,7 +256,7 @@ export function VariantEditor({
           </div>
           <div className="sm:col-span-3">
             <label className={LABEL}>Name</label>
-            <input className={INPUT} value={draft.name} placeholder="e.g. 100g bar"
+            <input className={INPUT} value={draft.name} placeholder={`e.g. 100g ${vocabulary.unitNoun.one}`}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} />
           </div>
           <div className="sm:col-span-2">
