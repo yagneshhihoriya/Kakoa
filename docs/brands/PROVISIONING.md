@@ -268,6 +268,44 @@ hence the backup.
 | Gate extension | `scripts/brand-gate.sh` — `KH-` prefix, per-brand seed exemption only (§2); `apps/web/src/lib/brand.test.ts` keeps gate + matrix in step with `BRAND_KEYS` |
 | Strict-env build | `turbo.json` `tasks.build.env` (+ `APP_ENV`, `NEXT_PUBLIC_SITE_URL`) and `passThroughEnv` (`DATABASE_URL`, `SESSION_SECRET`, `OTP_PEPPER`) so a process-env-only `turbo build` (CI) sees what `next build` needs |
 
+### Stage 4 — Phase 2 gate (both brands, scratch Postgres, standalone server)
+
+Run on 2026-11-12 for `khakhra` and `kakoa`, each on a fresh `postgres:17`
+container: extensions → `pnpm db:migrate` (7 journal entries, 0000–0006) →
+`BRAND_KEY=<brand> pnpm db:seed` → `rm -rf apps/web/.next/cache/fetch-cache`
+→ `pnpm typecheck && turbo test --force && pnpm lint && pnpm brand-gate`
+(+ `typecheck:khakhra`) → `turbo build --filter=web --force` with the CI env →
+`node apps/web/.next/standalone/apps/web/server.js` (with `.next/static` and
+`public` copied in) on 4011 / 4012 → per-route smoke.
+
+| Check | khakhra | kakoa |
+| --- | --- | --- |
+| Seed | 15 settings · 4 categories · 6 products · 16 variants · 12 images | 15 · 4 · 10 · 12 · 0 (3 coupons) |
+| typecheck / tests / lint / gate | 8/8 · 849 passed · 0 errors (12 pre-existing warnings) · 457 files, 0 leaks | same |
+| Build | 38 s, 65 static pages, 6 PDPs prerendered | 38 s, 4 journal articles + PDPs prerendered |
+| Smoke (14 routes + `/journal` + `/locator`) | all 200; brand name, Fraunces / Mukta Vaani / Hind Vadodara faces, `#8c3b1c` / `#fff7e6` / `#d9962a` tokens, `theme-color #8C3B1C`, PDP `shelfLifeDays: 90`, airtight-container storage, FSSAI licence, Wheat (gluten) allergen; sitemap without `/journal` / `/locator`; 0 chocolate / cocoa / cold-chain / Infini leaks | all 200; KAKOA, hero copy, "Ships cold", cocoa swatches, FSSAI, Infini + DM Serif Display + Poppins ship |
+| Test order (mock prepaid) | `KH-48210` · 2 × KH-METHI-200 · ₹387.00 (₹338 + ₹49 shipping; HSN 1905 @ 500 bp, CGST/SGST ₹8.05 each) · payment `captured` (`rzp_test_mock`) · order `confirmed` · FakeEmailProvider: "Payment received — order KH-48210 · Khakhra House" · `notification_log` row `sent` | not repeated (Phase 1 gate) |
+
+Fixed on the way: `packages/ui/src/tokens.css` named KAKOA's faces (Infini, DM
+Serif Display) as the shared font fallbacks, so the literal reached every
+brand's stylesheet — the fallbacks are now generic system stacks and the brand
+gate flags `Infini` outside the packs; `/locator` now 404s for a brand with
+`features.locator` off (it rendered "Coming soon" for everyone).
+
+Known, not fixed here: every `notFound()` thrown inside a storefront page
+(`/journal`, `/locator`, an unknown product slug) answers **HTTP 200 with the
+404 UI**, because `apps/web/src/app/(storefront)/loading.tsx` wraps each page
+in a Suspense boundary and the 200 shell is flushed before the page runs; Next
+16 streams metadata too, so a `notFound()` in `generateMetadata` does not help
+(tried, reverted). A real 404 status needs the gated routes handled before the
+shell (a `proxy.ts` rewrite, or dropping the group-level `loading.tsx` in
+favour of per-route ones). Search engines still see the 404 UI, not content.
+
+By design on khakhra pages: the shared legal name and support desk
+(`Kakao Chocolates Private Limited`, `support@kakoa.in`) — the same company —
+appear in the footer, legal pages and the Organization JSON-LD (§6, "Support
+mailbox"). The preview build carries `noindex, nofollow` (`APP_ENV=preview`).
+
 ### The starter catalogue
 
 Each product is one flavour family; pack sizes are the variants (SKU
@@ -416,4 +454,13 @@ ship unreviewed.
 `apps/web/src/brands/<key>/` and `packages/brands/src/<dir>/` directory (packs,
 profiles, the shared fixture), the seed dispatcher and the per-brand seed files
 (`packages/db/src/seed*.ts`, `packages/db/src/seeds/<key>.ts`), and flags
-`khakhra` / `KH-` outside them.
+`khakhra` / `KH-` / `Infini` outside them.
+
+Before a brand ships, repeat the Stage 4 smoke (§4) against its built
+standalone server: every public route 200, the brand's name on every page, its
+faces and palette tokens in the stylesheet and no other brand's, the sitemap
+without feature-gated routes, no `undefined` / `[object Object]` /
+`not configured`, and one mock prepaid order (quote → place → verify) whose
+number carries the brand's prefix and whose confirmation mail carries its
+identity. Expect `/journal` and `/locator` to answer 200 with the 404 UI until
+the Suspense caveat in §4 is addressed.

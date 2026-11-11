@@ -14,9 +14,10 @@ cd "$(git rev-parse --show-toplevel)"
 BRAND_KEYS='kakoa|khakhra'
 
 # The words that may only appear inside a brand pack (case-insensitive) — for
-# every shipped brand (KAKOA's chocolate, Khakhra House's khakhra) — plus the
-# identifiers Phase 1 retired (a reintroduction is a leak, not a revival).
-PATTERN='KAKOA|kakoa|chocolate|cocoa|cacao|praline|truffle|bean-to-bar|ships cold|khakhra|ChocoScene|HeroShowcase|SEEDED_SLUGS|lib/content/journal'
+# every shipped brand (KAKOA's chocolate, Khakhra House's khakhra), KAKOA's
+# self-hosted typeface (Infini — the shared tokens must name no brand's face)
+# and the identifiers Phase 1 retired (a reintroduction is a leak, not a revival).
+PATTERN='KAKOA|kakoa|chocolate|cocoa|cacao|praline|truffle|bean-to-bar|ships cold|khakhra|Infini|ChocoScene|HeroShowcase|SEEDED_SLUGS|lib/content/journal'
 # Brand identifier prefixes (profile.identifierPrefix — order numbers, SKUs:
 # KK-M72-70G, KH-PLAIN-200). Case-SENSITIVE and word-anchored, unlike PATTERN:
 # a lower-case "kh-" is an ordinary substring, an upper-case KH- is a brand.
@@ -46,8 +47,10 @@ EXEMPT_FILES='(\.test\.[cm]?[jt]sx?$|\.md$|(^|/)(package\.json|pnpm-lock\.yaml|p
 #                                every issued guest-tracking token
 #   mock.kakoa.local             the mock shipping provider's fake label host
 #   brands/kakoa                 the build-time pack path in alias/config plumbing
+#   infinite / Infinity          animation keywords and the JS number, not the face
 ALLOW_TOKENS=(
   '@kakoa/[a-z0-9-]+'
+  'infinit[ey]'
   '[A-Za-z0-9_-]*-(cocoa|espresso|caramel)[A-Za-z0-9_/.%-]*'
   'kakoa\.tracking\.jwt\.v1'
   'mock\.kakoa\.local'

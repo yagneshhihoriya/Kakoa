@@ -12,11 +12,16 @@
  * utility (compiled to `var(--color-*)`) re-skins without touching this file.
  *
  * Font variables are consumed from `next/font` CSS variables set by the
- * app (`apps/web/app/layout.tsx`); `packages/ui` never imports `next/font`.
- * The app must expose:
- *   --font-dm-serif-display  (DM Serif Display — headlines only)
- *   --font-body              (Infini — body / UI default, self-hosted)
- *   --font-dm-mono           (DM Mono — eyebrow labels, uppercase, 0.14em)
+ * app (`apps/web/src/app/layout.tsx`, from the active brand pack's
+ * `fonts.ts`); `packages/ui` never imports `next/font`. The app sets, on
+ * `<html>`:
+ *   --font-display  (headlines only)
+ *   --font-body     (body / UI default)
+ *   --font-ui       (site chrome — header, footer)
+ *   --font-mono     (eyebrow labels, uppercase, 0.14em)
+ * The values below are generic system fallbacks for a render without those
+ * classes — they name no brand's typeface, so a brand's face never ships to
+ * another brand's stylesheet.
  */
 @theme {
   /* ---- Brand palette (Contract / design-system.md §1.1) ---- */
@@ -37,10 +42,10 @@
   --color-danger: var(--color-raspberry);
   --color-success: var(--color-pistachio);
 
-  /* ---- Typography (vars provided by next/font in the app) ---- */
-  --font-display: var(--font-dm-serif-display, 'DM Serif Display', Georgia, serif);
-  --font-body: 'Infini', system-ui, sans-serif;
-  --font-mono: var(--font-dm-mono, 'DM Mono', ui-monospace, 'SFMono-Regular', monospace);
+  /* ---- Typography (system fallbacks; next/font sets the real faces) ---- */
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', monospace;
 
   /* ---- Spacing scale (4px base) ---- */
   --space-1: 4px;
