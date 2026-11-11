@@ -22,9 +22,16 @@ import {
   type VerticalPreset,
 } from "@platform/kernel";
 import type { BrandNavLink, BrandProfile } from "@kakoa/brands";
-import { brand } from "@brand";
+import type { BrandPack } from "@/brands/contract";
+import { brand as pack } from "@brand";
 
-export { brand };
+/**
+ * Widened to the contract on purpose: every pack is authored `as const
+ * satisfies BrandPack`, and a consumer typed against the bundled pack's
+ * LITERALS (a null `fontAttribution`, an empty `social`, an empty journal)
+ * would compile for one brand and not another. App code sees the contract.
+ */
+export const brand: BrandPack = pack;
 export type { BrandPack } from "@/brands/contract";
 
 /* ── Vertical preset ──────────────────────────────────────────────────── */

@@ -8,7 +8,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./kakoa": "./src/kakoa/profile.ts"
+    "./kakoa": "./src/kakoa/profile.ts",
+    "./khakhra": "./src/khakhra/profile.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

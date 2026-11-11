@@ -95,7 +95,7 @@ export interface ClosingCtaCopy {
  * Thin-stroke line icons the home page can draw. Copy picks one per item so a
  * pack never ships SVG for the trust/gifting bands — only words.
  */
-export type TrustIconName = "snowflake" | "flame" | "shield";
+export type TrustIconName = "snowflake" | "flame" | "shield" | "box";
 export type GiftIconName = "wrap" | "note" | "truck";
 
 export interface TrustSignalCopy {

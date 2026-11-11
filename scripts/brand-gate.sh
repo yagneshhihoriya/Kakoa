@@ -8,15 +8,17 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# The words that may only appear inside a brand pack (case-insensitive), plus
-# the identifiers Phase 1 retired (a reintroduction is a leak, not a revival).
-PATTERN='KAKOA|kakoa|chocolate|cocoa|cacao|praline|truffle|bean-to-bar|ships cold|ChocoScene|HeroShowcase|SEEDED_SLUGS|lib/content/journal'
+# The words that may only appear inside a brand pack (case-insensitive) — for
+# every shipped brand (KAKOA's chocolate, Khakhra House's khakhra) — plus the
+# identifiers Phase 1 retired (a reintroduction is a leak, not a revival).
+PATTERN='KAKOA|kakoa|chocolate|cocoa|cacao|praline|truffle|bean-to-bar|ships cold|khakhra|ChocoScene|HeroShowcase|SEEDED_SLUGS|lib/content/journal'
 
-# Paths that are allowed to carry the brand: the two kakoa packs, the brand
-# registry (the ONE place that enumerates brand keys), the kakoa seed, the
-# kernel preset catalogue (vertical templates), tests, docs, CI config and the
-# local editor launch config.
-EXEMPT_PATHS='^(apps/web/src/brands/kakoa/|packages/brands/src/kakoa/|packages/brands/src/(index|keys)\.ts$|packages/db/src/seed[^/]*\.ts$|packages/kernel/src/presets\.ts$|docs/|\.github/|\.claude/|scripts/brand-gate\.sh$)'
+# Paths that are allowed to carry a brand: every presentation pack
+# (apps/web/src/brands/<key>/), every profile directory and the shared seller
+# fixture (packages/brands/src/<dir>/), the brand registry (the ONE place that
+# enumerates brand keys), the brand seeds, the kernel preset catalogue (vertical
+# templates), tests, docs, CI config and the local editor launch config.
+EXEMPT_PATHS='^(apps/web/src/brands/[a-z0-9-]+/|packages/brands/src/[a-z0-9-]+/|packages/brands/src/(index|keys)\.ts$|packages/db/src/seed[^/]*\.ts$|packages/kernel/src/presets\.ts$|docs/|\.github/|\.claude/|scripts/brand-gate\.sh$)'
 # File kinds that are not source: tests, markdown, lockfiles/manifests (the
 # `@kakoa/*` package scope and the kakoa tsconfig/alias defaults live there),
 # binary assets.

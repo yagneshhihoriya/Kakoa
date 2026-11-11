@@ -1,0 +1,72 @@
+/*
+ * Khakhra House palette — turmeric, terracotta and cream. Imported by the root
+ * layout AFTER globals.css: Tailwind v4 emits @theme variables inside @layer
+ * theme, so this unlayered :root rule wins and re-skins every token-backed
+ * utility without touching packages/ui/src/tokens.css. Token NAMES are shared
+ * across brands (they stay chocolate-flavoured by design — `--color-cocoa` is
+ * "the secondary dark", `--color-espresso` "the warm mid-tone"); only the
+ * VALUES live here, and this file declares exactly the set the KAKOA pack does
+ * (brands/khakhra/theme.test.ts asserts the parity and the contrast of every
+ * text-on-field pair). Spacing, type scale, radius and motion are platform
+ * tokens and are not re-declared.
+ */
+:root {
+  /* ---- Brand palette ---- */
+  --color-ink: #2c1a0b; /* roasted-wheat ink */
+  --color-cocoa: #7a3b1e; /* terracotta, deep */
+  --color-espresso: #b4532a; /* terracotta */
+  --color-cream: #fff7e6; /* page field — also the manifest background_color */
+  --color-card: #f7e8c8; /* pale wheat */
+  --color-line: #eddcb8;
+  --color-gold: #d9962a; /* turmeric */
+  --color-caramel: #e0a93f; /* turmeric, light */
+  --color-raspberry: #c2473b; /* chilli — danger */
+  --color-pistachio: #6e8a3c; /* coriander — success */
+  --color-plum: #7d4b63;
+
+  /* ---- Semantic neutrals ---- */
+  --color-ink-soft: #5b4330;
+  --color-ink-muted: #8a7254;
+  --color-ink-hover: #44281a;
+  --color-ink-body: #4f3a28;
+  --color-cocoa-deep: #4a2010;
+  --color-surface: #ffffff;
+  --color-cream-2: #faefd8;
+  --color-line-soft: #f0e3c8;
+  --color-line-strong: #e3cfa6;
+  --color-gold-soft: #f3d9a3;
+  --color-pistachio-deep: #4a5f26;
+
+  /* ---- Site chrome field (announcement ribbon, footer, square buttons) ---- */
+  --color-field: #8c3b1c;
+  --color-field-ink: #fff3dc;
+  --color-field-light: #a84a26;
+  --color-field-deep: #4f1f0d;
+
+  /* ---- Selection, scrollbar, shadow hue ---- */
+  --color-selection: #f3d9a3;
+  --color-scrollbar: #e3c99a;
+  --color-scrollbar-hover: #cfae72;
+  --shadow-tint: 44 26 11;
+
+  /* ---- Customer avatar gradient pairs ---- */
+  --color-avatar-honey: #f6dfa8;
+  --color-avatar-honey-deep: #e5c078;
+  --color-avatar-almond: #f0dfc0;
+  --color-avatar-almond-deep: #d9bc8c;
+  --color-avatar-rose: #f0cbb8;
+  --color-avatar-rose-deep: #dba58f;
+  --color-avatar-sage: #dfe3bd;
+  --color-avatar-sage-deep: #c2c88e;
+  --color-avatar-caramel: #f3d2a0;
+  --color-avatar-caramel-deep: #e0b06e;
+  --color-avatar-clay: #ecc9a8;
+  --color-avatar-clay-deep: #d6a67c;
+
+  /* ---- Order-success confetti ---- */
+  --color-confetti-gold: #e0a93f;
+  --color-confetti-pistachio: #6e8a3c;
+  --color-confetti-brick: #a33d22;
+  --color-confetti-sun: #f0c75e;
+  --color-confetti-espresso: #b4532a;
+}

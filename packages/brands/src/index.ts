@@ -18,14 +18,17 @@ export {
   type LegalIdentityKey,
 } from './contract';
 export { KAKOA } from './kakoa/profile';
+export { KHAKHRA } from './khakhra/profile';
 
 import { BRAND_KEYS, isBrandKey, type BrandKey } from './keys';
 import type { BrandProfile } from './contract';
 import { KAKOA } from './kakoa/profile';
+import { KHAKHRA } from './khakhra/profile';
 
 /** Registry of every shipped brand, keyed by BRAND_KEY. */
 export const BRANDS: Readonly<Record<BrandKey, BrandProfile>> = {
   kakoa: KAKOA,
+  khakhra: KHAKHRA,
 };
 
 export function getBrandProfile(key: BrandKey): BrandProfile {

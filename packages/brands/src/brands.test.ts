@@ -4,6 +4,7 @@ import {
   BRANDS,
   BRAND_KEYS,
   KAKOA,
+  KHAKHRA,
   LEGAL_IDENTITY_KEYS,
   brandProfileSchema,
   getBrandProfile,
@@ -57,17 +58,120 @@ describe('KAKOA profile', () => {
   });
 });
 
+describe('KHAKHRA profile', () => {
+  it('carries the working identity the owner chose', () => {
+    expect(KHAKHRA.key).toBe('khakhra');
+    expect(KHAKHRA.name).toBe('Khakhra House');
+    expect(KHAKHRA.shortName).toBe('Khakhra');
+    expect(KHAKHRA.identifierPrefix).toBe('KH');
+    expect(KHAKHRA.cookiePrefix).toBe('khakhra');
+    expect(KHAKHRA.email.fromName).toBe('Khakhra House');
+    expect(KHAKHRA.locale).toBe('en-IN');
+    expect(KHAKHRA.availableLanguages).toEqual(['en', 'gu', 'hi']);
+    expect(KHAKHRA.features).toEqual({ journal: false, locator: false, gifting: true, giftWrap: true });
+    expect(KHAKHRA.social).toEqual({});
+  });
+
+  it('passes the zod contract', () => {
+    const result = brandProfileSchema.safeParse(getBrandProfile('khakhra'));
+    expect(result.success, result.success ? '' : JSON.stringify(result.error.issues)).toBe(true);
+  });
+
+  it('mirrors the KAKOA fee policy with COD off', () => {
+    const fees = (p: typeof KAKOA | typeof KHAKHRA) => [
+      p.defaults.shipping_fee_standard_paise,
+      p.defaults.shipping_fee_express_paise,
+      p.defaults.free_shipping_threshold_paise,
+      p.defaults.gift_wrap_fee_paise,
+      p.defaults.cod_enabled,
+    ];
+    expect(fees(KHAKHRA)).toEqual(fees(KAKOA));
+    expect(fees(KHAKHRA)).toEqual([4900, 14900, 99900, 4900, false]);
+  });
+
+  it('is the same legal entity as KAKOA — one shared fixture, never a second literal', () => {
+    expect(KHAKHRA.seedLegalIdentity).toBe(KAKOA.seedLegalIdentity);
+    expect(KHAKHRA.defaults.support_phone).toBe(KAKOA.defaults.support_phone);
+    expect(KHAKHRA.defaults.support_email).toBe(KAKOA.defaults.support_email);
+    expect(KHAKHRA.defaults.support_hours).toBe(KAKOA.defaults.support_hours);
+    for (const key of LEGAL_IDENTITY_KEYS) expect(key in KHAKHRA.defaults).toBe(false);
+  });
+
+  it('never ships a cold-chain claim (every string value, legal identity aside)', () => {
+    const { seedLegalIdentity: _entity, ...own } = KHAKHRA;
+    const leaves: string[] = [];
+    const walk = (value: unknown): void => {
+      if (typeof value === 'string') leaves.push(value.toLowerCase());
+      else if (Array.isArray(value)) value.forEach(walk);
+      else if (value !== null && typeof value === 'object') Object.values(value).forEach(walk);
+    };
+    walk(own);
+    expect(leaves.length).toBeGreaterThan(40);
+    for (const banned of ['cold', 'ice pack', 'insulat', 'melt', 'chocolate']) {
+      expect(leaves.filter((s) => s.includes(banned)), `profile says "${banned}"`).toEqual([]);
+    }
+  });
+
+  it('resolves to the snacks preset tuned for khakhra', () => {
+    const preset = resolvePreset(KHAKHRA);
+    expect(preset.key).toBe('snacks');
+    expect(preset.label).toBe('Khakhra');
+    expect(preset.taxDefaults).toEqual({
+      category: 'Khakhra / bakery products',
+      rateBp: 0,
+      codeSystem: 'HSN',
+      code: '1905',
+    });
+    expect(preset.capabilities).not.toContain('cold-chain');
+    expect(preset.capabilities).toEqual(expect.arrayContaining(['variants', 'allergens', 'veg-mark', 'hsn-codes']));
+    expect(preset.storefront.coldChain).toBe(false);
+    expect(preset.storefront.noun).toEqual({ one: 'khakhra', many: 'khakhras', collective: 'khakhra' });
+    expect(preset.storefront.unitNoun).toEqual({ one: 'pack', many: 'packs' });
+    expect(preset.storefront.packaging.trustLabel).toBe('Packed crisp, ships anywhere in India');
+    expect(preset.storefront.packaging.pdpBullet).toContain('{unit}');
+    expect(preset.storefront.returnReasonLabels).toMatchObject({
+      damaged_or_melted: 'Damaged or crushed',
+      wrong_item: 'Wrong item received',
+    });
+
+    const options = (key: string) => preset.attributeSchema.find((a) => a.key === key)?.options;
+    expect(options('pack_size')).toEqual(['200 g', '400 g', '1 kg']);
+    expect(options('flavour')).toEqual(['Plain', 'Methi', 'Masala', 'Jeera', 'Pudina', 'Multigrain']);
+    expect(options('spice_level')).toEqual(['Mild', 'Medium', 'Hot']);
+    expect(options('allergens')).toEqual(['Wheat (gluten)', 'Sesame', 'Milk', 'Nuts', 'Soy']);
+    // The override patched option lists in place — the preset's other attribute
+    // fields (group, showOnPdp, capability) survive.
+    const flavour = preset.attributeSchema.find((a) => a.key === 'flavour');
+    expect(flavour).toMatchObject({ group: 'Flavour', showOnPdp: true });
+    expect(preset.attributeSchema.find((a) => a.key === 'allergens')?.capability).toBe('allergens');
+    expect(preset.attributeSchema.map((a) => a.key)).toEqual(
+      PRESETS.snacks.attributeSchema.map((a) => a.key),
+    );
+
+    expect(preset.categoryTaxonomy?.map((c) => [c.slug, c.name])).toEqual([
+      ['plain-classic', 'Plain & Everyday'],
+      ['masala-flavoured', 'Masala & Flavoured'],
+      ['multigrain-health', 'Multigrain & Millet'],
+      ['gift-packs', 'Gift Packs & Combos'],
+    ]);
+    expect(KHAKHRA.nav.primary.map((l) => l.href)).toContain('/shop?category=gift-packs');
+    expect(preset.presentation.defaultSwatch).toBe('wheat');
+  });
+});
+
 describe('resolveBrandKey', () => {
   it('accepts a registered key', () => {
     expect(resolveBrandKey({ BRAND_KEY: 'kakoa' })).toBe('kakoa');
+    expect(resolveBrandKey({ BRAND_KEY: 'khakhra' })).toBe('khakhra');
     expect(isBrandKey('kakoa')).toBe(true);
+    expect(isBrandKey('khakhra')).toBe(true);
   });
 
   it('rejects unset, empty and unknown keys with a readable error', () => {
-    expect(() => resolveBrandKey({})).toThrow(/BRAND_KEY must be one of: kakoa \(got nothing\)/);
+    expect(() => resolveBrandKey({})).toThrow(/BRAND_KEY must be one of: kakoa, khakhra \(got nothing\)/);
     expect(() => resolveBrandKey({ BRAND_KEY: '' })).toThrow(/got nothing/);
     expect(() => resolveBrandKey({ BRAND_KEY: 'Kakoa' })).toThrow(/got "Kakoa"/);
-    expect(isBrandKey('khakhra')).toBe(false);
+    expect(isBrandKey('bakery')).toBe(false);
     expect(isBrandKey(undefined)).toBe(false);
   });
 

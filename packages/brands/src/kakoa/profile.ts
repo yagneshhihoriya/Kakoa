@@ -9,6 +9,7 @@
  * contact point, and the footer's social / newsletter / announcement copy.
  */
 import type { BrandProfile } from '../contract';
+import { SELLER_LEGAL_IDENTITY, SELLER_SUPPORT_CONTACT } from '../shared/seller-identity';
 
 export const KAKOA = {
   key: 'kakoa',
@@ -77,9 +78,7 @@ export const KAKOA = {
     cod_enabled: false, // prepaid/online-only launch; flip to true to enable COD
     cod_fee_paise: 4900, // ₹49
     payment_expiry_minutes: 30,
-    support_phone: '+919820012345',
-    support_email: 'support@kakoa.in',
-    support_hours: 'Monday to Saturday, 10:00–18:00 IST',
+    ...SELLER_SUPPORT_CONTACT,
     // Ribbon / club / policy lines the storefront rendered as literals before
     // the move; the owner overrides them in Admin → Settings.
     announcement_segments: [
@@ -96,14 +95,7 @@ export const KAKOA = {
     shiprocket_pickup_location: 'Primary',
   },
   // Written by the KAKOA seed only; at runtime the legal identity is whatever
-  // store_settings holds (no code fallback — see contract.ts).
-  seedLegalIdentity: {
-    seller_legal_name: 'Kakao Chocolates Private Limited',
-    seller_gstin: '27AABCK4321M1Z5',
-    seller_state_code: '27',
-    seller_address:
-      'Unit 12, Veera Desai Industrial Estate, Andheri West, Mumbai 400053, Maharashtra, India',
-    origin_pincode: '400053',
-    fssai_license_number: '11525023000841',
-  },
+  // store_settings holds (no code fallback — see contract.ts). The entity is
+  // shared with every sister brand (shared/seller-identity.ts).
+  seedLegalIdentity: SELLER_LEGAL_IDENTITY,
 } as const satisfies BrandProfile;

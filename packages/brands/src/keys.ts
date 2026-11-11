@@ -6,7 +6,7 @@
  * Append-only: a new brand adds its key here, its profile under src/<key>/ and
  * its entry in the BRANDS registry (src/index.ts).
  */
-export const BRAND_KEYS = ['kakoa'] as const;
+export const BRAND_KEYS = ['kakoa', 'khakhra'] as const;
 
 export type BrandKey = (typeof BRAND_KEYS)[number];
 

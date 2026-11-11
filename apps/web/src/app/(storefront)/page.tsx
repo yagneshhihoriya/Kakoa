@@ -68,6 +68,14 @@ function TrustIcon({ name }: { name: TrustIconName }): ReactNode {
       </svg>
     );
   }
+  if (name === "box") {
+    return (
+      <svg {...common}>
+        <path d="M3 8l9-4 9 4v9l-9 4-9-4V8z" />
+        <path d="M3 8l9 4 9-4M12 12v9" />
+      </svg>
+    );
+  }
   return (
     <svg {...common}>
       <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" />
