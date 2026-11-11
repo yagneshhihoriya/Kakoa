@@ -218,9 +218,12 @@ hence the backup.
 3. **Rehearse on scratch:** `docker run -d --name kakoa-scratch -e POSTGRES_PASSWORD=scratch -p 54329:5432 postgres:17`,
    `pg_restore -d postgres://postgres:scratch@127.0.0.1:54329/postgres --no-owner --no-privileges <dump>`,
    then run step 4 against the scratch URL and step 5's checks.
-4. **Check the journal, then apply.** `select * from drizzle.__drizzle_migrations;`
-   — if 0000–0005 are listed, `DATABASE_URL=<session pooler URL> pnpm db:migrate`
-   applies only 0006. If the journal is missing (migrations were applied by
+4. **Check the journal, then apply.** The journal table stores only `hash` and
+   `created_at` (never migration names), so check it by count and timestamp:
+   `select count(*), max(created_at) from drizzle.__drizzle_migrations;` should
+   give `6` and the `when` value of `0005_curved_old_lace` in
+   `packages/db/migrations/meta/_journal.json`. Then
+   `DATABASE_URL=<session pooler URL> pnpm db:migrate` applies only 0006. If the journal is missing (migrations were applied by
    hand), apply the file directly in one transaction instead:
    `psql "<session pooler URL>" -1 -v ON_ERROR_STOP=1 -f packages/db/migrations/0006_freezing_blacklash.sql`
    (the `--> statement-breakpoint` markers are SQL comments).

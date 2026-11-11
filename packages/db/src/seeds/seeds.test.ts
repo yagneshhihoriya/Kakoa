@@ -150,7 +150,10 @@ describe('khakhra seed (starter catalogue)', () => {
     for (const product of spec.products) {
       const declared = product.attributes.allergens;
       expect(Array.isArray(declared) && declared.includes('Wheat (gluten)')).toBe(true);
-      expect(product.allergens).toMatch(/wheat \(gluten\)/i);
+      // The free-text field is the cross-contact advisory only; the PDP prints
+      // "Contains …" from attributes.allergens, so the advisory must not repeat it.
+      expect(product.allergens).toMatch(/^Made on lines that also handle/);
+      expect(product.allergens).not.toMatch(/^Contains/i);
       const hasSesame = /sesame/i.test(product.ingredients);
       expect(Array.isArray(declared) && declared.includes('Sesame')).toBe(hasSesame);
     }

@@ -9,8 +9,9 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 # The brand keys the repo ships — mirrors BRAND_KEYS in packages/brands/src/keys.ts
-# (the gate cannot import it; packages/brands/src/brands.test.ts keeps the two
-# in step). Names the per-brand seed files below.
+# (the gate cannot import it; apps/web/src/lib/brand.test.ts — the "brand
+# enumerations outside TypeScript" suite — fails when the two drift). Names the
+# per-brand seed files below.
 BRAND_KEYS='kakoa|khakhra'
 
 # The words that may only appear inside a brand pack (case-insensitive) — for

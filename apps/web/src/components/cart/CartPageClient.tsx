@@ -65,6 +65,16 @@ function SnowIcon(): ReactNode {
   );
 }
 
+/** Sealed-carton cue for room-temperature verticals (the non-cold-chain twin of SnowIcon). */
+function BoxIcon(): ReactNode {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 8l9-4 9 4v9l-9 4-9-4V8z" />
+      <path d="M3 8l9 4 9-4M12 12v9" />
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Loading / error / empty states                                      */
 /* ------------------------------------------------------------------ */
@@ -360,10 +370,11 @@ function TrustLine(): ReactNode {
   const items: { icon: ReactNode; label: string }[] = [
     { icon: <LockIcon />, label: "Secure checkout" },
     { icon: <HeartIcon />, label: "Satisfaction promise" },
-    // The vertical's shipping claim (cold-chain verticals add one; others none).
+    // The vertical's shipping claim, with the icon chosen by the claim it makes:
+    // a snowflake only for cold-chain verticals, a sealed carton otherwise.
     ...(vocabulary.packaging.trustLabel === null
       ? []
-      : [{ icon: <SnowIcon />, label: vocabulary.packaging.trustLabel }]),
+      : [{ icon: vocabulary.coldChain ? <SnowIcon /> : <BoxIcon />, label: vocabulary.packaging.trustLabel }]),
   ];
   return (
     <ul className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-5">

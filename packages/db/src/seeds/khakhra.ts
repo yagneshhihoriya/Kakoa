@@ -125,8 +125,10 @@ function nutritionPer100g(n: Nutrition): Record<string, string> {
 
 /* ── Products — one flavour family each, pack sizes as variants ────────────── */
 
-const WHEAT_ONLY = 'Contains wheat (gluten). Made on lines that also handle sesame, milk and tree nuts.';
-const WHEAT_SESAME = 'Contains wheat (gluten) and sesame. Made on lines that also handle milk and tree nuts.';
+// Cross-contact advisory only — the declared allergens come from attributes.allergens
+// (the PDP prints "Contains …" from that list, so repeating it here would double up).
+const WHEAT_ONLY = 'Made on lines that also handle sesame, milk and tree nuts.';
+const WHEAT_SESAME = 'Made on lines that also handle milk and tree nuts.';
 
 function gallery(slug: string, name: string, bg: string): ProductSeed['images'] {
   return [
