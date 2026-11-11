@@ -39,7 +39,9 @@ export function MediaPicker({
 }: {
   onPick?: (asset: { url: string; alt: string }) => void;
   onPickMany?: (assets: { url: string; alt: string }[]) => void;
-  onUploaded?: (assets: MediaAssetRow[]) => void | Promise<void>;
+  /** Fresh uploads plus how many files were refused, so the caller can report
+   *  partial failures after this dialog closes. */
+  onUploaded?: (assets: MediaAssetRow[], result: { failed: number }) => void | Promise<void>;
   onClose: () => void;
   scope?: MediaPickerScope;
   attachedUrls?: readonly string[];
@@ -132,7 +134,9 @@ export function MediaPicker({
       setMsg(`${failed} upload${failed === 1 ? "" : "s"} failed (JPG/PNG/WebP/GIF/AVIF, up to 8 MB each).`);
     }
     if (uploaded.length > 0 && onUploaded) {
-      await onUploaded(uploaded);
+      // The caller usually closes this dialog, so the failure count travels
+      // with the uploads instead of dying with the unmounted message above.
+      await onUploaded(uploaded, { failed });
       setBusy(false);
       return;
     }

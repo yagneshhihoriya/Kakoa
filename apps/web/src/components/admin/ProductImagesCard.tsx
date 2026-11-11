@@ -90,9 +90,16 @@ export function ProductImagesCard({
     await attachMany(assets);
   }
 
-  async function onUploaded(assets: MediaAssetRow[]): Promise<void> {
+  async function onUploaded(assets: MediaAssetRow[], { failed }: { failed: number }): Promise<void> {
     setPicking(false);
     await attachMany(assets.map((a) => ({ url: a.url, alt: a.alt || a.filename })));
+    if (failed > 0) {
+      // Partial failures would otherwise vanish with the closed picker.
+      setMsg((prev) =>
+        `${failed} upload${failed === 1 ? "" : "s"} failed (JPG/PNG/WebP/GIF/AVIF, up to 8 MB each).` +
+        (prev ? ` ${prev}` : ""),
+      );
+    }
   }
 
   async function detach(imageId: string): Promise<void> {
