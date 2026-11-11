@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { MediaAssetRow, MediaList } from "@/lib/admin/media";
 
 /** Narrow the picker to one folder (a product's own gallery) with a tab label. */
@@ -173,7 +174,10 @@ export function MediaPicker({
     "rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors " +
     (active ? "bg-[#2a1d12] text-[#f3e7d5]" : "text-[#8a7a68] hover:bg-[#f3e7d5] hover:text-[#2a1d12]");
 
-  return (
+  // Rendered on <body>: an animated/transformed ancestor (the admin page
+  // transition) would otherwise become the containing block for this fixed
+  // overlay and pin it to the page instead of the viewport.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2a1d12]/50 p-4 backdrop-blur-[2px]">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default" />
       <div
@@ -341,6 +345,7 @@ export function MediaPicker({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
