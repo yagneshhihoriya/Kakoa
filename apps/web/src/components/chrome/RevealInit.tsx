@@ -7,7 +7,7 @@ const NEVER_HIDE_FALLBACK_MS = 1700;
 
 /**
  * `_enhance` section fade-ups from the prototype: any element carrying
- * `data-reveal` starts at opacity 0 / translateY(26px) (CSS in globals.css,
+ * `data-reveal` starts at opacity 0 / translateY(16px) (CSS in globals.css,
  * gated behind the `.kk-js` class this component sets) and transitions in
  * when it enters the viewport.
  *

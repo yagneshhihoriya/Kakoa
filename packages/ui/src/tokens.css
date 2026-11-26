@@ -66,6 +66,7 @@
 
   /* ---- Breakpoints (mobile-first, authored at 360px) ---- */
   --breakpoint-sm: 640px;
+  --breakpoint-md: 768px; /* declared so all tiers share a unit and sort sm<md<lg<xl */
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
 
