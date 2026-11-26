@@ -52,7 +52,7 @@ export function BrandLockup({
         className={cx(
           "font-display leading-none",
           isHeader
-            ? "whitespace-nowrap text-[clamp(16px,4.6vw,26px)] tracking-[.01em] text-ink max-[339px]:hidden"
+            ? "whitespace-nowrap text-[clamp(14px,4.2vw,26px)] tracking-[.01em] text-ink max-[349px]:hidden"
             : "text-[25px] text-card",
         )}
       >
