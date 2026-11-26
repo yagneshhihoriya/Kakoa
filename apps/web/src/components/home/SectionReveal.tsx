@@ -5,7 +5,7 @@ import { useEffect } from "react";
 /**
  * Section fade-up enhancement — 1:1 port of the prototype's `_enhance()`
  * (app script): every `main > section` starts `opacity: 0` /
- * `translateY(26px)` and reveals on intersection with a small stagger
+ * `translateY(16px)` and reveals on intersection with a small stagger
  * (`min(i, 6) * 0.05s`). Progressive enhancement only:
  *
  * - styles are applied *from JS* after mount, so no-JS visitors and the
@@ -47,7 +47,7 @@ export function SectionReveal(): null {
       );
       targets.forEach((target, index) => {
         target.style.opacity = "0";
-        target.style.transform = "translateY(26px)";
+        target.style.transform = "translateY(16px)";
         const delay = Math.min(index, 6) * 0.05;
         target.style.transition = `opacity .75s cubic-bezier(.2,.7,.3,1) ${delay}s, transform .75s cubic-bezier(.2,.7,.3,1) ${delay}s`;
         io?.observe(target);

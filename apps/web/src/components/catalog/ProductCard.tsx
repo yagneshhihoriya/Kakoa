@@ -149,8 +149,11 @@ export function ProductCard({
         </p>
         <div
           className={cx(
-            "flex items-center gap-1.5 sm:mt-2.5 sm:mb-[14px] sm:min-h-[18px]",
-            product.ratingCount > 0 ? "mt-1.5" : "max-sm:hidden",
+            // The row keeps its height on phones even without a rating so the
+            // price baselines of neighbouring tiles line up; the "New" label
+            // is desktop-only there (the photo badge already says it).
+            "mt-1.5 flex min-h-[18px] items-center gap-1.5 sm:mt-2.5 sm:mb-[14px]",
+            product.ratingCount > 0 ? "" : "max-sm:[&>span]:hidden",
           )}
         >
           {product.ratingCount > 0 ? (

@@ -127,9 +127,23 @@ function GiftIcon({ name }: { name: GiftIconName }): ReactNode {
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
-/** Premium pill CTAs — reused across the home hero and story bands. */
+/** Premium pill CTAs — the gifting section's "Shop gift packs" and the story band's outline. */
 const PRIMARY_CTA = `rounded-pill bg-ink px-[30px] py-4 font-body text-[15.5px] font-bold text-cream shadow-lift transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-ink-hover motion-reduce:transform-none ${FOCUS_RING}`;
-const SECONDARY_CTA = `rounded-pill border-[1.5px] border-ink/25 px-[30px] py-4 font-body text-[15.5px] font-bold text-ink transition-colors duration-[var(--duration-base)] hover:border-ink hover:bg-card ${FOCUS_RING}`;
+const SECONDARY_CTA = `rounded-pill border-[1.5px] border-ink/25 px-[30px] py-4 font-body text-[15.5px] font-bold text-ink transition-colors duration-[var(--duration-base)] hover:border-ink hover:bg-cream ${FOCUS_RING}`;
+/**
+ * One seam everywhere. A cream section owns only the space ABOVE itself
+ * (72px desktop / 56px phone) — never a bottom padding, so neighbours cannot
+ * stack into 144–160px voids. A full-bleed tinted band takes the same seam
+ * as a margin above its colour edge and a one-step-smaller inset inside it,
+ * so its padding reads as material rather than emptiness. The last cream
+ * section before the footer also carries one bottom seam.
+ */
+const SECTION = "mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 lg:pt-[72px]";
+const BAND = "mt-14 lg:mt-[72px]";
+const BAND_INNER = "mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16";
+/** Section header row: eyebrow + title on the left, the section's next step on the right. */
+const SECTION_HEAD = "mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mb-8";
+const HEAD_LINK = `flex items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold transition-[gap] hover:gap-2.5 ${FOCUS_RING}`;
 
 /** DM-Mono eyebrow with a growing rule — the section signature. */
 function Eyebrow({
@@ -231,7 +245,7 @@ export default async function HomePage() {
             the first layer; the field gradient stands in until it exists. */}
         <div
           aria-hidden="true"
-          className="relative aspect-square w-full sm:aspect-[1989/791] md:absolute md:inset-0 md:-z-10 md:aspect-auto"
+          className="relative aspect-[4/3] w-full sm:aspect-[1989/791] md:absolute md:inset-0 md:-z-10 md:aspect-auto"
         >
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_74%_38%,var(--color-field-light)_0%,var(--color-field)_46%,var(--color-field-deep)_100%)]" />
           {heroPhoto !== null ? (
@@ -254,10 +268,19 @@ export default async function HomePage() {
           ) : null}
         </div>
 
-        <div className="w-full px-[3%] py-12 md:py-10 lg:py-20">
+        <div className="w-full px-5 pt-9 pb-10 md:px-[3%] md:py-10 lg:py-16">
           <div className="w-full md:max-w-[58%] lg:max-w-[50%]">
             <div className="mb-6">
-              <Eyebrow tone="gold">{home.hero.eyebrow}</Eyebrow>
+              <Eyebrow tone="gold">
+                {/* Three claims on wide screens; the third wraps a 375px line,
+                    so phones show two. Layout only — the copy is unchanged. */}
+                {home.hero.eyebrow.split(" • ").map((claim, index) => (
+                  <span key={claim} className={index >= 2 ? "max-sm:hidden" : undefined}>
+                    {index > 0 ? <span aria-hidden="true"> • </span> : null}
+                    {claim}
+                  </span>
+                ))}
+              </Eyebrow>
             </div>
             <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance whitespace-pre-line text-field-ink md:text-[28px] md:leading-[1.15] lg:text-[34px]">
               {home.hero.headline(heroName)}
@@ -265,7 +288,7 @@ export default async function HomePage() {
             <p className="mb-8 max-w-[52ch] text-[14px] leading-[21px] font-light tracking-[0.7px] text-field-ink/85">
               {staticHero ? home.hero.body : (heroProduct?.blurb ?? home.hero.body)}
             </p>
-            <div className="mb-9 flex flex-wrap gap-3.5">
+            <div className="flex flex-wrap gap-3">
               <Link
                 href={heroProduct !== null && !staticHero ? `/product/${heroProduct.slug}` : "/shop"}
                 className={`rounded-none border border-field-ink bg-field-ink px-5 py-3 text-[14px] tracking-[1.4px] text-field uppercase no-underline transition-colors hover:bg-transparent hover:text-field-ink ${FOCUS_RING}`}
@@ -311,7 +334,7 @@ export default async function HomePage() {
           tablet-and-up, where the three cards sit side by side. */}
       <section
         aria-label={home.trust.ariaLabel}
-        className="mx-auto max-w-[1240px] px-5 pt-8 sm:px-8 sm:pt-14 lg:pt-[72px]"
+        className="mx-auto max-w-[1240px] px-5 pt-10 sm:px-8 sm:pt-14 lg:pt-[72px]"
       >
         <ul className="grid grid-cols-3 gap-px overflow-hidden rounded-[18px] border border-line bg-line shadow-soft sm:rounded-[22px]">
           {home.trust.signals.map((signal) => (
@@ -342,9 +365,9 @@ export default async function HomePage() {
       {collections.length > 0 ? (
         <section
           aria-labelledby="home-collections"
-          className="mx-auto max-w-[1240px] px-5 sm:px-8 py-14 lg:py-[72px]"
+          className={SECTION}
         >
-          <div className="mb-8 flex items-end justify-between gap-4">
+          <div className={SECTION_HEAD}>
             <div>
               <div className="mb-2.5">
                 <Eyebrow>{home.collections.eyebrow}</Eyebrow>
@@ -358,12 +381,12 @@ export default async function HomePage() {
             </div>
             <Link
               href="/shop"
-              className={`hidden items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold text-ink transition-[gap] hover:gap-2.5 sm:flex ${FOCUS_RING}`}
+              className={`${HEAD_LINK} text-ink`}
             >
               All {vocabulary.noun.collective} <span aria-hidden="true">→</span>
             </Link>
           </div>
-          <ul className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-[18px]">
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-[18px]">
             {collections.map(({ category, count }, index) => (
               <li key={category.id}>
                 <Link
@@ -372,8 +395,10 @@ export default async function HomePage() {
                 >
                   <div className="overflow-hidden">
                     <div className="transition-transform duration-[700ms] ease-brand group-hover:scale-[1.06] motion-reduce:group-hover:scale-100">
-                      {category.imageUrl !== null ? (
-                        <div className="relative aspect-[4/5] w-full overflow-hidden">
+                      {/* Portrait on phones (two-up), square at four-up so the
+                          four tiles stop reading as a second product wall. */}
+                      <div className="relative aspect-[4/5] w-full overflow-hidden lg:aspect-square">
+                        {category.imageUrl !== null ? (
                           <SafeImage
                             src={category.imageUrl}
                             alt=""
@@ -381,23 +406,23 @@ export default async function HomePage() {
                             sizes="(max-width: 1024px) 50vw, 25vw"
                             className="object-cover"
                           />
-                        </div>
-                      ) : (
-                        <ProductPlaceholder
-                          tone={categorySwatch(index)}
-                          ratio="4 / 5"
-                          className="rounded-none!"
-                        />
-                      )}
+                        ) : (
+                          <ProductPlaceholder
+                            tone={categorySwatch(index)}
+                            ratio="4 / 5"
+                            className="absolute inset-0 h-full w-full rounded-none!"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div
                     aria-hidden="true"
                     className="absolute inset-0 bg-[linear-gradient(to_top,rgba(20,10,4,.72),rgba(20,10,4,.05)_54%)]"
                   />
-                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-4">
+                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3.5 sm:p-4">
                     <div className="text-cream">
-                      <div className="font-display text-[22px] leading-tight font-normal">
+                      <div className="font-display text-[19px] leading-tight font-normal sm:text-[22px]">
                         {category.name}
                       </div>
                       <div className="font-mono text-[11px] font-medium tracking-[0.1em] opacity-85">
@@ -406,7 +431,7 @@ export default async function HomePage() {
                     </div>
                     <span
                       aria-hidden="true"
-                      className="grid h-9 w-9 flex-none translate-y-1 place-items-center rounded-pill bg-cream/90 text-ink opacity-0 transition-[opacity,transform] duration-[var(--duration-base)] ease-brand group-hover:translate-y-0 group-hover:opacity-100"
+                      className="grid h-9 w-9 flex-none translate-y-1 place-items-center rounded-pill bg-cream/90 text-ink opacity-0 transition-[opacity,transform] duration-[var(--duration-base)] ease-brand group-hover:translate-y-0 group-hover:opacity-100 max-sm:hidden"
                     >
                       →
                     </span>
@@ -421,9 +446,9 @@ export default async function HomePage() {
       {/* ======================== BEST SELLERS ======================== */}
       <section
         aria-labelledby="home-featured"
-        className="mx-auto max-w-[1240px] px-5 sm:px-8 py-14 lg:py-[72px]"
+        className={SECTION}
       >
-        <div className="mb-8 flex items-end justify-between gap-4">
+        <div className={SECTION_HEAD}>
           <div>
             <div className="mb-2.5">
               <Eyebrow>{home.bestSellers.eyebrow}</Eyebrow>
@@ -437,13 +462,13 @@ export default async function HomePage() {
           </div>
           <Link
             href="/shop"
-            className={`flex items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold text-ink transition-[gap] hover:gap-2.5 ${FOCUS_RING}`}
+            className={`${HEAD_LINK} text-ink`}
           >
             {home.bestSellers.viewAll} <span aria-hidden="true">→</span>
           </Link>
         </div>
         {featured.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:gap-[22px] lg:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-[22px] lg:grid-cols-4">
             {featured.map((product) => (
               <li key={product.id}>
                 <ProductCard
@@ -463,85 +488,93 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ========================== STORY BAND ========================= */}
+      {/* ================= CRAFT BAND — story + four steps ================= */}
+      {/* One full-bleed pale-wheat band: the kitchen photograph and "Rolled
+          thin, roasted slow." first, then the four steps as a sub-head with
+          the section's next step beside it, ending on the card row. The band
+          takes the page seam as its top margin and a smaller inset inside its
+          colour, so the two most related stories on the page sit together
+          instead of 160px apart. */}
       <section
         aria-labelledby="home-story"
-        className="mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 sm:px-8 sm:py-16 lg:grid-cols-[.95fr_1.05fr] lg:gap-16 lg:py-[88px]"
+        className={`${BAND} border-y border-line bg-card`}
       >
-        <div className="relative aspect-[5/4] overflow-hidden rounded-[26px] shadow-float">
-          {/* The pack's kitchen photograph when it has one; otherwise its
-              Story illustration. */}
-          <PhotoSlot
-            src={assets.storyPhoto?.src ?? null}
-            alt={home.story.photoAlt}
-            sizes="(max-width: 1024px) 100vw, 48vw"
-          >
-            <StoryIllustration label={home.story.photoLabel} />
-          </PhotoSlot>
-        </div>
-        <div>
-          <div className="mb-4">
-            <Eyebrow>{home.story.eyebrow}</Eyebrow>
-          </div>
-          <h2
-            id="home-story"
-            className="mb-5 font-display text-h1 font-normal leading-[1.06]"
-          >
-            {home.story.title[0]}
-            <br />
-            {home.story.title[1]}
-          </h2>
-          <p className="mb-7 max-w-[62ch] font-body text-lead text-ink-soft">
-            {home.story.body}
-          </p>
-          <dl className="mb-8 grid grid-cols-3 gap-x-4 sm:flex sm:flex-wrap sm:gap-x-12 sm:gap-y-5">
-            {home.story.stats.map((stat) => (
-              <div key={stat.label}>
-                <dt className="font-display text-[28px] leading-none text-ink sm:text-[32px]">
-                  {stat.value}
-                </dt>
-                <dd className="mt-1.5 font-mono text-[11px] tracking-[0.12em] text-ink-muted uppercase">
-                  {stat.label}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          <Link href={home.story.cta.href as Route} className={SECONDARY_CTA}>
-            {home.story.cta.label}
-          </Link>
-        </div>
-      </section>
-
-      {/* ========================= PROCESS STRIP ======================= */}
-      {/* Sits on the page background in the trust strip's card language —
-          cream-2 cards, hairline borders, espresso line icons — joined by a
-          numbered rail; a photo per step replaces the icon when a pack
-          supplies one. Phones get a snap rail (one card ≈ 78vw) so the
-          section stays about a screen tall instead of four stacked blocks. */}
-      <section
-        aria-labelledby="home-process"
-        className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:py-[72px]"
-      >
-        <div className="relative">
-          <div className="mb-9 grid gap-5 lg:mb-12 lg:grid-cols-[1.15fr_1fr] lg:items-end lg:gap-12">
-            <div className="max-w-[62ch]">
-              <div className="mb-3">
-                <Eyebrow>{home.process.eyebrow}</Eyebrow>
+        <div className={BAND_INNER}>
+          <div className="grid items-center gap-8 lg:grid-cols-[.95fr_1.05fr] lg:gap-16">
+            <div className="relative aspect-[5/4] overflow-hidden rounded-[26px] bg-cream shadow-float">
+              {/* The pack's kitchen photograph when it has one; otherwise its
+                  Story illustration. */}
+              <PhotoSlot
+                src={assets.storyPhoto?.src ?? null}
+                alt={home.story.photoAlt}
+                sizes="(max-width: 1024px) 100vw, 48vw"
+              >
+                <StoryIllustration label={home.story.photoLabel} />
+              </PhotoSlot>
+            </div>
+            <div>
+              <div className="mb-2.5">
+                <Eyebrow>{home.story.eyebrow}</Eyebrow>
               </div>
               <h2
+                id="home-story"
+                className="mb-4 font-display text-h2 font-normal"
+              >
+                {home.story.title[0]}
+                <br />
+                {home.story.title[1]}
+              </h2>
+              <p className="mb-6 max-w-[58ch] font-body text-lead text-ink-soft">
+                {home.story.body}
+              </p>
+              <dl className="mb-7 grid grid-cols-3 gap-x-4 sm:flex sm:flex-wrap sm:gap-x-12 sm:gap-y-5">
+                {home.story.stats.map((stat) => (
+                  <div key={stat.label}>
+                    <dt className="font-display text-[28px] leading-none text-ink sm:text-[32px]">
+                      {stat.value}
+                    </dt>
+                    <dd className="mt-1.5 font-mono text-[11px] tracking-[0.12em] text-ink-muted uppercase">
+                      {stat.label}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <Link href={home.story.cta.href as Route} className={SECONDARY_CTA}>
+                {home.story.cta.label}
+              </Link>
+            </div>
+          </div>
+
+          {/* The four steps: sub-head row (title + lede left, next step right),
+              then the numbered rail and the cards. Phones get a snap rail so
+              the steps stay about a screen tall. */}
+          <div className="mt-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mt-14">
+            <div className="max-w-[52ch]">
+              <div className="mb-2.5">
+                <Eyebrow>{home.process.eyebrow}</Eyebrow>
+              </div>
+              <h3
                 id="home-process"
-                className="font-display text-h1 font-normal leading-[1.06] text-balance text-ink"
+                className="scroll-mt-24 font-display text-h3 font-normal text-ink"
               >
                 {home.process.title}
-              </h2>
+              </h3>
+              {home.process.lede ? (
+                <p className="mt-2 font-body text-[15px] leading-[1.6] text-ink-soft max-sm:hidden">
+                  {home.process.lede}
+                </p>
+              ) : null}
             </div>
-            {home.process.lede ? (
-              <p className="max-w-[44ch] font-body text-[15px] leading-[1.65] text-ink-soft max-lg:hidden lg:justify-self-end lg:pb-2 lg:text-[16px]">
-                {home.process.lede}
-              </p>
+            {home.process.cta ? (
+              <Link
+                href={home.process.cta.href as Route}
+                className={`${HEAD_LINK} text-espresso`}
+              >
+                {home.process.cta.label} <span aria-hidden="true">→</span>
+              </Link>
             ) : null}
           </div>
-          <ol className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-5">
+          <ol className="-mx-5 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:mt-8 lg:grid-cols-4 lg:gap-5">
             {home.process.steps.map((movement, index) => {
               const isLast = index === home.process.steps.length - 1;
               // The rail runs card to card. It must stop at the end of each
@@ -559,12 +592,12 @@ export default async function HomePage() {
               return (
                 <li
                   key={movement.step}
-                  className="relative flex min-w-[78%] snap-start flex-col sm:min-w-0"
+                  className="relative flex min-w-[74%] snap-start flex-col sm:min-w-0"
                 >
-                  <div className="relative mb-5 flex items-center">
+                  <div className="relative mb-3.5 flex items-center">
                     <span
                       aria-hidden="true"
-                      className={`absolute top-1/2 right-[-16px] left-8 h-0 border-t-2 border-dotted border-line-strong sm:right-[-24px] lg:right-[-20px] ${railClass}`}
+                      className={`absolute top-1/2 right-[-12px] left-8 h-0 border-t-2 border-dotted border-espresso/30 sm:right-[-24px] lg:right-[-20px] ${railClass}`}
                     />
                     <span className="relative grid h-7 w-7 place-items-center rounded-full bg-gold-soft font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
                       {movement.step}
@@ -574,7 +607,7 @@ export default async function HomePage() {
                     className={`flex flex-1 flex-col rounded-[20px] border p-5 shadow-soft sm:p-6 ${
                       accent
                         ? "border-espresso/40 bg-espresso text-cream"
-                        : "border-line bg-cream-2"
+                        : "border-line bg-cream"
                     }`}
                   >
                     {movement.photo ? (
@@ -629,76 +662,63 @@ export default async function HomePage() {
               );
             })}
           </ol>
-          {home.process.cta ? (
-            <div className="mt-8 sm:mt-10">
-              <Link
-                href={home.process.cta.href as Route}
-                className={`inline-flex items-center gap-2 font-body text-[15px] font-semibold text-espresso underline-offset-4 hover:underline ${FOCUS_RING}`}
-              >
-                {home.process.cta.label}
-                <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          ) : null}
         </div>
       </section>
 
       {/* ========================== GIFTING ========================== */}
+      {/* On the page cream, in the trust strip's card language, with the one
+          bottom seam the page needs before the terracotta footer. */}
       {brand.profile.features.gifting ? (
       <section
         aria-labelledby="home-gifting"
-        className="mx-auto max-w-[1240px] px-5 sm:px-8 py-14 lg:py-[72px]"
+        className={`${SECTION} pb-14 lg:pb-[72px]`}
       >
-        <div className="relative overflow-hidden rounded-[28px] border border-line bg-gradient-to-br from-card to-cream-2 shadow-soft">
-          <div
-            aria-hidden="true"
-            className="absolute -top-[28%] -right-[10%] h-[62%] w-[42%] rounded-pill bg-gold-soft opacity-30 blur-[80px]"
-          />
-          <div className="relative grid gap-10 p-8 sm:p-11 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14 lg:p-14">
-            <div>
-              <div className="mb-3.5">
-                <Eyebrow>{home.gifting.eyebrow}</Eyebrow>
-              </div>
-              <h2
-                id="home-gifting"
-                className="font-display text-h2 font-normal leading-[1.08] text-balance"
-              >
-                {home.gifting.title[0]}
-                <br className="hidden sm:block" /> {home.gifting.title[1]}
-              </h2>
-              <p className="mt-4 max-w-[46ch] font-body text-lead text-ink-soft">
-                {home.gifting.body}
-              </p>
-              <Link
-                href={home.gifting.cta.href as Route}
-                className={`mt-8 inline-block ${PRIMARY_CTA}`}
-              >
-                {home.gifting.cta.label}
-              </Link>
+        <div className="grid gap-8 lg:grid-cols-[1fr_1.05fr] lg:grid-rows-[auto_auto] lg:items-center lg:gap-x-14 lg:gap-y-0">
+          <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+            <div className="mb-2.5">
+              <Eyebrow>{home.gifting.eyebrow}</Eyebrow>
             </div>
-            <ul className="grid gap-3.5">
-              {home.gifting.features.map((feature) => (
-                <li
-                  key={feature.title}
-                  className="flex items-start gap-4 rounded-[16px] border border-line-soft bg-cream/70 px-5 py-4"
+            <h2
+              id="home-gifting"
+              className="font-display text-h2 font-normal text-balance"
+            >
+              {home.gifting.title[0]}
+              <br className="hidden sm:block" /> {home.gifting.title[1]}
+            </h2>
+            <p className="mt-4 max-w-[46ch] font-body text-lead text-ink-soft">
+              {home.gifting.body}
+            </p>
+          </div>
+          <ul className="grid gap-3 lg:col-start-2 lg:row-span-2 lg:self-center">
+            {home.gifting.features.map((feature) => (
+              <li
+                key={feature.title}
+                className="flex items-start gap-4 rounded-[16px] border border-line bg-cream-2 px-5 py-4 shadow-soft"
+              >
+                <span
+                  aria-hidden="true"
+                  className="mt-px grid h-10 w-10 flex-none place-items-center rounded-[12px] border border-line-soft bg-cream text-espresso"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="mt-px grid h-10 w-10 flex-none place-items-center rounded-[12px] border border-line bg-cream text-espresso"
-                  >
-                    <GiftIcon name={feature.icon} />
-                  </span>
-                  <div>
-                    <h3 className="font-body text-[15px] font-semibold text-ink">
-                      {feature.title}
-                    </h3>
-                    <p className="mt-1 font-body text-[13.5px] leading-[1.55] text-ink-soft">
-                      {feature.body}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  <GiftIcon name={feature.icon} />
+                </span>
+                <div>
+                  <h3 className="font-body text-[15px] font-semibold text-ink">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-1 font-body text-[13.5px] leading-[1.55] text-ink-soft">
+                    {feature.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="lg:col-start-1 lg:row-start-2 lg:mt-8 lg:self-start">
+            <Link
+              href={home.gifting.cta.href as Route}
+              className={`inline-block max-sm:w-full max-sm:text-center ${PRIMARY_CTA}`}
+            >
+              {home.gifting.cta.label}
+            </Link>
           </div>
         </div>
       </section>
