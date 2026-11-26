@@ -564,9 +564,9 @@ export default async function HomePage() {
                   <div className="relative mb-5 flex items-center">
                     <span
                       aria-hidden="true"
-                      className={`absolute top-1/2 right-[-16px] left-8 h-px bg-line sm:right-[-24px] lg:right-[-20px] ${railClass}`}
+                      className={`absolute top-1/2 right-[-16px] left-8 h-0 border-t-2 border-dotted border-line-strong sm:right-[-24px] lg:right-[-20px] ${railClass}`}
                     />
-                    <span className="relative grid h-7 w-7 place-items-center rounded-full border border-line bg-cream-2 font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
+                    <span className="relative grid h-7 w-7 place-items-center rounded-full bg-gold-soft font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
                       {movement.step}
                     </span>
                   </div>
@@ -588,7 +588,7 @@ export default async function HomePage() {
                         />
                       </div>
                     ) : (
-                      <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="mb-3 flex items-start justify-between gap-3">
                         <span
                           aria-hidden="true"
                           className={`grid h-11 w-11 flex-none place-items-center rounded-[14px] border ${
@@ -606,7 +606,7 @@ export default async function HomePage() {
                             width={art.width}
                             height={art.height}
                             sizes="160px"
-                            className="h-auto w-[46%] max-w-[160px] -mt-1 -mr-1"
+                            className="-mt-2 -mr-2 h-auto w-[52%] max-w-[184px]"
                           />
                         ) : null}
                       </div>
