@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import type { ProductCardView } from "@kakoa/core";
 import { Price, StarRating, cx } from "@kakoa/ui";
@@ -50,7 +51,9 @@ export function ProductCard({
   const isOnSale =
     product.compareAtPricePaise !== null &&
     product.compareAtPricePaise > product.fromPricePaise;
-  const pdpHref = `/product/${product.slug}`;
+  // Typed routes: a template literal stored in a const widens to `string`,
+  // which `next build` rejects for <Link>; the editor typecheck does not.
+  const pdpHref = `/product/${product.slug}` as Route;
   return (
     <article
       className={cx(
