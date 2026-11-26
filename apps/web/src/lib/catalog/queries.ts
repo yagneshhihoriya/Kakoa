@@ -669,6 +669,14 @@ export async function searchProducts(
       tone: products.tone,
       fromPricePaise: variantAgg.fromPricePaise,
       categorySlug: categories.slug,
+      // Primary image = lowest-position row, as on the card (null → swatch).
+      imageUrl: sql<string | null>`(
+        select ${productImages.url}
+        from ${productImages}
+        where ${productImages.productId} = ${products.id}
+        order by ${productImages.position} asc, ${productImages.createdAt} asc
+        limit 1
+      )`,
     })
     .from(products)
     .innerJoin(variantAgg, eq(variantAgg.productId, products.id))
@@ -693,6 +701,7 @@ export async function searchProducts(
     tone: toTone(row.tone),
     fromPricePaise: row.fromPricePaise,
     categorySlug: row.categorySlug,
+    imageUrl: row.imageUrl ?? null,
   }));
 }
 

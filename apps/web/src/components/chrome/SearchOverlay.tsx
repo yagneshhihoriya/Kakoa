@@ -18,6 +18,7 @@ import {
 } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
 import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { SafeImage } from "@/components/media/SafeImage";
 import { vocabulary } from "@/lib/brand";
 import { useOverlay } from "./useOverlay";
 
@@ -368,7 +369,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                         )}
                       >
                         <div className="relative w-12 flex-none overflow-hidden rounded-[9px]">
-                          <ProductPlaceholder tone={product.tone} ratio="6 / 7" />
+                          {product.imageUrl !== null ? (
+                            <div className="relative aspect-[6/7] bg-cream-2">
+                              <SafeImage src={product.imageUrl} alt="" fill sizes="48px" className="object-cover" />
+                            </div>
+                          ) : (
+                            <ProductPlaceholder tone={product.tone} ratio="6 / 7" />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-ink">
@@ -422,7 +429,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                       )}
                     >
                       <div className="relative w-[52px] flex-none overflow-hidden rounded-[10px]">
-                        <ProductPlaceholder tone={hit.tone} ratio="13 / 15" />
+                        {hit.imageUrl !== null ? (
+                          <div className="relative aspect-[13/15] bg-cream-2">
+                            <SafeImage src={hit.imageUrl} alt="" fill sizes="52px" className="object-cover" />
+                          </div>
+                        ) : (
+                          <ProductPlaceholder tone={hit.tone} ratio="13 / 15" />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-base font-semibold text-ink">

@@ -255,7 +255,7 @@ function Card({ label, value, big }: { label: string; value: string; big?: boole
 function Panel({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }): ReactNode {
   return (
     <div className="rounded-2xl border border-[#eadbc6] bg-white p-5">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="text-[12px] font-semibold uppercase tracking-wider text-[#8a7a68]">{title}</div>
         {action}
       </div>

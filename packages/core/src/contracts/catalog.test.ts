@@ -124,6 +124,7 @@ describe('searchHitSchema', () => {
       tone: 'dark',
       fromPricePaise: 49900,
       categorySlug: 'pralines',
+      imageUrl: null,
     };
     expect(searchHitSchema.parse(hit)).toEqual(hit);
   });

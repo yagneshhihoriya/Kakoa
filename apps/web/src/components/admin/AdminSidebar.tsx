@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminIcon } from "./icons";
 
 export interface SidebarNavItem {
@@ -20,6 +20,10 @@ export interface SidebarSection {
  * Admin sidebar — registry-driven, with icons, section headers and an
  * active-route pill. Client component (needs `usePathname` for the active
  * state); the nav data is composed server-side from the module registry.
+ *
+ * Below `lg` the rail becomes an off-canvas drawer: a fixed menu button in
+ * the top-left opens it over the content with a backdrop; a nav tap, the
+ * backdrop or Escape closes it. From `lg` up it is the static 248px column.
  */
 export function AdminSidebar({
   business,
@@ -30,6 +34,18 @@ export function AdminSidebar({
 }): React.ReactNode {
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!drawerOpen) return undefined;
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") setDrawerOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [drawerOpen]);
 
   function isActive(href: string): boolean {
     if (href === "/admin") return pathname === "/admin";
@@ -37,7 +53,40 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="flex w-[248px] shrink-0 flex-col border-r border-black/30 bg-[#1b120b] text-white">
+    <>
+      {/* Phone/tablet: drawer toggle, pinned over the top bar's free left side. */}
+      <button
+        type="button"
+        aria-label={drawerOpen ? "Close menu" : "Open menu"}
+        aria-expanded={drawerOpen}
+        aria-controls="admin-sidebar"
+        onClick={() => {
+          setDrawerOpen((current) => !current);
+        }}
+        className="fixed top-2.5 left-3 z-[60] grid h-9 w-9 place-items-center rounded-full bg-[#1b120b] text-white shadow-md transition-colors hover:bg-[#2a1d12] lg:hidden"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          {drawerOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+        </svg>
+      </button>
+      {drawerOpen ? (
+        <button
+          type="button"
+          aria-label="Close menu"
+          tabIndex={-1}
+          onClick={() => {
+            setDrawerOpen(false);
+          }}
+          className="fixed inset-0 z-40 bg-black/45 lg:hidden"
+        />
+      ) : null}
+    <aside
+      id="admin-sidebar"
+      className={
+        "fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col border-r border-black/30 bg-[#1b120b] text-white transition-transform duration-200 ease-out motion-reduce:transition-none lg:static lg:translate-x-0 " +
+        (drawerOpen ? "translate-x-0" : "-translate-x-full")
+      }
+    >
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-5 py-[18px]">
         <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#c69a4c] to-[#8a5a34] text-[15px] font-bold text-[#1b120b]">
@@ -71,6 +120,9 @@ export function AdminSidebar({
                     key={item.href}
                     href={item.href as Route}
                     aria-current={active ? "page" : undefined}
+                    onClick={() => {
+                      setDrawerOpen(false);
+                    }}
                     className={
                       "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] transition-all duration-200 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 " +
                       (active
@@ -114,5 +166,6 @@ export function AdminSidebar({
         </button>
       </div>
     </aside>
+    </>
   );
 }

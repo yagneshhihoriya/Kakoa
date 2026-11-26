@@ -156,6 +156,8 @@ export const searchHitSchema = z.object({
   tone: productToneSchema,
   fromPricePaise: paiseSchema,
   categorySlug: slugSchema,
+  /** Primary product image (lowest position), null when the product has none. */
+  imageUrl: z.string().nullable(),
 });
 export type SearchHitView = z.infer<typeof searchHitSchema>;
 

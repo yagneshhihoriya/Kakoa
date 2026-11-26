@@ -32,7 +32,7 @@ export default async function AdminTaxesPage(): Promise<ReactNode> {
 
       {/* Seller GST identity (read-only; edited in Settings) */}
       <div className="mb-4 rounded-2xl border border-[#eadbc6] bg-white p-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="text-[12px] font-semibold uppercase tracking-wider text-[#8a7a68]">Seller GST identity</div>
           <Link href={"/admin/settings" as Route} className="text-[12px] font-medium text-[#8a5a34] hover:underline">
             Edit in Settings →

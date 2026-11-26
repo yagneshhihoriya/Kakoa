@@ -74,7 +74,7 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="mx-auto max-w-7xl">
-      <div className="mb-5 flex items-end justify-between">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1
             className="text-[24px] text-[#2a1d12]"
