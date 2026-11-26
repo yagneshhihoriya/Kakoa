@@ -84,25 +84,30 @@ export const copy = {
     process: {
       eyebrow: "The craft",
       title: "Four steps, from dough to crackle.",
+      lede: "The same four hands-on steps for every batch — nothing automated, nothing rushed.",
       steps: [
         {
           step: "01",
           title: "Knead",
+          icon: "knead",
           body: "Flour, oil, salt and the spices of the day, kneaded by hand into a firm, even dough.",
         },
         {
           step: "02",
           title: "Roll",
+          icon: "roll",
           body: "Each round is rolled paper-thin — thin enough to see the board through it.",
         },
         {
           step: "03",
           title: "Roast",
+          icon: "roast",
           body: "Roasted slowly on the tava and pressed with a cloth pad until the blisters rise and it turns crisp.",
         },
         {
           step: "04",
           title: "Pack",
+          icon: "pack",
           body: "Cooled, stacked and sealed the same day so the crackle survives the journey.",
         },
       ],

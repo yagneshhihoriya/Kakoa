@@ -79,25 +79,30 @@ export const copy = {
     process: {
       eyebrow: "The craft",
       title: "Four movements, from bean to bar.",
+      lede: "Every bar goes through the same four slow movements, in our own kitchen.",
       steps: [
         {
           step: "01",
           title: "Source",
+          icon: "source",
           body: "Direct-trade cacao from growers across four origins, chosen bean by bean.",
         },
         {
           step: "02",
           title: "Roast",
+          icon: "flame",
           body: "Every batch roasted in-house, low and slow, to draw out its origin character.",
         },
         {
           step: "03",
           title: "Conch",
+          icon: "conch",
           body: "Slow-conched for days until the texture turns to silk on the tongue.",
         },
         {
           step: "04",
           title: "Temper",
+          icon: "temper",
           body: "Hand-tempered and molded for that clean, glossy snap in every piece.",
         },
       ],
