@@ -143,9 +143,12 @@ describe("Khakhra House pack — copy", () => {
     expect(brand.profile.key).toBe("khakhra");
     expect(brand.copy.titleTagline).toBe("Hand-Roasted Khakhra");
     expect(brand.copy.invoiceTagline).toBe("Hand-roasted khakhra");
-    expect(brand.copy.home.hero.headline(null)).toBe("Thin, crisp and roasted by hand.");
-    expect(brand.copy.home.hero.headline("Methi Khakhra")).toBe("Methi Khakhra: roasted this week.");
-    expect(brand.copy.home.hero.cta("Methi Khakhra")).toBe("Try Methi Khakhra");
+    // Static hero: the pack's own words whatever product is featured.
+    expect(brand.copy.home.hero.mode).toBe("static");
+    expect(brand.copy.home.hero.headline(null)).toBe("Crispy, Hand-Roasted Khakhra.\nRoasted Fresh This Week.");
+    expect(brand.copy.home.hero.headline("Methi Khakhra")).toBe(brand.copy.home.hero.headline(null));
+    expect(brand.copy.home.hero.cta("Methi Khakhra")).toBe("Shop now");
+    expect(brand.copy.home.hero.secondaryCta).toEqual({ label: "Explore flavours", href: "#home-collections" });
     expect(brand.copy.home.process.steps.map((s) => s.title)).toEqual(["Knead", "Roll", "Roast", "Pack"]);
     expect(brand.copy.home.trust.signals.map((s) => s.icon)).toEqual(["flame", "box", "shield"]);
     expect(brand.copy.footer.copyrightHolder).toBe("Khakhra House");

@@ -18,11 +18,14 @@ export const copy = {
 
   home: {
     hero: {
-      eyebrow: "Hand-roasted · Small batches",
-      headline: (productName) =>
-        productName !== null ? `${productName}: roasted this week.` : "Thin, crisp and roasted by hand.",
-      body: "Khakhra the way it is made at home — kneaded, rolled thin and roasted slowly on the tava until it crackles. Sealed the same day and shipped crisp, anywhere in India.",
-      cta: (productName) => (productName !== null ? `Try ${productName}` : "Shop the range"),
+      // Brand-level hero over the pack's photograph (board of khakhra, left
+      // half faded for the copy) — the catalogue spotlight is not used.
+      mode: "static",
+      eyebrow: "Hand-roasted • Small batches • 100% whole wheat",
+      headline: (_productName) => "Crispy, Hand-Roasted Khakhra.\nRoasted Fresh This Week.",
+      body: "The everyday classic — paper-thin, roasted to golden perfection with whole wheat and a pinch of salt. Honest, natural, and made with love.",
+      cta: (_productName) => "Shop now",
+      secondaryCta: { label: "Explore flavours", href: "#home-collections" },
     },
     marqueeWords: [
       "Hand-roasted",

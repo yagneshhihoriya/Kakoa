@@ -123,12 +123,25 @@ export interface StatCopy {
 
 export interface HomeCopy {
   readonly hero: {
+    /**
+     * `spotlight` (default) puts the featured product in the headline, uses
+     * its blurb as the paragraph and sends the CTA to its page. `static`
+     * renders the pack's own headline and body whatever the catalogue holds
+     * and sends the CTA to the shop — for a brand-level hero photograph rather
+     * than a product shot.
+     */
+    readonly mode?: "spotlight" | "static";
     readonly eyebrow: string;
-    /** Headline when a hero product is spotlighted (its name) / when none is. */
+    /**
+     * Headline when a hero product is spotlighted (its name) / when none is.
+     * A `\n` breaks the line; the page renders it pre-line.
+     */
     readonly headline: (productName: string | null) => string;
     /** Paragraph when the spotlighted product has no blurb / no product. */
     readonly body: string;
     readonly cta: (productName: string | null) => string;
+    /** Optional second, outlined CTA beside the primary; `#id` anchors allowed. */
+    readonly secondaryCta?: { readonly label: string; readonly href: string };
   };
   /** Editorial marquee words; the `✦` separators are the page's. */
   readonly marqueeWords: readonly string[];

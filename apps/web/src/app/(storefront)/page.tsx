@@ -211,7 +211,9 @@ export default async function HomePage() {
       : assets.heroPhoto !== null
         ? { desktop: assets.heroPhoto.desktop.src, mobile: assets.heroPhoto.mobile.src }
         : null;
-  const heroName = heroProduct?.name ?? null;
+  /** A `static` hero (the pack's call) ignores the spotlight product's name, blurb and link. */
+  const staticHero = home.hero.mode === "static";
+  const heroName = staticHero ? null : (heroProduct?.name ?? null);
 
   return (
     <main>
@@ -219,7 +221,7 @@ export default async function HomePage() {
 
       {/* ============================ HERO ============================ */}
       <section
-        className="relative isolate overflow-hidden bg-field text-field-ink md:flex md:aspect-[1989/791] md:items-center"
+        className="relative isolate overflow-hidden bg-field text-field-ink md:flex md:min-h-[calc(100vw*791/1989)] md:items-center"
         style={{ fontFamily: "var(--font-ui)" }}
       >
 
@@ -251,24 +253,32 @@ export default async function HomePage() {
           ) : null}
         </div>
 
-        <div className="w-full px-[3%] py-12 md:py-0 lg:py-20">
-          <div className="w-full md:max-w-[65%] lg:max-w-[50%]">
+        <div className="w-full px-[3%] py-12 md:py-10 lg:py-20">
+          <div className="w-full md:max-w-[58%] lg:max-w-[50%]">
             <div className="mb-6">
               <Eyebrow tone="gold">{home.hero.eyebrow}</Eyebrow>
             </div>
-            <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance text-field-ink md:text-[34px] md:leading-[1.15]">
+            <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance whitespace-pre-line text-field-ink md:text-[28px] md:leading-[1.15] lg:text-[34px]">
               {home.hero.headline(heroName)}
             </h1>
             <p className="mb-8 max-w-[52ch] text-[14px] leading-[21px] font-light tracking-[0.7px] text-field-ink/85">
-              {heroProduct?.blurb ?? home.hero.body}
+              {staticHero ? home.hero.body : (heroProduct?.blurb ?? home.hero.body)}
             </p>
             <div className="mb-9 flex flex-wrap gap-3.5">
               <Link
-                href={heroProduct !== null ? `/product/${heroProduct.slug}` : "/shop"}
+                href={heroProduct !== null && !staticHero ? `/product/${heroProduct.slug}` : "/shop"}
                 className={`rounded-none border border-field-ink bg-field-ink px-5 py-3 text-[14px] tracking-[1.4px] text-field uppercase no-underline transition-colors hover:bg-transparent hover:text-field-ink ${FOCUS_RING}`}
               >
                 {home.hero.cta(heroName)}
               </Link>
+              {home.hero.secondaryCta !== undefined ? (
+                <a
+                  href={home.hero.secondaryCta.href}
+                  className={`rounded-none border border-field-ink bg-transparent px-5 py-3 text-[14px] tracking-[1.4px] text-field-ink uppercase no-underline transition-colors hover:bg-field-ink hover:text-field ${FOCUS_RING}`}
+                >
+                  {home.hero.secondaryCta.label}
+                </a>
+              ) : null}
             </div>
           </div>
         </div>
@@ -337,7 +347,7 @@ export default async function HomePage() {
               </div>
               <h2
                 id="home-collections"
-                className="font-display text-h2 font-normal"
+                className="scroll-mt-24 font-display text-h2 font-normal"
               >
                 {home.collections.title}
               </h2>
