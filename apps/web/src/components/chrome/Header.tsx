@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
-import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
 import { brand, routeEnabled, staticNav, vocabulary } from "@/lib/brand";
 import { BrandLockup } from "./BrandMark";
 import { MegaMenu } from "./MegaMenu";
@@ -738,17 +737,18 @@ function AccountControl({
         href="/account"
         title="Your account"
         aria-label="Your account"
-        className={cx(
-          "grid h-10 w-10 place-items-center rounded-pill no-underline transition-transform hover:scale-105 max-[680px]:h-9 max-[680px]:w-9",
-          FOCUS_RING,
-        )}
+        className={cx("no-underline", ICON_BUTTON_CLASSES)}
       >
-        <CustomerAvatar
-          name={auth.customer.name}
-          phone={auth.customer.phone}
-          email={auth.customer.email}
-          size={36}
-        />
+        <span className="relative inline-flex">
+          <PersonIcon />
+          {/* Signed-in marker — the only difference from "Log in" on phones,
+              where the captions are hidden. */}
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-cream bg-gold"
+          />
+        </span>
+        <span className={ICON_LABEL_CLASSES}>Account</span>
       </Link>
     );
   }

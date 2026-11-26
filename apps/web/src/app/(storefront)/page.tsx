@@ -588,27 +588,30 @@ export default async function HomePage() {
                         />
                       </div>
                     ) : (
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <span
-                          aria-hidden="true"
-                          className={`grid h-11 w-11 flex-none place-items-center rounded-[14px] border ${
-                            accent
-                              ? "border-cream/25 bg-cream/15 text-cream"
-                              : "border-line-soft bg-cream text-espresso"
-                          }`}
-                        >
-                          <CraftIcon name={movement.icon} />
-                        </span>
+                      <div className="mb-3 flex items-start justify-end">
+                        {/* The illustration carries the card; the line icon
+                            is the fallback for a pack without art. */}
                         {art ? (
                           <SafeImage
                             src={art.src}
                             alt=""
                             width={art.width}
                             height={art.height}
-                            sizes="160px"
-                            className="-mt-2 -mr-2 h-auto w-[52%] max-w-[184px]"
+                            sizes="200px"
+                            className="-mt-2 -mr-2 h-auto w-[58%] max-w-[200px]"
                           />
-                        ) : null}
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className={`mr-auto grid h-11 w-11 flex-none place-items-center rounded-[14px] border ${
+                              accent
+                                ? "border-cream/25 bg-cream/15 text-cream"
+                                : "border-line-soft bg-cream text-espresso"
+                            }`}
+                          >
+                            <CraftIcon name={movement.icon} />
+                          </span>
+                        )}
                       </div>
                     )}
                     <h3
