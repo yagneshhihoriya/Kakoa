@@ -6,6 +6,7 @@ import {
   getFssaiLicense,
   type StorefrontSettings,
 } from "@/lib/catalog/queries";
+import { cx } from "@kakoa/ui";
 import { brand, staticNav, vocabulary } from "@/lib/brand";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { BrandLockup } from "./BrandMark";
@@ -52,8 +53,10 @@ const LEGAL_LINKS: FooterLink[] = [
  * Global storefront footer — styled to match the Valrhona reference 1:1:
  * flat `field` band with `field-ink` text, Poppins (via --font-ui), underlined
  * links at 75% opacity that brighten on hover, square bordered email input and
- * a solid cream rectangular submit. Mobile centres the brand, socials and
- * signup, as the reference does below 750px.
+ * a solid cream rectangular submit. Below the desktop breakpoint the brand
+ * block and the signup span the full row and the three link lists sit side by
+ * side (two columns on phones, three on tablets), everything left-aligned, so
+ * the footer stays short on a phone instead of one long centred column.
  *
  * ONE dark band, replacing
  * the previous dark-newsletter-over-cream-body split. Layout: brand + contact
@@ -98,9 +101,9 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
     >
       <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8">
         {/* ---- Brand · link columns · newsletter ---- */}
-        <div className="grid gap-x-8 gap-y-10 py-12 sm:py-14 max-[680px]:grid-cols-1 max-[1023px]:grid-cols-2 lg:grid-cols-[1.55fr_.85fr_.85fr_.85fr_1.3fr]">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 py-10 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 sm:py-14 lg:grid-cols-[1.55fr_.85fr_.85fr_.85fr_1.3fr]">
           {/* Brand · about · contact · social */}
-          <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:flex max-[749px]:flex-col max-[749px]:items-center max-[749px]:text-center">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <BrandLockup size="footer" logoUrl={settings.logoUrl} />
             <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-field-ink">
               {footer.tagline}
@@ -109,7 +112,7 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
               {footer.blurb}
             </p>
 
-            <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic max-[749px]:items-center">
+            <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic">
               <a
                 href={`mailto:${company.supportEmail}`}
                 className="w-fit tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
@@ -136,7 +139,7 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
             </address>
 
             {socials.length > 0 ? (
-              <div className="mt-6 flex items-center gap-1 max-[749px]:justify-center">
+              <div className="mt-5 -ml-3 flex items-center gap-1">
                 {socials.map(({ key, label, href, Icon }) => (
                   <SocialLink key={key} label={`${profile.name} on ${label}`} href={href}>
                     <Icon />
@@ -146,16 +149,18 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
             ) : null}
           </div>
 
-          <FooterColumn heading="Shop" links={shopLinks(categories)} />
+          {/* Phones: Shop fills the left column while Company and Support stack
+              on the right, so no column sits beside an empty cell. */}
+          <FooterColumn heading="Shop" links={shopLinks(categories)} className="row-span-2 sm:row-span-1" />
           <FooterColumn heading="Company" links={COMPANY_LINKS} />
           <FooterColumn heading="Support" links={SUPPORT_LINKS} />
 
           {/* Newsletter — inline final column */}
-          <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:text-center">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <p className="text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
               {footer.clubHeading}
             </p>
-            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase max-[749px]:mx-auto">
+            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
               {settings.newsletterOffer}
             </p>
             <div className="mt-4">
@@ -165,34 +170,37 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
         </div>
 
         {/* ---- Legal bar ---- */}
-        <div className="flex flex-col gap-3 border-t border-field-ink/15 py-6 max-[749px]:items-center max-[749px]:text-center sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light tracking-[0.4px] text-field-ink/60 max-[749px]:justify-center">
+        {/* On phones each group gets its own line (no mid-line dot wrapping) and
+            the extra bottom padding keeps the last line clear of the floating
+            back-to-top button; from sm up they run inline, dot-separated, with
+            payments at the end. */}
+        <div className="flex flex-col gap-4 border-t border-field-ink/15 pt-6 pb-20 sm:flex-row sm:items-center sm:justify-between sm:pb-6">
+          <div className="flex flex-col gap-1.5 text-[12.5px] font-light tracking-[0.4px] text-field-ink/60 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2.5 sm:gap-y-1 sm:text-[13px]">
             <span>© {year} {footer.copyrightHolder}. All rights reserved.</span>
-            {LEGAL_LINKS.map((link) => (
-              <span key={link.label} className="flex items-center gap-x-2.5">
-                <span aria-hidden="true" className="text-field-ink/25">
-                  ·
+            <span className="flex flex-wrap items-center gap-x-2.5">
+              <Dot className="hidden sm:inline" />
+              {LEGAL_LINKS.map((link, i) => (
+                <span key={link.label} className="flex items-center gap-x-2.5">
+                  {i > 0 ? <Dot /> : null}
+                  <Link
+                    href={link.href}
+                    className="tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
+                  >
+                    {link.label}
+                  </Link>
                 </span>
-                <Link
-                  href={link.href}
-                  className="tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
-                >
-                  {link.label}
-                </Link>
-              </span>
-            ))}
-            <span aria-hidden="true" className="text-field-ink/25">
-              ·
+              ))}
             </span>
-            <span>
-              {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
-              inclusive of all taxes
+            <span className="flex items-center gap-x-2.5">
+              <Dot className="hidden sm:inline" />
+              <span>
+                {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
+                inclusive of all taxes
+              </span>
             </span>
             {fontAttribution !== null ? (
-              <>
-                <span aria-hidden="true" className="text-field-ink/25">
-                  ·
-                </span>
+              <span className="flex items-center gap-x-2.5">
+                <Dot className="hidden sm:inline" />
                 <a
                   href={fontAttribution.href}
                   target="_blank"
@@ -201,19 +209,15 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
                 >
                   {fontAttribution.text}
                 </a>
-              </>
+              </span>
             ) : null}
           </div>
 
           {/* Accepted payment methods — text, not vendor logos */}
-          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-field-ink/55 max-[749px]:justify-center">
+          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-field-ink/55">
             {payments.map((method, i) => (
               <span key={method} className="flex items-center gap-x-2">
-                {i > 0 && (
-                  <span aria-hidden="true" className="text-field-ink/25">
-                    ·
-                  </span>
-                )}
+                {i > 0 ? <Dot /> : null}
                 {method}
               </span>
             ))}
@@ -231,12 +235,14 @@ export async function Footer({ categories, settings }: FooterProps): Promise<Rea
 function FooterColumn({
   heading,
   links,
+  className,
 }: {
   heading: string;
   links: FooterLink[];
+  className?: string;
 }): ReactNode {
   return (
-    <nav aria-label={heading} className="max-[749px]:text-center">
+    <nav aria-label={heading} className={className}>
       <div className="mb-4 text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
         {heading}
       </div>
@@ -253,6 +259,15 @@ function FooterColumn({
         ))}
       </ul>
     </nav>
+  );
+}
+
+/** Hairline dot separator between inline legal-bar items. */
+function Dot({ className }: { className?: string }): ReactNode {
+  return (
+    <span aria-hidden="true" className={cx("text-field-ink/25", className)}>
+      ·
+    </span>
   );
 }
 

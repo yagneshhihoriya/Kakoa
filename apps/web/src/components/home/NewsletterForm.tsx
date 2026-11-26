@@ -118,7 +118,7 @@ export function NewsletterForm({ variant = "card", offer }: NewsletterFormProps)
           <div
             className={cx(
               square
-                ? "flex max-w-[300px] flex-col items-stretch gap-3 max-[749px]:mx-auto"
+                ? "flex max-w-[300px] flex-col items-stretch gap-3"
                 : "flex gap-2",
             )}
           >
@@ -144,7 +144,7 @@ export function NewsletterForm({ variant = "card", offer }: NewsletterFormProps)
               className={cx(
                 "whitespace-nowrap transition-colors disabled:opacity-60",
                 square
-                  ? "w-fit border border-field bg-field-ink px-5 py-[11px] text-[14px] tracking-[1.4px] text-field uppercase hover:bg-field hover:text-field-ink focus-visible:ring-2 focus-visible:ring-field-ink focus-visible:outline-none max-[749px]:mx-auto"
+                  ? "w-fit border border-field bg-field-ink px-5 py-[11px] text-[14px] tracking-[1.4px] text-field uppercase hover:bg-field hover:text-field-ink focus-visible:ring-2 focus-visible:ring-field-ink focus-visible:outline-none"
                   : "rounded-pill bg-gold-soft px-[22px] py-3.5 font-body text-sm font-bold text-ink hover:bg-gold focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cocoa focus-visible:outline-none",
               )}
             >
@@ -157,14 +157,14 @@ export function NewsletterForm({ variant = "card", offer }: NewsletterFormProps)
               role="alert"
               className={cx(
                 "mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-gold-soft",
-                bare && "justify-center",
+                variant === "bare" && "justify-center",
               )}
             >
               <span aria-hidden="true">⚠</span>
               {errorMsg}
             </p>
           ) : (
-            <div className={cx("mt-2.5 text-xs text-cream/55", bare && "text-center")}>
+            <div className={cx("mt-2.5 text-xs text-cream/55", variant === "bare" && "text-center")}>
               {newsletter.finePrint}
             </div>
           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, useSyncExternalStore, type ReactNode } from "react";
 import { SafeImage } from "@/components/media/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -574,9 +574,30 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
  * left and a sticky summary card on the right. Presentation only — cart
  * actions, pricing, coupons, and checkout routing are unchanged.
  */
+const subscribeNever = (): (() => void) => () => {};
+
+/**
+ * `false` while the server renders and while React hydrates, `true` after.
+ * The layout mounts CartProvider without a server-read cart, so the server
+ * always paints the skeleton here; the provider then fetches the cart right
+ * after it mounts, which can land before this page segment hydrates. Rendering
+ * the live cart on that first client pass would not match the server HTML
+ * (React logs a hydration error and re-renders the segment), so the island
+ * mirrors the server until hydration is done.
+ */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+}
+
 export function CartPageClient(): ReactNode {
   const { cart, status, refresh } = useCart();
+  const hydrated = useHydrated();
 
+  if (!hydrated) return <CartSkeleton />;
   if (status === "error" && cart === null) {
     return (
       <CartError

@@ -4,7 +4,12 @@ import { Mark } from "@brand/Mark";
 import { brand } from "@/lib/brand";
 
 export interface BrandLockupProps {
-  /** Header uses 40px square / 26px wordmark; footer 34px / 25px. */
+  /**
+   * Header uses 40px square / 26px wordmark; footer 34px / 25px. On phones the
+   * header wordmark scales with the viewport (clamp) and stays on one line, and
+   * the square drops to 36px under 400px, so the lockup never wraps to two
+   * lines inside the 72px bar.
+   */
   size?: "header" | "footer";
   /** `brand.logo_url` setting — an uploaded logo replaces the drawn mark square. */
   logoUrl?: string | null;
@@ -24,10 +29,10 @@ export function BrandLockup({
 }: BrandLockupProps): ReactNode {
   const isHeader = size === "header";
   const square = isHeader
-    ? "h-10 w-10 rounded-[10px] shadow-[0_2px_7px_rgba(42,20,10,.22)]"
+    ? "h-9 w-9 rounded-[9px] shadow-[0_2px_7px_rgba(42,20,10,.22)] min-[400px]:h-10 min-[400px]:w-10 min-[400px]:rounded-[10px]"
     : "h-[34px] w-[34px] rounded-[9px]";
   return (
-    <span className={cx("flex items-center", isHeader ? "gap-[11px]" : "gap-2.5", className)}>
+    <span className={cx("flex items-center", isHeader ? "gap-2 min-[400px]:gap-[11px]" : "gap-2.5", className)}>
       {logoUrl !== null ? (
         // eslint-disable-next-line @next/next/no-img-element -- admin-supplied logo URL; host not known to next/image
         <img src={logoUrl} alt="" className={cx("flex-none object-cover", square)} />
@@ -47,7 +52,7 @@ export function BrandLockup({
         className={cx(
           "font-display leading-none",
           isHeader
-            ? "text-[26px] tracking-[.01em] text-ink"
+            ? "whitespace-nowrap text-[clamp(16px,4.6vw,26px)] tracking-[.01em] text-ink max-[339px]:hidden"
             : "text-[25px] text-card",
         )}
       >
