@@ -9,7 +9,7 @@ import type { BrandEmail } from "../contract";
 export const email = {
   theme: {
     ink: "#2c1a0b",
-    cream: "#fff7e6",
+    cream: "#fcf8ef",
     muted: "#8a7254",
     line: "#eddcb8",
     card: "#ffffff",

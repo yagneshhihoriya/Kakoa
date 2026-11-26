@@ -74,7 +74,7 @@ export const KHAKHRA = {
   // Terracotta field / warm cream — <meta theme-color> and the manifest
   // background_color (`--color-field` / `--color-cream` in the pack's theme.css).
   themeColor: '#8C3B1C',
-  backgroundColor: '#FFF7E6',
+  backgroundColor: '#FCF8EF',
 
   seo: {
     description:

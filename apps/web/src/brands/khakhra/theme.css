@@ -15,9 +15,9 @@
   --color-ink: #2c1a0b; /* roasted-wheat ink */
   --color-cocoa: #7a3b1e; /* terracotta, deep */
   --color-espresso: #b4532a; /* terracotta */
-  --color-cream: #fff7e6; /* page field — also the manifest background_color */
-  --color-card: #f7e8c8; /* pale wheat */
-  --color-line: #eddcb8;
+  --color-cream: #fcf8ef; /* page field — also the manifest background_color */
+  --color-card: #f4ead4; /* pale wheat */
+  --color-line: #ece0c6;
   --color-gold: #d9962a; /* turmeric */
   --color-caramel: #e0a93f; /* turmeric, light */
   --color-raspberry: #c2473b; /* chilli — danger */
@@ -31,8 +31,8 @@
   --color-ink-body: #4f3a28;
   --color-cocoa-deep: #4a2010;
   --color-surface: #ffffff;
-  --color-cream-2: #faefd8;
-  --color-line-soft: #f0e3c8;
+  --color-cream-2: #f8f1e2;
+  --color-line-soft: #f1e7d3;
   --color-line-strong: #e3cfa6;
   --color-gold-soft: #f3d9a3;
   --color-pistachio-deep: #4a5f26;
