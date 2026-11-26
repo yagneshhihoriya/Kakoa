@@ -469,8 +469,13 @@ export default async function HomePage() {
         className="mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 sm:px-8 sm:py-16 lg:grid-cols-[.95fr_1.05fr] lg:gap-16 lg:py-[88px]"
       >
         <div className="relative aspect-[5/4] overflow-hidden rounded-[26px] shadow-float">
-          {/* photo-ready: pass a `src` to swap in real kitchen photography. */}
-          <PhotoSlot alt={home.story.photoAlt} sizes="(max-width: 1024px) 100vw, 48vw">
+          {/* The pack's kitchen photograph when it has one; otherwise its
+              Story illustration. */}
+          <PhotoSlot
+            src={assets.storyPhoto?.src ?? null}
+            alt={home.story.photoAlt}
+            sizes="(max-width: 1024px) 100vw, 48vw"
+          >
             <StoryIllustration label={home.story.photoLabel} />
           </PhotoSlot>
         </div>

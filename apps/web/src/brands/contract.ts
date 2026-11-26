@@ -493,6 +493,11 @@ export interface BrandAssets {
     /** 1:1 crop for the stacked mobile band. */
     readonly mobile: StaticImageData;
   } | null;
+  /**
+   * Kitchen photograph for the home story band (5:4 crop, ~1000 px wide).
+   * `null` renders the pack's Story illustration instead.
+   */
+  readonly storyPhoto: StaticImageData | null;
 }
 
 /** What `import { brand } from "@brand"` resolves to. */
