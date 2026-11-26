@@ -28,7 +28,18 @@ const SORT_LABELS = {
  *
  * Closes on outside click and Escape (focus returns to the trigger).
  */
-export function SortDropdown({ value }: { value: ProductSort }): ReactNode {
+export function SortDropdown({
+  value,
+  compact = false,
+}: {
+  value: ProductSort;
+  /**
+   * Phone toolbar variant: a short "Sort" pill that sits beside the filter
+   * chips — the chosen option is read out in the aria-label and marked with
+   * a dot when it is not the default, and the panel is the same.
+   */
+  compact?: boolean;
+}): ReactNode {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -85,13 +96,28 @@ export function SortDropdown({ value }: { value: ProductSort }): ReactNode {
         onClick={() => {
           setOpen((current) => !current);
         }}
+        aria-label={compact ? `Sort: ${SORT_LABELS[value]}` : undefined}
         className={cx(
-          "relative z-30 flex min-h-11 min-w-[150px] cursor-pointer items-center gap-[9px] rounded-pill border border-line-soft bg-surface py-[11px] pr-[15px] pl-[17px] font-body text-[13.5px] font-semibold text-ink shadow-soft transition-colors hover:border-espresso/40",
+          "relative z-30 flex cursor-pointer items-center rounded-pill border border-line-soft bg-surface font-body font-semibold text-ink shadow-soft transition-colors hover:border-espresso/40",
+          compact
+            ? "min-h-10 gap-1.5 py-2 pr-3 pl-3.5 text-[13px]"
+            : "min-h-11 min-w-[150px] gap-[9px] py-[11px] pr-[15px] pl-[17px] text-[13.5px]",
           "focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none",
         )}
       >
-        <span className="text-[12.5px] font-medium text-ink-muted">Sort</span>
-        <span className="flex-1 text-left">{SORT_LABELS[value]}</span>
+        {compact ? (
+          <>
+            <span>Sort</span>
+            {value !== "featured" ? (
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-pill bg-espresso" />
+            ) : null}
+          </>
+        ) : (
+          <>
+            <span className="text-[12.5px] font-medium text-ink-muted">Sort</span>
+            <span className="flex-1 text-left">{SORT_LABELS[value]}</span>
+          </>
+        )}
         <svg
           aria-hidden="true"
           width="15"
