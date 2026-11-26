@@ -1109,9 +1109,15 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
  * the blanket 'products' tag on every product entry.
  */
 export async function revalidateCatalog(): Promise<void> {
-  // Tag purge (data cache) …
-  revalidateTag('products', 'max');
-  revalidateTag('categories', 'max');
+  // Tag purge (data cache). `{ expire: 0 }` expires the entries now, so the
+  // very next storefront request re-queries. Next 16's 'max' profile only
+  // marks them stale: the first request after an admin change still serves
+  // the old rows (stale-while-revalidate), which is how a freshly uploaded
+  // product photo kept showing the seed placeholder for one more page view.
+  // (`updateTag` expires immediately too but is Server-Action-only; these
+  // purges run from Route Handlers.)
+  revalidateTag('products', { expire: 0 });
+  revalidateTag('categories', { expire: 0 });
   // … plus explicit path revalidation, which is the reliable purge on this
   // Next setup (tag purge alone was observed to miss the built data cache).
   // 'page' invalidates every /product/[slug] instance without needing a slug.

@@ -139,7 +139,7 @@ export async function updateSettings(
   // FSSAI). Checkout/cart read live, but purge the 'settings' tag so cached
   // storefront surfaces reflect the change. Only when something actually changed.
   if (result.ok && result.changed.length > 0) {
-    revalidateTag('settings', 'max');
+    revalidateTag('settings', { expire: 0 }); // expire now, not stale-while-revalidate — see revalidateCatalog()
     // Settings drive footer (root layout) + cached PDP notes — purge paths too.
     revalidatePath('/', 'layout');
     revalidatePath('/shop');

@@ -124,7 +124,7 @@ export async function createCategory(
       before: null,
       after: { slug, name },
     });
-    revalidateTag('categories', 'max');
+    revalidateTag('categories', { expire: 0 }); // expire now — see revalidateCatalog()
     return { ok: true, id: row.id };
     }),
   );
@@ -182,7 +182,7 @@ export async function updateCategory(
       before: { name: current.name, isActive: current.isActive },
       after: { name, isActive: input.active ?? current.isActive },
     });
-    revalidateTag('categories', 'max');
+    revalidateTag('categories', { expire: 0 }); // expire now — see revalidateCatalog()
     return { ok: true, id };
   });
 }
