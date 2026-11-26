@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import type { ProductCardView } from "@kakoa/core";
 import { Price, StarRating, cx } from "@kakoa/ui";
 import { AddToBagButton } from "@/components/cart/AddToBagButton";
@@ -50,7 +50,7 @@ export function ProductCard({
         <div className="transition-transform duration-[650ms] ease-brand group-hover:scale-[1.045] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
           {product.imageUrl !== null ? (
             <div className="relative aspect-[4/5] overflow-hidden bg-cream-2">
-            <Image
+            <SafeImage
               src={product.imageUrl}
               alt={product.name}
               fill

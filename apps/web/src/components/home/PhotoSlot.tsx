@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 
 /**
  * Photo-ready presentational slot. When `src` is provided it renders a real
@@ -32,7 +32,7 @@ export function PhotoSlot({
 }: PhotoSlotProps): ReactNode {
   if (typeof src === "string" && src !== "") {
     return (
-      <Image
+      <SafeImage
         src={src}
         alt={alt}
         fill

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CartView } from "@kakoa/core";
@@ -245,7 +245,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
         )}
       >
         {line.imageUrl !== null ? (
-          <Image
+          <SafeImage
             src={line.imageUrl}
             alt=""
             fill

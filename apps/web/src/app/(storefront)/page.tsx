@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import Link from "next/link";
 import type { ProductCardView } from "@kakoa/core";
 import { EmptyState } from "@kakoa/ui";
@@ -360,7 +360,7 @@ export default async function HomePage() {
                     <div className="transition-transform duration-[700ms] ease-brand group-hover:scale-[1.06] motion-reduce:group-hover:scale-100">
                       {category.imageUrl !== null ? (
                         <div className="relative aspect-[4/5] w-full overflow-hidden">
-                          <Image
+                          <SafeImage
                             src={category.imageUrl}
                             alt=""
                             fill

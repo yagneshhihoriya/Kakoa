@@ -77,9 +77,16 @@ function legacyMediaHosts(): string[] {
     .filter((h) => /^[a-z0-9.-]+$/.test(h));
 }
 
+/**
+ * Every host `/_next/image` may fetch from: the seed placeholder host plus the
+ * configured bucket/CDN/legacy hosts. Exact hostnames, https only. The same
+ * array is published to the app as NEXT_PUBLIC_IMAGE_HOSTS (below) so
+ * `SafeImage` can tell, before rendering, whether `next/image` would accept
+ * a database-sourced URL — the two must never drift, so both read this array.
+ */
 const imageHosts = Array.from(
   new Set(
-    [cdnHost(), s3BucketHost(), ...legacyMediaHosts()].filter(
+    ["placehold.co", cdnHost(), s3BucketHost(), ...legacyMediaHosts()].filter(
       (h): h is string => h !== null,
     ),
   ),
@@ -88,13 +95,19 @@ const imageHosts = Array.from(
 const nextConfig: NextConfig = {
   typedRoutes: true,
   output: "standalone",
+  // Derived, never set by hand: the host allowlist above, inlined at build time
+  // into the server and client bundles for src/lib/images.ts. A value in a
+  // .env file is ignored — config `env` takes precedence over NEXT_PUBLIC_*.
+  env: {
+    NEXT_PUBLIC_IMAGE_HOSTS: imageHosts.join(","),
+  },
   images: {
     // Only the configured bucket/CDN host + the seed placeholder host. Local dev
     // uploads (/uploads/*) are same-origin and need no entry.
-    remotePatterns: [
-      { protocol: "https", hostname: "placehold.co" },
-      ...imageHosts.map((hostname) => ({ protocol: "https" as const, hostname })),
-    ],
+    remotePatterns: imageHosts.map((hostname) => ({
+      protocol: "https" as const,
+      hostname,
+    })),
   },
   transpilePackages: [
     "@kakoa/brands",

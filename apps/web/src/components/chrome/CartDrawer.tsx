@@ -2,7 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import { useRouter } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
@@ -156,7 +156,7 @@ export function CartDrawer(): ReactNode {
                   <div className="w-[70px] flex-none overflow-hidden rounded-[12px]">
                     {line.imageUrl !== null ? (
                       <div className="relative aspect-[7/8] bg-cream-2">
-                        <Image
+                        <SafeImage
                           src={line.imageUrl}
                           alt={line.name}
                           fill

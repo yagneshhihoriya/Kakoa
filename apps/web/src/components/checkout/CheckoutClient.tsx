@@ -36,7 +36,7 @@ import {
 import { cx } from "@kakoa/ui";
 import { Skeleton } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import type { ProductTone } from "@kakoa/core";
 import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
 import { brand, vocabulary } from "@/lib/brand";
@@ -58,7 +58,7 @@ function LineThumb({
   if (imageUrl !== null && imageUrl !== "") {
     return (
       <div className="relative aspect-[44/52] w-full overflow-hidden rounded-[8px] bg-cream-2">
-        <Image src={imageUrl} alt={name} fill sizes="60px" className="object-cover" />
+        <SafeImage src={imageUrl} alt={name} fill sizes="60px" className="object-cover" />
       </div>
     );
   }
