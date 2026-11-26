@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import type { Route } from "next";
 import type { ProductTone } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
@@ -56,7 +56,7 @@ function BundleImage({
   if (imageUrl !== null) {
     return (
       <div className="relative aspect-square overflow-hidden rounded-[18px] bg-cream-2">
-        <Image
+        <SafeImage
           src={imageUrl}
           alt={name}
           fill

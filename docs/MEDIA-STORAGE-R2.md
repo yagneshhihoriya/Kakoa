@@ -122,6 +122,16 @@ shopper. `next.config.ts` allows `/_next/image` to fetch only from
 `S3_PUBLIC_BASE_URL`'s host, the AWS bucket host (when no endpoint is set) and
 `S3_LEGACY_PUBLIC_HOSTS` — exact hostnames, no wildcards.
 
+A stored URL on a host outside that list — an image uploaded to another bucket,
+a legacy host missing from `S3_LEGACY_PUBLIC_HOSTS` — does not take the page
+down. `SafeImage` (apps/web/src/components/media/SafeImage.tsx) checks every
+database-sourced URL against the list the build registered, which
+`next.config.ts` publishes as `NEXT_PUBLIC_IMAGE_HOSTS` (derived; never set it
+by hand), and renders an unlisted one as a plain unoptimised `<img>` straight
+from its host, logging `images.unlisted_host` once per host on the server. To
+get such images back through `/_next/image`, add the host to
+`S3_LEGACY_PUBLIC_HOSTS` (or point `S3_PUBLIC_BASE_URL` at it) and rebuild.
+
 Restart `next dev` after changing these (the provider is memoized and
 `remotePatterns` are read at config load).
 
