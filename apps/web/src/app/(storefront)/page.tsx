@@ -305,27 +305,30 @@ export default async function HomePage() {
       </section>
 
       {/* ==================== TRUST / REASSURANCE ==================== */}
+      {/* Phones: a slim three-up strip (icon over a short title) so the
+          products stay within the first two screens; the body sentence is
+          tablet-and-up, where the three cards sit side by side. */}
       <section
         aria-label={home.trust.ariaLabel}
-        className="mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 lg:pt-[72px]"
+        className="mx-auto max-w-[1240px] px-5 pt-8 sm:px-8 sm:pt-14 lg:pt-[72px]"
       >
-        <ul className="grid gap-px overflow-hidden rounded-[22px] border border-line bg-line shadow-soft sm:grid-cols-3">
+        <ul className="grid grid-cols-3 gap-px overflow-hidden rounded-[18px] border border-line bg-line shadow-soft sm:rounded-[22px]">
           {home.trust.signals.map((signal) => (
             <li
               key={signal.title}
-              className="flex items-start gap-3.5 bg-cream-2 px-6 py-6 sm:px-7 sm:py-7"
+              className="flex flex-col items-center gap-2 bg-cream-2 px-2 py-4 text-center sm:flex-row sm:items-start sm:gap-3.5 sm:px-7 sm:py-7 sm:text-left"
             >
               <span
                 aria-hidden="true"
-                className="mt-px grid h-11 w-11 flex-none place-items-center rounded-[14px] border border-line-soft bg-cream text-espresso"
+                className="grid h-9 w-9 flex-none place-items-center rounded-[12px] border border-line-soft bg-cream text-espresso sm:mt-px sm:h-11 sm:w-11 sm:rounded-[14px]"
               >
                 <TrustIcon name={signal.icon} />
               </span>
               <div className="max-w-[34ch]">
-                <h3 className="font-body text-[15px] font-semibold text-ink">
+                <h3 className="font-body text-[12px] leading-[1.3] font-semibold text-ink sm:text-[15px] sm:leading-normal">
                   {signal.title}
                 </h3>
-                <p className="mt-1 font-body text-[13.5px] leading-[1.55] text-ink-soft">
+                <p className="mt-1 font-body text-[13.5px] leading-[1.55] text-ink-soft max-sm:hidden">
                   {signal.body}
                 </p>
               </div>
