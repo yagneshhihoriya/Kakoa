@@ -552,6 +552,10 @@ export default async function HomePage() {
                 : index % 2 === 1
                   ? "sm:hidden lg:block"
                   : "";
+              // Every second card takes the terracotta tone so the row
+              // alternates cream / terracotta like the hero's two fields.
+              const accent = index % 2 === 1;
+              const art = assets.processArt?.[movement.step] ?? null;
               return (
                 <li
                   key={movement.step}
@@ -560,13 +564,19 @@ export default async function HomePage() {
                   <div className="relative mb-5 flex items-center">
                     <span
                       aria-hidden="true"
-                      className={`absolute top-1/2 right-[-16px] left-8 h-px bg-line sm:right-[-24px] lg:right-[-20px] ${railClass}`}
+                      className={`absolute top-1/2 right-[-16px] left-8 h-0 border-t-2 border-dotted border-line-strong sm:right-[-24px] lg:right-[-20px] ${railClass}`}
                     />
-                    <span className="relative grid h-7 w-7 place-items-center rounded-full border border-line bg-cream-2 font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
+                    <span className="relative grid h-7 w-7 place-items-center rounded-full bg-gold-soft font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
                       {movement.step}
                     </span>
                   </div>
-                  <div className="flex flex-1 flex-col rounded-[20px] border border-line bg-cream-2 p-5 shadow-soft sm:p-6">
+                  <div
+                    className={`flex flex-1 flex-col rounded-[20px] border p-5 shadow-soft sm:p-6 ${
+                      accent
+                        ? "border-espresso/40 bg-espresso text-cream"
+                        : "border-line bg-cream-2"
+                    }`}
+                  >
                     {movement.photo ? (
                       <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-[14px] bg-cream">
                         <SafeImage
@@ -578,17 +588,37 @@ export default async function HomePage() {
                         />
                       </div>
                     ) : (
-                      <span
-                        aria-hidden="true"
-                        className="mb-5 grid h-11 w-11 place-items-center rounded-[14px] border border-line-soft bg-cream text-espresso"
-                      >
-                        <CraftIcon name={movement.icon} />
-                      </span>
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <span
+                          aria-hidden="true"
+                          className={`grid h-11 w-11 flex-none place-items-center rounded-[14px] border ${
+                            accent
+                              ? "border-cream/25 bg-cream/15 text-cream"
+                              : "border-line-soft bg-cream text-espresso"
+                          }`}
+                        >
+                          <CraftIcon name={movement.icon} />
+                        </span>
+                        {art ? (
+                          <SafeImage
+                            src={art.src}
+                            alt=""
+                            width={art.width}
+                            height={art.height}
+                            sizes="160px"
+                            className="-mt-2 -mr-2 h-auto w-[52%] max-w-[184px]"
+                          />
+                        ) : null}
+                      </div>
                     )}
-                    <h3 className="mb-2 font-display text-[22px] leading-tight font-normal text-ink sm:text-[24px]">
+                    <h3
+                      className={`mb-2 font-display text-[22px] leading-tight font-normal sm:text-[24px] ${accent ? "text-cream" : "text-ink"}`}
+                    >
                       {movement.title}
                     </h3>
-                    <p className="font-body text-[14px] leading-[1.6] text-ink-soft">
+                    <p
+                      className={`font-body text-[14px] leading-[1.6] ${accent ? "text-cream/85" : "text-ink-soft"}`}
+                    >
                       {movement.body}
                     </p>
                   </div>
@@ -596,6 +626,17 @@ export default async function HomePage() {
               );
             })}
           </ol>
+          {home.process.cta ? (
+            <div className="mt-8 sm:mt-10">
+              <Link
+                href={home.process.cta.href as Route}
+                className={`inline-flex items-center gap-2 font-body text-[15px] font-semibold text-espresso underline-offset-4 hover:underline ${FOCUS_RING}`}
+              >
+                {home.process.cta.label}
+                <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          ) : null}
         </div>
       </section>
 

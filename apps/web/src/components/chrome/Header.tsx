@@ -89,12 +89,12 @@ const MOBILE_SECONDARY = [
 ].filter((link) => routeEnabled(link.href)) as readonly { href: Route; label: string }[];
 
 const ICON_BUTTON_CLASSES = cx(
-  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field",
+  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field max-[680px]:h-11 max-[680px]:w-10 max-[480px]:w-9",
   FOCUS_RING,
 );
 
 /** Small label sitting under each utility icon (Valrhona header pattern). */
-const ICON_LABEL_CLASSES = "text-[11px] font-light leading-none tracking-[0.2px]";
+const ICON_LABEL_CLASSES = "text-[11px] font-light leading-none tracking-[0.2px] max-[480px]:hidden";
 
 function SearchIcon(): ReactNode {
   return (
@@ -467,7 +467,7 @@ export function Header({ categories, logoUrl }: HeaderProps): ReactNode {
           </div>
 
           {/* MOBILE (<1000px) — centered logo: menu left · logo center · search+cart right */}
-          <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-2 min-[1000px]:hidden">
+          <div className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 min-[1000px]:hidden">
             <div className="flex items-center justify-self-start">
               <button
                 type="button"
@@ -498,6 +498,7 @@ export function Header({ categories, logoUrl }: HeaderProps): ReactNode {
             </Link>
             <div className="flex items-center justify-self-end gap-0.5">
               {searchButton}
+              <AccountControl auth={auth} />
               {cartButton}
             </div>
           </div>
@@ -709,6 +710,8 @@ function PersonIcon(): ReactNode {
  * Header account affordance (auth-otp.md §2): anonymous → open the login
  * sheet; signed-in → link to `/account` with an initials avatar. Falls back
  * to a plain `/account` link when no auth context is mounted (defensive).
+ * Shown at every width — on phones it sits between search and cart, where
+ * returning customers look for it, rather than only inside the menu.
  */
 function AccountControl({
   auth,
@@ -721,7 +724,7 @@ function AccountControl({
         href="/account"
         title="Account"
         aria-label="Account"
-        className={cx("max-[680px]:hidden no-underline", ICON_BUTTON_CLASSES)}
+        className={cx("no-underline", ICON_BUTTON_CLASSES)}
       >
         <PersonIcon />
         <span className={ICON_LABEL_CLASSES}>Log in</span>
@@ -736,7 +739,7 @@ function AccountControl({
         title="Your account"
         aria-label="Your account"
         className={cx(
-          "grid h-10 w-10 place-items-center rounded-pill no-underline transition-transform hover:scale-105 max-[680px]:hidden",
+          "grid h-10 w-10 place-items-center rounded-pill no-underline transition-transform hover:scale-105 max-[680px]:h-9 max-[680px]:w-9",
           FOCUS_RING,
         )}
       >
@@ -744,7 +747,7 @@ function AccountControl({
           name={auth.customer.name}
           phone={auth.customer.phone}
           email={auth.customer.email}
-          size={38}
+          size={36}
         />
       </Link>
     );
@@ -758,7 +761,7 @@ function AccountControl({
       onClick={() => {
         auth.open();
       }}
-      className={cx("max-[680px]:hidden", ICON_BUTTON_CLASSES)}
+      className={ICON_BUTTON_CLASSES}
     >
       <PersonIcon />
       <span className={ICON_LABEL_CLASSES}>Log in</span>

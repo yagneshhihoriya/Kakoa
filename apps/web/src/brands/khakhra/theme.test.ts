@@ -93,6 +93,6 @@ describe("brands/khakhra/theme.css", () => {
 
   it("matches the profile's theme-color / background-color", () => {
     expect(theme.get("--color-field")).toBe("#8c3b1c");
-    expect(theme.get("--color-cream")).toBe("#fff7e6");
+    expect(theme.get("--color-cream")).toBe("#fcf8ef");
   });
 });

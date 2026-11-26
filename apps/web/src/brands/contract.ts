@@ -195,6 +195,8 @@ export interface HomeCopy {
     /** One sentence beside the title on wide screens; omitted on narrow ones. */
     readonly lede?: string;
     readonly steps: readonly ProcessStepCopy[];
+    /** Quiet link under the steps so the section is not a dead end. */
+    readonly cta?: CopyLink;
   };
   readonly gifting: {
     readonly eyebrow: string;
@@ -498,6 +500,12 @@ export interface BrandAssets {
    * `null` renders the pack's Story illustration instead.
    */
   readonly storyPhoto: StaticImageData | null;
+  /**
+   * Spot illustrations for the process cards, keyed by `ProcessStepCopy.step`
+   * ("01"…): transparent PNGs, ~3:2, shown top-right of the card beside the
+   * icon. `null` (or a missing key) leaves the icon on its own.
+   */
+  readonly processArt: Readonly<Record<string, StaticImageData>> | null;
 }
 
 /** What `import { brand } from "@brand"` resolves to. */

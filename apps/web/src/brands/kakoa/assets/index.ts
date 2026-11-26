@@ -11,4 +11,5 @@ export const assets: BrandAssets = {
   heroPhoto: { desktop, mobile },
   /** No kitchen photograph yet — the Story illustration renders. */
   storyPhoto: null,
+  processArt: null,
 };
