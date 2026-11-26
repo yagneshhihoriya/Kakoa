@@ -15,4 +15,5 @@ export const assets: BrandAssets = {
   heroPhoto: { desktop, mobile },
   /** Pressing a round on the tava — generated for this pack, 5:4, ~140 KB. */
   storyPhoto: story,
+  processArt: null,
 };

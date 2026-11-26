@@ -111,6 +111,7 @@ export const copy = {
           body: "Cooled, stacked and sealed the same day so the crackle survives the journey.",
         },
       ],
+      cta: { label: "Explore the flavours made this way", href: "/shop" },
     },
     gifting: {
       eyebrow: "Made for gifting",

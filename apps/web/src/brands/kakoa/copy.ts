@@ -106,6 +106,7 @@ export const copy = {
           body: "Hand-tempered and molded for that clean, glossy snap in every piece.",
         },
       ],
+      cta: { label: "Explore the bars made this way", href: "/shop" },
     },
     gifting: {
       eyebrow: "Made for gifting",
