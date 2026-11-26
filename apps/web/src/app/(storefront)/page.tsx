@@ -429,7 +429,7 @@ export default async function HomePage() {
           </Link>
         </div>
         {featured.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-4 sm:gap-[22px] lg:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:gap-[22px] lg:grid-cols-4">
             {featured.map((product) => (
               <li key={product.id}>
                 <ProductCard

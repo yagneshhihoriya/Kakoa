@@ -335,7 +335,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             >
               You may also like
             </h2>
-            <ul className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:gap-[22px] lg:grid-cols-4">
               {product.related.map((card) => (
                 <li key={card.id}>
                   <ProductCard product={card} className="h-full" />
