@@ -372,7 +372,7 @@ export const SETTINGS_CATALOG: readonly SettingField[] = [
     label: 'Home hero image (mobile)',
     type: 'url',
     media: true,
-    hint: 'Square 1:1 crop for the stacked mobile hero. Blank = the brand pack’s photo.',
+    hint: '4:3 crop for the stacked phone hero. Blank = the brand pack’s photo.',
     default: '',
   },
   {

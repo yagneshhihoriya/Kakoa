@@ -126,10 +126,13 @@ function GiftIcon({ name }: { name: GiftIconName }): ReactNode {
 /** Shared focus treatment for bespoke (non-`Button`) interactive elements. */
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+/** The same ring on the pale-wheat band, where gold-on-card falls under 3:1. */
+const FOCUS_RING_ON_CARD =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 
 /** Premium pill CTAs — the gifting section's "Shop gift packs" and the story band's outline. */
 const PRIMARY_CTA = `rounded-pill bg-ink px-[30px] py-4 font-body text-[15.5px] font-bold text-cream shadow-lift transition-[transform,background-color] duration-[var(--duration-base)] ease-brand hover:-translate-y-0.5 hover:bg-ink-hover motion-reduce:transform-none ${FOCUS_RING}`;
-const SECONDARY_CTA = `rounded-pill border-[1.5px] border-ink/25 px-[30px] py-4 font-body text-[15.5px] font-bold text-ink transition-colors duration-[var(--duration-base)] hover:border-ink hover:bg-cream ${FOCUS_RING}`;
+const SECONDARY_CTA = `rounded-pill border-[1.5px] border-ink/25 px-[30px] py-4 font-body text-[15.5px] font-bold text-ink transition-colors duration-[var(--duration-base)] hover:border-ink hover:bg-cream ${FOCUS_RING_ON_CARD}`;
 /**
  * One seam everywhere. A cream section owns only the space ABOVE itself
  * (72px desktop / 56px phone) — never a bottom padding, so neighbours cannot
@@ -143,7 +146,9 @@ const BAND = "mt-14 lg:mt-[72px]";
 const BAND_INNER = "mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16";
 /** Section header row: eyebrow + title on the left, the section's next step on the right. */
 const SECTION_HEAD = "mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mb-8";
-const HEAD_LINK = `flex items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold transition-[gap] hover:gap-2.5 ${FOCUS_RING}`;
+const HEAD_LINK_BASE = "flex items-center gap-1.5 rounded-sm font-body text-[14.5px] font-bold transition-[gap] hover:gap-2.5 max-sm:basis-full";
+const HEAD_LINK = `${HEAD_LINK_BASE} ${FOCUS_RING}`;
+const HEAD_LINK_ON_CARD = `${HEAD_LINK_BASE} ${FOCUS_RING_ON_CARD}`;
 
 /** DM-Mono eyebrow with a growing rule — the section signature. */
 function Eyebrow({
@@ -151,10 +156,13 @@ function Eyebrow({
   tone = "espresso",
 }: {
   children: ReactNode;
-  tone?: "espresso" | "gold";
+  /** `deep` (cocoa) keeps AA on the pale-wheat band, where espresso falls to 4.2:1. */
+  tone?: "espresso" | "gold" | "deep";
 }): ReactNode {
-  const color = tone === "gold" ? "text-gold-soft" : "text-espresso";
-  const rule = tone === "gold" ? "bg-gold-soft/70" : "bg-espresso";
+  const color =
+    tone === "gold" ? "text-gold-soft" : tone === "deep" ? "text-cocoa" : "text-espresso";
+  const rule =
+    tone === "gold" ? "bg-gold-soft/70" : tone === "deep" ? "bg-cocoa" : "bg-espresso";
   return (
     <div
       className={`flex items-center gap-[13px] font-mono text-eyebrow font-medium uppercase ${color}`}
@@ -211,7 +219,7 @@ export default async function HomePage() {
 
   /**
    * Hero photography — two art-directed crops: a 2.51:1 frame for the overlay
-   * layout and a 1:1 frame for the stacked mobile band. The owner's uploads
+   * layout and a 4:3 frame for the stacked phone band. The owner's uploads
    * (storefront.hero_image_url / _mobile_url) win; otherwise the crops bundled
    * with the brand pack; a pack without photography degrades to the gradient
    * field below. One configured URL serves both crops.
@@ -273,13 +281,16 @@ export default async function HomePage() {
             <div className="mb-6">
               <Eyebrow tone="gold">
                 {/* Three claims on wide screens; the third wraps a 375px line,
-                    so phones show two. Layout only — the copy is unchanged. */}
-                {home.hero.eyebrow.split(" • ").map((claim, index) => (
-                  <span key={claim} className={index >= 2 ? "max-sm:hidden" : undefined}>
-                    {index > 0 ? <span aria-hidden="true"> • </span> : null}
-                    {claim}
-                  </span>
-                ))}
+                    so phones show two. One wrapper span keeps the eyebrow's
+                    rule + text as two flex items. Layout only — copy unchanged. */}
+                <span>
+                  {home.hero.eyebrow.split(/\s[•·]\s/).map((claim, index) => (
+                    <span key={claim} className={index >= 2 ? "max-sm:hidden" : undefined}>
+                      {index > 0 ? <span aria-hidden="true"> • </span> : null}
+                      {claim}
+                    </span>
+                  ))}
+                </span>
               </Eyebrow>
             </div>
             <h1 className="mb-5 text-[24px] leading-[1.2] font-medium text-balance whitespace-pre-line text-field-ink md:text-[28px] md:leading-[1.15] lg:text-[34px]">
@@ -331,7 +342,9 @@ export default async function HomePage() {
       {/* ==================== TRUST / REASSURANCE ==================== */}
       {/* Phones: a slim three-up strip (icon over a short title) so the
           products stay within the first two screens; the body sentence is
-          tablet-and-up, where the three cards sit side by side. */}
+          tablet-and-up, where the three cards sit side by side. Its phone
+          seam is 40px rather than the page's 56: the marquee's hairline above
+          it supplies the rest, and it keeps the first products on screen two. */}
       <section
         aria-label={home.trust.ariaLabel}
         className="mx-auto max-w-[1240px] px-5 pt-10 sm:px-8 sm:pt-14 lg:pt-[72px]"
@@ -514,7 +527,7 @@ export default async function HomePage() {
             </div>
             <div>
               <div className="mb-2.5">
-                <Eyebrow>{home.story.eyebrow}</Eyebrow>
+                <Eyebrow tone="deep">{home.story.eyebrow}</Eyebrow>
               </div>
               <h2
                 id="home-story"
@@ -533,7 +546,7 @@ export default async function HomePage() {
                     <dt className="font-display text-[28px] leading-none text-ink sm:text-[32px]">
                       {stat.value}
                     </dt>
-                    <dd className="mt-1.5 font-mono text-[11px] tracking-[0.12em] text-ink-muted uppercase">
+                    <dd className="mt-1.5 font-mono text-[11px] tracking-[0.12em] text-ink-soft uppercase">
                       {stat.label}
                     </dd>
                   </div>
@@ -551,7 +564,7 @@ export default async function HomePage() {
           <div className="mt-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mt-14">
             <div className="max-w-[52ch]">
               <div className="mb-2.5">
-                <Eyebrow>{home.process.eyebrow}</Eyebrow>
+                <Eyebrow tone="deep">{home.process.eyebrow}</Eyebrow>
               </div>
               <h3
                 id="home-process"
@@ -568,13 +581,13 @@ export default async function HomePage() {
             {home.process.cta ? (
               <Link
                 href={home.process.cta.href as Route}
-                className={`${HEAD_LINK} text-espresso`}
+                className={`${HEAD_LINK_ON_CARD} text-cocoa`}
               >
                 {home.process.cta.label} <span aria-hidden="true">→</span>
               </Link>
             ) : null}
           </div>
-          <ol className="-mx-5 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:mt-8 lg:grid-cols-4 lg:gap-5">
+          <ol className="-mx-5 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-pl-5 px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:scroll-pl-0 sm:px-0 sm:pb-0 lg:mt-8 lg:grid-cols-4 lg:gap-5">
             {home.process.steps.map((movement, index) => {
               const isLast = index === home.process.steps.length - 1;
               // The rail runs card to card. It must stop at the end of each
@@ -599,7 +612,7 @@ export default async function HomePage() {
                       aria-hidden="true"
                       className={`absolute top-1/2 right-[-12px] left-8 h-0 border-t-2 border-dotted border-espresso/30 sm:right-[-24px] lg:right-[-20px] ${railClass}`}
                     />
-                    <span className="relative grid h-7 w-7 place-items-center rounded-full bg-gold-soft font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
+                    <span className="relative grid h-7 w-7 place-items-center rounded-full bg-gold-soft font-mono text-[11px] font-medium tracking-[0.08em] text-cocoa">
                       {movement.step}
                     </span>
                   </div>
@@ -647,13 +660,13 @@ export default async function HomePage() {
                         )}
                       </div>
                     )}
-                    <h3
+                    <h4
                       className={`mb-2 font-display text-[22px] leading-tight font-normal sm:text-[24px] ${accent ? "text-cream" : "text-ink"}`}
                     >
                       {movement.title}
-                    </h3>
+                    </h4>
                     <p
-                      className={`font-body text-[14px] leading-[1.6] ${accent ? "text-cream/85" : "text-ink-soft"}`}
+                      className={`font-body text-[14px] leading-[1.6] ${accent ? "text-cream" : "text-ink-soft"}`}
                     >
                       {movement.body}
                     </p>

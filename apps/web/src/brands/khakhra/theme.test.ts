@@ -42,6 +42,8 @@ const AA_PAIRS: readonly [string, string][] = [
   ["--color-ink-body", "--color-cream"],
   ["--color-ink-soft", "--color-cream"],
   ["--color-ink", "--color-card"],
+  ["--color-ink-soft", "--color-card"],
+  ["--color-cocoa", "--color-card"],
   ["--color-ink-body", "--color-surface"],
   ["--color-field-ink", "--color-field"],
   ["--color-field-ink", "--color-field-light"],
