@@ -7,6 +7,10 @@
  * enriches with the seller's GST identity (store_settings), the payment
  * status/method, any refunds (credit-note block), and the shipment AWB.
  *
+ * The seller identity has NO code default: while any legal-identity setting is
+ * missing the invoice is withheld (`{ eligible: false }` + an ops log line) —
+ * a fresh brand database can never print another brand's GSTIN.
+ *
  * A tax invoice is issued only once the order is REAL (confirmed / paid):
  * `confirmedAt !== null`. Pending-payment / unconfirmed-COD orders get
  * `{ eligible: false }` so the UI shows "invoice available after confirmation".
@@ -26,7 +30,13 @@ import {
 import { stateByCode } from '@kakoa/core';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { methodLabel, paymentStatusLabel } from '@/lib/admin/payment-format';
+import {
+  LEGAL_IDENTITY_KEYS,
+  legalIdentityMessage,
+  resolveLegalIdentity,
+} from '@/lib/admin/legal-identity';
 import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
+import { ORDER_NUMBER_PREFIX } from '@/lib/brand';
 import { deriveInvoiceNumber } from './invoice-number';
 
 export interface InvoiceLine {
@@ -105,34 +115,37 @@ export type InvoiceResult =
   | { eligible: true; invoice: InvoiceModel }
   | { eligible: false; reason: string };
 
-/** Read the seller identity block from store_settings (defaults overlaid). */
-async function loadSeller(): Promise<InvoiceModel['seller']> {
-  const keys = [
-    'seller_legal_name',
-    'seller_gstin',
-    'seller_state_code',
-    'seller_address',
-    'fssai_license_number',
-    'support_email',
-    'support_phone',
-  ];
+/**
+ * Read the seller identity block from store_settings. Support contacts fall
+ * back to the brand defaults; the legal identity does not — `null` when any of
+ * it is missing (the caller withholds the invoice).
+ */
+async function loadSeller(): Promise<InvoiceModel['seller'] | null> {
+  const keys = [...LEGAL_IDENTITY_KEYS, 'support_email', 'support_phone'];
   const rows = await db
     .select({ key: storeSettings.key, value: storeSettings.value })
     .from(storeSettings)
     .where(inArray(storeSettings.key, keys));
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
+  const legal = resolveLegalIdentity(byKey);
+  if (!legal.configured) {
+    console.error('invoice.legal_identity_not_configured', {
+      missing: legal.missing,
+      message: legalIdentityMessage(legal.missing),
+    });
+    return null;
+  }
   const str = (key: string): string => {
     const v = byKey.has(key) ? byKey.get(key) : SETTINGS_DEFAULTS[key];
     return typeof v === 'string' ? v : String(v ?? '');
   };
-  const stateCode = str('seller_state_code');
   return {
-    legalName: str('seller_legal_name'),
-    gstin: str('seller_gstin'),
-    stateCode,
-    stateName: stateByCode(stateCode)?.name ?? null,
-    address: str('seller_address'),
-    fssai: str('fssai_license_number'),
+    legalName: legal.legalName,
+    gstin: legal.gstin,
+    stateCode: legal.stateCode,
+    stateName: stateByCode(legal.stateCode)?.name ?? null,
+    address: legal.address,
+    fssai: legal.fssai,
     supportEmail: str('support_email'),
     supportPhone: str('support_phone'),
   };
@@ -204,13 +217,22 @@ export async function getInvoiceData(orderId: string): Promise<InvoiceResult | n
     .limit(1);
 
   const seller = await loadSeller();
+  if (seller === null) {
+    return {
+      eligible: false,
+      reason:
+        'Your tax invoice is being prepared — the seller details are not yet configured. Please check back shortly or contact support.',
+    };
+  }
 
   const isCod = order.paymentMode === 'cod';
   const totalRefundedPaise = Number(payment?.amountRefundedPaise ?? 0);
   const taxTotalPaise = order.cgstPaise + order.sgstPaise + order.igstPaise;
 
   const invoice: InvoiceModel = {
-    invoiceNumber: order.invoiceNumber ?? deriveInvoiceNumber(order.orderNumber, new Date(order.placedAt)),
+    invoiceNumber:
+      order.invoiceNumber ??
+      deriveInvoiceNumber(ORDER_NUMBER_PREFIX, order.orderNumber, new Date(order.placedAt)),
     orderNumber: order.orderNumber,
     orderDateIso: new Date(order.placedAt).toISOString(),
     invoiceDateIso: new Date(order.confirmedAt).toISOString(),

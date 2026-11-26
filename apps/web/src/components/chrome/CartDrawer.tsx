@@ -2,11 +2,12 @@
 
 import { useRef, type ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import { useRouter } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { brand, vocabulary } from "@/lib/brand";
 import { useCartChrome, type ChromeCartContext } from "./useCartChrome";
 import { useOverlay } from "./useOverlay";
 
@@ -34,7 +35,7 @@ function BagIcon({ size }: { size: number }): ReactNode {
 
 /**
  * Cart drawer (prototype CART DRAWER aside): right slide-in, 420px, line
- * items with tone thumbnails + qty steppers, subtotal / shipping summary,
+ * items with swatch thumbnails + qty steppers, subtotal / shipping summary,
  * free-ship progress note, checkout + view-full-cart actions.
  *
  * Visual SHELL for Module 2 — reads the pinned CartProvider context through
@@ -102,7 +103,7 @@ export function CartDrawer(): ReactNode {
         aria-label="Your bag"
         tabIndex={-1}
         style={{ fontFamily: "var(--font-ui)" }}
-        className="fixed inset-y-0 right-0 z-[61] flex w-[420px] max-w-[92vw] flex-col bg-[#FCF5E8] shadow-[-24px_0_60px_rgba(42,29,18,.24)] animate-[kk-drawer_.34s_cubic-bezier(.2,.7,.3,1)] motion-reduce:animate-none focus-visible:outline-none"
+        className="fixed inset-y-0 right-0 z-[61] flex w-[420px] max-w-[92vw] flex-col bg-field-ink shadow-[-24px_0_60px_rgb(var(--shadow-tint)_/_.24)] animate-[kk-drawer_.34s_cubic-bezier(.2,.7,.3,1)] motion-reduce:animate-none focus-visible:outline-none"
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-[22px]">
           <span className="text-[30px] font-medium leading-none text-[#000]">Your bag</span>
@@ -126,11 +127,9 @@ export function CartDrawer(): ReactNode {
             </div>
             <div>
               <div className="mb-1 text-[22px] font-medium text-[#000]">
-                Your bag is empty
+                {brand.copy.cart.emptyTitle}
               </div>
-              <div className="text-sm text-ink-soft">
-                Let&rsquo;s fix that — the truffles are calling.
-              </div>
+              <div className="text-sm text-ink-soft">{brand.copy.cart.emptyBody}</div>
             </div>
             <button
               type="button"
@@ -138,11 +137,11 @@ export function CartDrawer(): ReactNode {
                 goTo("/shop");
               }}
               className={cx(
-                "rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]",
+                "rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field",
                 FOCUS_RING,
               )}
             >
-              Browse chocolates
+              Browse {vocabulary.noun.many}
             </button>
           </div>
         ) : (
@@ -157,7 +156,7 @@ export function CartDrawer(): ReactNode {
                   <div className="w-[70px] flex-none overflow-hidden rounded-[12px]">
                     {line.imageUrl !== null ? (
                       <div className="relative aspect-[7/8] bg-cream-2">
-                        <Image
+                        <SafeImage
                           src={line.imageUrl}
                           alt={line.name}
                           fill
@@ -166,7 +165,7 @@ export function CartDrawer(): ReactNode {
                         />
                       </div>
                     ) : (
-                      <ChocoPlaceholder tone={line.tone} ratio="7 / 8" />
+                      <ProductPlaceholder tone={line.tone} ratio="7 / 8" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -204,7 +203,7 @@ export function CartDrawer(): ReactNode {
                       <div
                         role="group"
                         aria-label={`Quantity for ${line.name}`}
-                        className="flex items-center overflow-hidden rounded-none border border-[#683126]"
+                        className="flex items-center overflow-hidden rounded-none border border-field"
                       >
                         <button
                           type="button"
@@ -318,7 +317,7 @@ export function CartDrawer(): ReactNode {
                   goTo("/checkout");
                 }}
                 className={cx(
-                  "w-full rounded-none bg-[#683126] py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:opacity-60",
+                  "w-full rounded-none bg-field py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field disabled:opacity-60",
                   FOCUS_RING,
                 )}
               >

@@ -64,6 +64,13 @@ describe('catalog integrity', () => {
     }
   });
 
+  it('subjects carry the brand suffix and SMS bodies the brand prefix (never a literal)', () => {
+    for (const t of TEMPLATE_CATALOG) {
+      if (t.channel === 'email') expect(t.defaultSubject).toMatch(/ · KAKOA$/);
+      else expect(t.defaultBody.startsWith('KAKOA: ')).toBe(true);
+    }
+  });
+
   it('catalogEntry looks up by key + channel', () => {
     expect(catalogEntry('order_shipped', 'sms')?.label).toBe('Order shipped');
     expect(catalogEntry('nope', 'email')).toBeUndefined();

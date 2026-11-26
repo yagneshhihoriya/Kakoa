@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCompanyInfo } from "@/lib/catalog/queries";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  description: "Get in touch with KAKOA Chocolate — support, address, phone, email and our Grievance Officer.",
+  description: `Get in touch with ${brand.profile.name} — support, address, phone, email and our Grievance Officer.`,
   alternates: { canonical: "/contact" },
 };
 
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
  * Protection E-Commerce Rules 2020 + payment-gateway activation): legal entity
  * name, physical registered address, working phone + email, support hours, tax
  * identifiers, and the named Grievance Officer with a resolution timeline. All
- * values come from Settings so they stay accurate and consistent with invoices.
+ * values come from Settings so they stay accurate and consistent with invoices;
+ * the legal identity has no code default, so its rows render only once the
+ * owner has configured them (never another brand's details).
  */
 export default async function ContactPage() {
   const c = await getCompanyInfo();
@@ -47,25 +50,28 @@ export default async function ContactPage() {
         </ContactCard>
 
         <ContactCard title="Registered business">
-          <Row label="Legal name">{c.legalName}</Row>
-          <Row label="Address">{c.address}</Row>
+          {c.legalName ? <Row label="Legal name">{c.legalName}</Row> : null}
+          {c.address ? <Row label="Address">{c.address}</Row> : null}
           {c.gstin ? <Row label="GSTIN">{c.gstin}</Row> : null}
           {c.fssai ? <Row label="FSSAI Lic. No.">{c.fssai}</Row> : null}
+          {!c.legalIdentityConfigured ? (
+            <Row label="Registration details">Being updated — please contact support for our registered particulars.</Row>
+          ) : null}
         </ContactCard>
       </div>
 
       {/* Grievance Officer — Consumer Protection (E-Commerce) Rules, 2020 */}
-      <div className="mt-4 rounded-[18px] border border-[#EEE1CE] bg-[#F6EEE1] p-6">
+      <div className="mt-4 rounded-[18px] border border-line-soft bg-cream-2 p-6">
         <h2 className="font-body text-[15px] font-semibold text-ink">Grievance Officer</h2>
-        <p className="mt-1 font-body text-[13.5px] leading-[1.7] text-[#4C3B2A]">
+        <p className="mt-1 font-body text-[13.5px] leading-[1.7] text-ink-body">
           In line with the Consumer Protection (E-Commerce) Rules, 2020, complaints may be
           addressed to our Grievance Officer. We acknowledge complaints within 48 hours and aim to
           resolve them within one month of receipt.
         </p>
         <div className="mt-4 flex flex-col gap-2">
           <Row label="Name">{c.grievanceName}</Row>
-          <Row label="Company">{c.legalName}</Row>
-          <Row label="Address">{c.address}</Row>
+          {c.legalName ? <Row label="Company">{c.legalName}</Row> : null}
+          {c.address ? <Row label="Address">{c.address}</Row> : null}
           <Row label="Email">
             <a href={`mailto:${c.supportEmail}`} className="font-semibold text-espresso underline">
               {c.supportEmail}
@@ -79,7 +85,7 @@ export default async function ContactPage() {
         </div>
       </div>
 
-      <p className="mt-8 font-body text-[13.5px] text-[#8a7a68]">
+      <p className="mt-8 font-body text-[13.5px] text-ink-muted">
         See also our{" "}
         <Link href="/legal/shipping" className="font-semibold text-espresso underline">Shipping</Link>,{" "}
         <Link href="/legal/refund" className="font-semibold text-espresso underline">Refund &amp; Cancellation</Link>,{" "}
@@ -92,7 +98,7 @@ export default async function ContactPage() {
 
 function ContactCard({ title, children }: { title: string; children: React.ReactNode }): React.ReactNode {
   return (
-    <div className="rounded-[18px] border border-[#EEE1CE] bg-white p-6">
+    <div className="rounded-[18px] border border-line-soft bg-white p-6">
       <h2 className="mb-3 font-body text-[15px] font-semibold text-ink">{title}</h2>
       <div className="flex flex-col gap-2">{children}</div>
     </div>
@@ -102,7 +108,7 @@ function ContactCard({ title, children }: { title: string; children: React.React
 function Row({ label, children }: { label: string; children: React.ReactNode }): React.ReactNode {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.1em] text-[#8a7a68]">{label}</span>
+      <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-muted">{label}</span>
       <span className="font-body text-[14px] leading-[1.5] text-ink">{children}</span>
     </div>
   );

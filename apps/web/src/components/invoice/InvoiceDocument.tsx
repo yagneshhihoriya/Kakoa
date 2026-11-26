@@ -2,6 +2,14 @@ import type { CSSProperties, ReactNode } from "react";
 import { formatPaise } from "@kakoa/core";
 import type { AddressSnapshot } from "@kakoa/db";
 import type { InvoiceModel } from "@/lib/invoice/invoice-data";
+import { brand, vocabulary } from "@/lib/brand";
+
+/** Returns caveat — the vertical decides whether "temperature-sensitive" applies. */
+const RETURNS_CAVEAT = vocabulary.coldChain
+  ? "perishable/temperature-sensitive items may be non-returnable."
+  : "opened food items may be non-returnable.";
+
+const BRAND_NAME = brand.profile.name;
 
 /**
  * Presentational A4 tax-invoice document (NO directive — usable from both the
@@ -14,7 +22,7 @@ const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
 const LINE = "#e2ddd4";
 const HEAD_BG = "#faf7f2";
-const COCOA = "#8a5a34";
+const ACCENT = brand.email.theme.accent;
 
 const money = (paise: number): string => formatPaise(paise);
 
@@ -134,7 +142,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
         style={{
           height: 8,
           margin: "-16mm -14mm 22px",
-          background: `linear-gradient(90deg, #d9ac5e 0%, ${COCOA} 100%)`,
+          background: `linear-gradient(90deg, #d9ac5e 0%, ${ACCENT} 100%)`,
           WebkitPrintColorAdjust: "exact",
           printColorAdjust: "exact",
         }}
@@ -143,9 +151,9 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: COCOA }}>KAKOA</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 5, color: ACCENT }}>{BRAND_NAME}</div>
           <div style={{ fontSize: 10, letterSpacing: 2, color: MUTED, textTransform: "uppercase", marginTop: 1 }}>
-            Fine chocolate
+            {brand.copy.invoiceTagline}
           </div>
           <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600 }}>{m.seller.legalName}</div>
           <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, maxWidth: 280 }}>{m.seller.address}</div>
@@ -269,7 +277,7 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
             }}
           >
             <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3 }}>Grand total</span>
-            <span style={{ fontSize: 17, fontWeight: 800, color: COCOA, fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 17, fontWeight: 800, color: ACCENT, fontVariantNumeric: "tabular-nums" }}>
               {money(m.summary.grandTotalPaise)}
             </span>
           </div>
@@ -306,10 +314,10 @@ export function InvoiceDocument({ model }: { model: InvoiceModel }): ReactNode {
 
       {/* Footer */}
       <div style={{ marginTop: 26, paddingTop: 14, borderTop: `1px solid ${LINE}`, fontSize: 10, color: MUTED, lineHeight: 1.6 }}>
-        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with KAKOA 🍫</div>
+        <div style={{ fontWeight: 700, color: INK, fontSize: 12, marginBottom: 4 }}>Thank you for shopping with {BRAND_NAME} 🍫</div>
         <div>
           This is a computer-generated tax invoice and does not require a signature. Returns &amp; refunds are governed by our
-          published policy; perishable/temperature-sensitive items may be non-returnable. For help, contact {m.seller.supportEmail}.
+          published policy; {RETURNS_CAVEAT} For help, contact {m.seller.supportEmail}.
         </div>
         <div style={{ marginTop: 4 }}>Registered under GSTIN {m.seller.gstin}. Whole amounts are in Indian Rupees (₹).</div>
       </div>

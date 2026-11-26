@@ -17,7 +17,7 @@
  *
  * NEVER logs the raw code / phone — only `sha256(destination)` (§6).
  */
-import { lookupRequestSchema } from '@kakoa/core';
+import { lookupRequestSchema } from '@/lib/brand';
 import { db, orders } from '@kakoa/db';
 import { getSmsProvider } from '@kakoa/integrations';
 import { and, eq } from 'drizzle-orm';

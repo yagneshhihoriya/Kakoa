@@ -131,6 +131,11 @@ export function MediaLibrary({
                 <div className="mt-0.5 text-[11px] text-[#8a7a68]">
                   {fmtBytes(a.sizeBytes)} · {a.mimeType.replace("image/", "").toUpperCase()}
                 </div>
+                {a.folder !== "general" ? (
+                  <div className="mt-1 inline-block rounded-full bg-[#f3e7d5] px-2 py-0.5 text-[10px] font-semibold text-[#8a7a68]" title={a.folder}>
+                    {a.folder.startsWith("products/") ? "Product gallery" : a.folder}
+                  </div>
+                ) : null}
                 <div className="mt-2 flex items-center gap-3 text-[12px]">
                   <button type="button" onClick={() => void copyUrl(a.url)} className="font-semibold text-[#345f8c] hover:underline">
                     {copied === a.url ? "Copied!" : "Copy URL"}

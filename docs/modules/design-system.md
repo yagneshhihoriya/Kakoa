@@ -19,7 +19,7 @@ This module has no user-input forms of its own; its "fields" are **component pro
 | `--color-ink` | `#2A1D12` | Primary text |
 | `--color-cocoa` | `#4A2E1C` | Headings, primary button bg |
 | `--color-espresso` | `#8A5A34` | Secondary emphasis |
-| `--color-cream` | `#FBF6EF` | Page background (`--color-bg` alias) |
+| `--color-cream` | `#FEF6EB` | Page background (`--color-bg` alias; also the manifest `background_color`) |
 | `--color-card` | `#F3E7D5` | Card surfaces |
 | `--color-line` | `#EADBC6` | Borders, dividers |
 | `--color-gold` | `#C69A4C` | Accent, StarRating fill |
@@ -29,6 +29,20 @@ This module has no user-input forms of its own; its "fields" are **component pro
 | `--color-plum` | `#8A5A78` | Accent (Signature category placeholder) |
 
 Semantic aliases (`--color-bg`, `--color-danger`, `--color-success`) are what components consume — **no component references a brand hex or literal color directly**. Lint rule: any hex literal outside `tokens.css` fails CI.
+
+Site-chrome and effect tokens (same file, `@theme static` so inline-style consumers keep them):
+
+| Token | Value | Rule |
+|---|---|---|
+| `--color-field` / `--color-field-ink` | `#683126` / `#FCF5E8` | Announcement ribbon, footer and square chrome buttons; the light ink set on that field |
+| `--color-field-light` / `--color-field-deep` | `#8A4A33` / `#3C1C12` | Highlight and shade stops of the hero's radial field gradient |
+| `--color-selection` | `#E8C9A0` | `::selection` background |
+| `--color-scrollbar` / `-hover` | `#DCC6A2` / `#C9A878` | Custom scrollbar thumb |
+| `--shadow-tint` | `42 29 18` | RGB triplet every shadow is tinted with: `rgb(var(--shadow-tint) / a)` |
+| `--color-avatar-<tint>` / `-deep` | parchment pairs | `CustomerAvatar` gradients (honey, almond, rose, sage, caramel, clay) |
+| `--color-confetti-*` | gold, pistachio, brick, sun, espresso | Order-success confetti |
+
+Token **names** are shared by every brand; **values** are per brand. `tokens.css` holds the defaults (KAKOA) and the active pack re-declares the same set from `apps/web/src/brands/<key>/theme.css`, an unlayered `:root` imported after `globals.css`, which wins over Tailwind's `@layer theme`. Renderers that cannot read CSS custom properties — Satori icons/OG cards, react-pdf invoices, email HTML — take literal colours from the brand pack instead.
 
 **Typography (via `next/font`, self-hosted, `display: swap`, subset `latin`, `adjustFontFallback: true`):**
 

@@ -3,15 +3,18 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
+import { brand } from "@/lib/brand";
 
 export interface NewsletterFormProps {
   /**
-   * `card` (default) — bordered dark panel used by the home Chocolate-Club CTA.
+   * `card` (default) — bordered dark panel (the home club CTA layout).
    * `bare` — no card chrome; a centered input + button row for the footer band.
    * `square` — Valrhona-style: stacked bordered input over a solid cream
    *   rectangular submit. Used by the footer.
    */
   variant?: "card" | "bare" | "square";
+  /** The incentive line (`storefront.newsletter_offer`), e.g. "15% off your first box". */
+  offer: string;
 }
 
 type Status = "idle" | "busy" | "success" | "error";
@@ -37,13 +40,15 @@ function CheckIcon(): ReactNode {
 }
 
 /**
- * Newsletter signup (footer "Sweeten your inbox" band). Persists the email via
+ * Newsletter signup (footer club column). Copy is the brand pack's; the offer
+ * line is the `storefront.newsletter_offer` setting. Persists the email via
  * `POST /api/newsletter` (idempotent). Feedback is inline and persistent — an
  * idle → busy → success/error state machine rendered in the form — with a toast
  * kept only as a secondary cue, so the outcome survives after the toast fades
  * and is announced to screen readers. The input id is per-instance (`useId`).
  */
-export function NewsletterForm({ variant = "card" }: NewsletterFormProps): ReactNode {
+export function NewsletterForm({ variant = "card", offer }: NewsletterFormProps): ReactNode {
+  const { newsletter } = brand.copy;
   const { toast } = useToast();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -69,7 +74,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
       const data = await res.json();
       if (data.ok) {
         setStatus("success");
-        toast({ kind: "success", message: "Welcome to the Club! Check your inbox." });
+        toast({ kind: "success", message: newsletter.toastSuccess });
         form.reset();
       } else {
         const message = data.error?.message ?? "Enter a valid email address.";
@@ -93,7 +98,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
         </label>
       ) : (
         <label htmlFor={emailId} className="mb-2 block text-[13px] text-cream/85">
-          Get 15% off your first box
+          {newsletter.label(offer)}
         </label>
       )}
 
@@ -106,14 +111,14 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
           <span className="text-gold-soft">
             <CheckIcon />
           </span>
-          You&rsquo;re in — check your inbox for 15% off.
+          {newsletter.success(offer)}
         </p>
       ) : (
         <>
           <div
             className={cx(
               square
-                ? "flex max-w-[300px] flex-col items-stretch gap-3 max-[749px]:mx-auto"
+                ? "flex max-w-[300px] flex-col items-stretch gap-3"
                 : "flex gap-2",
             )}
           >
@@ -129,7 +134,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
               className={cx(
                 "min-w-0 outline-none",
                 square
-                  ? "w-full border border-[#FCF5E8]/70 bg-transparent px-[15px] py-[10px] text-[13px] tracking-[0.4px] text-[#FCF5E8] placeholder:text-[#FCF5E8]/55 focus-visible:border-[#FCF5E8]"
+                  ? "w-full border border-field-ink/70 bg-transparent px-[15px] py-[10px] text-[13px] tracking-[0.4px] text-field-ink placeholder:text-field-ink/55 focus-visible:border-field-ink"
                   : "flex-1 rounded-pill border-none bg-cream px-[18px] py-3.5 font-body text-sm font-medium text-ink placeholder:text-espresso/60 focus-visible:ring-2 focus-visible:ring-gold",
               )}
             />
@@ -139,7 +144,7 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
               className={cx(
                 "whitespace-nowrap transition-colors disabled:opacity-60",
                 square
-                  ? "w-fit border border-[#683126] bg-[#FCF5E8] px-5 py-[11px] text-[14px] tracking-[1.4px] text-[#683126] uppercase hover:bg-[#683126] hover:text-[#FCF5E8] focus-visible:ring-2 focus-visible:ring-[#FCF5E8] focus-visible:outline-none max-[749px]:mx-auto"
+                  ? "w-fit border border-field bg-field-ink px-5 py-[11px] text-[14px] tracking-[1.4px] text-field uppercase hover:bg-field hover:text-field-ink focus-visible:ring-2 focus-visible:ring-field-ink focus-visible:outline-none"
                   : "rounded-pill bg-gold-soft px-[22px] py-3.5 font-body text-sm font-bold text-ink hover:bg-gold focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cocoa focus-visible:outline-none",
               )}
             >
@@ -152,15 +157,15 @@ export function NewsletterForm({ variant = "card" }: NewsletterFormProps): React
               role="alert"
               className={cx(
                 "mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-gold-soft",
-                bare && "justify-center",
+                variant === "bare" && "justify-center",
               )}
             >
               <span aria-hidden="true">⚠</span>
               {errorMsg}
             </p>
           ) : (
-            <div className={cx("mt-2.5 text-xs text-cream/55", bare && "text-center")}>
-              No spam, ever. Unsubscribe in one click.
+            <div className={cx("mt-2.5 text-xs text-cream/55", variant === "bare" && "text-center")}>
+              {newsletter.finePrint}
             </div>
           )}
         </>

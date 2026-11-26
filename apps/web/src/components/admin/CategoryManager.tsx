@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MediaPicker } from "@/components/admin/MediaPicker";
 
 interface Category {
   id: string;
   slug: string;
   name: string;
   description: string | null;
+  /** Storefront collection tile image; null → the preset swatch fallback. */
+  imageUrl: string | null;
   position: number;
   active: boolean;
   productCount: number;
@@ -22,6 +25,8 @@ export function CategoryManager({ initial }: { initial: Category[] }): React.Rea
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  // Which row's Media Library picker is open (tile image).
+  const [pickingFor, setPickingFor] = useState<string | null>(null);
 
   // Local editable copy so inline edits feel instant; the server list is the truth on refresh.
   const [rows, setRows] = useState<Category[]>(initial);
@@ -74,6 +79,7 @@ export function CategoryManager({ initial }: { initial: Category[] }): React.Rea
         body: JSON.stringify({
           name: row.name,
           description: row.description ?? undefined,
+          imageUrl: row.imageUrl ?? null,
           position: row.position,
           active: row.active,
         }),
@@ -136,6 +142,7 @@ export function CategoryManager({ initial }: { initial: Category[] }): React.Rea
             <tr className="border-b border-[#eadbc6] text-[11px] uppercase tracking-wider text-[#8a7a68]">
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Slug</th>
+              <th className="px-4 py-3 font-medium">Tile image</th>
               <th className="px-4 py-3 font-medium">Products</th>
               <th className="w-20 px-4 py-3 font-medium">Order</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -145,7 +152,7 @@ export function CategoryManager({ initial }: { initial: Category[] }): React.Rea
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-[#8a7a68]">
+                <td colSpan={7} className="px-4 py-10 text-center text-[#8a7a68]">
                   No categories yet. Add your first above.
                 </td>
               </tr>
@@ -160,6 +167,32 @@ export function CategoryManager({ initial }: { initial: Category[] }): React.Rea
                     />
                   </td>
                   <td className="px-4 py-2.5 font-mono text-[11.5px] text-[#8a7a68]">{c.slug}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      {c.imageUrl !== null ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail of an arbitrary media URL
+                        <img src={c.imageUrl} alt="" className="h-9 w-9 flex-none rounded-md object-cover" />
+                      ) : (
+                        <span className="h-9 w-9 flex-none rounded-md border border-dashed border-[#e2d3bd]" aria-hidden="true" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPickingFor(c.id)}
+                        className="rounded-lg border border-[#eadbc6] bg-white px-2.5 py-1 text-[12px] text-[#5c4b3a] transition-colors hover:bg-[#f3e7d5]"
+                      >
+                        {c.imageUrl !== null ? "Change" : "Pick"}
+                      </button>
+                      {c.imageUrl !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => patchRow(c.id, { imageUrl: null })}
+                          className="text-[12px] text-[#8a7a68] hover:text-[#b25b5b]"
+                        >
+                          Clear
+                        </button>
+                      ) : null}
+                    </div>
+                  </td>
                   <td className="px-4 py-2.5 text-[#5c4b3a]">{c.productCount}</td>
                   <td className="px-4 py-2.5">
                     <input
@@ -201,8 +234,19 @@ export function CategoryManager({ initial }: { initial: Category[] }): React.Rea
       </div>
       <p className="text-[11.5px] text-[#b8a88f]">
         Archiving a category hides it from the storefront but keeps its products.
-        Re-order with the Order column (lower shows first).
+        Re-order with the Order column (lower shows first). A tile image shows on the
+        home collection tiles; without one the storefront paints a brand swatch.
       </p>
+
+      {pickingFor !== null ? (
+        <MediaPicker
+          onPick={(asset) => {
+            patchRow(pickingFor, { imageUrl: asset.url });
+            setPickingFor(null);
+          }}
+          onClose={() => setPickingFor(null)}
+        />
+      ) : null}
     </div>
   );
 }

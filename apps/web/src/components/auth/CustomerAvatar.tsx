@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { cx } from "@kakoa/ui";
+import { brand } from "@/lib/brand";
 
 /**
- * Generated, deterministic customer avatar in the KAKOA house style — a
+ * Generated, deterministic customer avatar in the brand house style — a
  * letterpress serif monogram on warm parchment, framed by a fine gold hairline
  * ring, with a slow gloss sweep (light catching a wax seal). The gradient tint
  * is picked from the seed (name → phone → email), so every customer gets a
@@ -13,25 +14,25 @@ import { cx } from "@kakoa/ui";
  * Presentational + hook-free (server- or client-safe). The gloss is motion-safe.
  */
 
-/** Warm, muted parchment gradient pairs [from, to]; index chosen from the seed. */
-const GRADIENTS: ReadonlyArray<readonly [string, string]> = [
-  ["#F1DCB0", "#DFBB84"], // honey
-  ["#ECDCC2", "#D6BB93"], // almond
-  ["#EDCBC2", "#D9A99E"], // rose
-  ["#DBE0C0", "#BFC894"], // sage
-  ["#EFD4AE", "#DDB57E"], // caramel
-  ["#E9CDB4", "#D3AC8B"], // clay
-];
+/**
+ * Warm, muted parchment gradient tints; index chosen from the seed. Each maps
+ * to the `--color-avatar-<tint>` / `--color-avatar-<tint>-deep` token pair so
+ * the brand pack's theme.css re-tints every avatar.
+ */
+const TINTS = ["honey", "almond", "rose", "sage", "caramel", "clay"] as const;
 
-const INK = "#4a2e1c";
-const GOLD = "#c69a4c";
+const INK = "var(--color-cocoa)";
+/** Fine hairline ring: the gold token at 60% (what `#…99` hex alpha encoded). */
+const RING = "color-mix(in srgb, var(--color-gold) 60%, transparent)";
+/** Outer drop shadow: the cocoa token at 45%. */
+const DROP = "color-mix(in srgb, var(--color-cocoa) 45%, transparent)";
 
 function seedIndex(seed: string): number {
   let h = 0;
   for (let i = 0; i < seed.length; i += 1) {
     h = (h * 31 + seed.charCodeAt(i)) | 0;
   }
-  return Math.abs(h) % GRADIENTS.length;
+  return Math.abs(h) % TINTS.length;
 }
 
 function initialsOf(name: string | null | undefined): string | null {
@@ -59,9 +60,10 @@ export function CustomerAvatar({
   size = 46,
   className,
 }: CustomerAvatarProps): ReactNode {
-  const seed = (name ?? phone ?? email ?? "kakoa").toLowerCase();
-  const pair = GRADIENTS[seedIndex(seed)] ?? GRADIENTS[0]!;
-  const [from, to] = pair;
+  const seed = (name ?? phone ?? email ?? brand.profile.cookiePrefix).toLowerCase();
+  const tint = TINTS[seedIndex(seed)] ?? TINTS[0];
+  const from = `var(--color-avatar-${tint})`;
+  const to = `var(--color-avatar-${tint}-deep)`;
   const label = initialsOf(name);
 
   return (
@@ -73,7 +75,7 @@ export function CustomerAvatar({
         height: size,
         background: `linear-gradient(152deg, ${from} 0%, ${to} 100%)`,
         // Fine gold hairline ring + a soft inner top-light + gentle drop shadow.
-        boxShadow: `inset 0 0 0 1.4px ${GOLD}99, inset 0 1.5px 3px rgba(255,255,255,0.55), inset 0 -4px 8px rgba(120,78,32,0.18), 0 4px 12px -4px rgba(74,46,28,0.45)`,
+        boxShadow: `inset 0 0 0 1.4px ${RING}, inset 0 1.5px 3px rgba(255,255,255,0.55), inset 0 -4px 8px rgba(120,78,32,0.18), 0 4px 12px -4px ${DROP}`,
       }}
     >
       {/* soft studio highlight, top-left */}

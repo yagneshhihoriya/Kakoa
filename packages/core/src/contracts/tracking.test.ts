@@ -5,9 +5,64 @@ import {
   CANCEL_REASON_MIN,
   cancelOrderSchema,
   countGraphemes,
+  exampleOrderNumber,
   lookupRequestSchema,
   lookupVerifySchema,
+  makeLookupRequestSchema,
+  makeLookupVerifySchema,
+  makeOrderNumberRegex,
+  makeOrderNumberSchema,
 } from './tracking';
+
+describe('makeOrderNumberSchema (brand-prefix factory)', () => {
+  it('accepts exactly <PREFIX>-ddddd for the given prefix, trimming whitespace', () => {
+    const kk = makeOrderNumberSchema('KK');
+    expect(kk.parse('KK-48210')).toBe('KK-48210');
+    expect(kk.parse('  KK-48210 ')).toBe('KK-48210');
+    expect(makeOrderNumberSchema('KH').parse('KH-00001')).toBe('KH-00001');
+  });
+
+  it("rejects another brand's prefix, wrong digit counts and a missing prefix", () => {
+    const kk = makeOrderNumberSchema('KK');
+    expect(kk.safeParse('KH-48210').success).toBe(false);
+    expect(kk.safeParse('KK-4821').success).toBe(false);
+    expect(kk.safeParse('KK-482100').success).toBe(false);
+    expect(kk.safeParse('48210').success).toBe(false);
+    expect(kk.safeParse('kk-48210').success).toBe(false);
+  });
+
+  it('names the example number in its message', () => {
+    const r = makeOrderNumberSchema('KH').safeParse('nope');
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0]?.message).toContain('KH-48210');
+    expect(exampleOrderNumber('KK')).toBe('KK-48210');
+  });
+
+  it('refuses a malformed prefix instead of building a permissive regex', () => {
+    expect(() => makeOrderNumberRegex('kk')).toThrow(/prefix/);
+    expect(() => makeOrderNumberRegex('K')).toThrow(/prefix/);
+    expect(() => makeOrderNumberRegex('K.*')).toThrow(/prefix/);
+    expect(makeOrderNumberRegex('KK').test('KK-48210')).toBe(true);
+  });
+
+  it('binds the prefix into the lookup request / verify schemas', () => {
+    const req = makeLookupRequestSchema('KH');
+    expect(req.safeParse({ orderNumber: 'KH-48210', phone: '9876543210' }).success).toBe(true);
+    expect(req.safeParse({ orderNumber: 'KK-48210', phone: '9876543210' }).success).toBe(false);
+    const verify = makeLookupVerifySchema('KH');
+    expect(
+      verify.safeParse({ orderNumber: 'KH-48210', phone: '9876543210', code: '042917' }).success,
+    ).toBe(true);
+    expect(
+      verify.safeParse({ orderNumber: 'KK-48210', phone: '9876543210', code: '042917' }).success,
+    ).toBe(false);
+  });
+
+  it('the prefix-agnostic exports accept every brand shape but still pin 5 digits', () => {
+    expect(lookupRequestSchema.safeParse({ orderNumber: 'KH-48210', phone: '9876543210' }).success).toBe(true);
+    expect(lookupRequestSchema.safeParse({ orderNumber: 'K-48210', phone: '9876543210' }).success).toBe(false);
+  });
+});
 
 describe('lookupRequestSchema', () => {
   it('accepts KK-48210 + a bare 10-digit phone, normalizing to E.164', () => {

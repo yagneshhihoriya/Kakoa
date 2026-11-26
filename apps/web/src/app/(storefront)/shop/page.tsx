@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ProductListInput, ProductSort } from "@kakoa/core";
 import { productListInputSchema } from "@kakoa/core";
 import { EmptyState, cx } from "@kakoa/ui";
+import { brand, vocabulary } from "@/lib/brand";
 import { getCategories, getProducts } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { SortDropdown } from "@/components/catalog/SortDropdown";
@@ -125,8 +126,7 @@ export async function generateMetadata({
       return {
         title: category.name,
         description:
-          category.description ??
-          `Shop ${category.name} — small-batch bean-to-bar chocolate, crafted in India.`,
+          category.description ?? brand.copy.shop.categoryMetaDescription(category.name),
         // Canonical without the volatile ?page — page 1 of the (filtered)
         // listing is the indexable URL; deeper pages consolidate to it.
         alternates: {
@@ -137,8 +137,7 @@ export async function generateMetadata({
   }
   return {
     title: "Shop",
-    description:
-      "Shop small-batch bean-to-bar chocolate — bars, pralines, signature collections, and gifts.",
+    description: brand.copy.shop.metaDescription,
     alternates: { canonical: "/shop" },
   };
 }
@@ -183,11 +182,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const pages = pageWindow(input.page, totalPages);
 
   return (
-    <main className="mx-auto w-full max-w-[1240px] px-6 pt-7 pb-[72px] md:px-8">
-      {/* Breadcrumb */}
+    <main className="mx-auto w-full max-w-[1240px] px-6 pt-5 pb-[72px] sm:pt-7 md:px-8">
+      {/* Breadcrumb — tablets up; on phones the header's Home link covers it. */}
       <nav
         aria-label="Breadcrumb"
-        className="mb-6 font-body text-[13px] font-medium text-ink-muted"
+        className="mb-6 font-body text-[13px] font-medium text-ink-muted max-sm:hidden"
       >
         <Link
           href="/"
@@ -201,30 +200,42 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </span>
       </nav>
 
-      {/* Page header — eyebrow + serif title + sub, sort dropdown right-aligned */}
+      {/* Page header — eyebrow + serif title + sub, sort dropdown right-aligned
+          (tablets up; on phones the sort sits beside the chips below). Phones
+          get the smaller title and tighter gaps so the grid starts within the
+          first screen. */}
       <div className="mb-2 flex flex-wrap items-end justify-between gap-5">
         <div>
-          <div className="mb-3 flex items-center gap-3 font-mono text-eyebrow font-medium text-espresso uppercase">
+          <div className="mb-2 flex items-center gap-3 font-mono text-eyebrow font-medium text-espresso uppercase sm:mb-3">
             <span aria-hidden="true" className="inline-block h-px w-[30px] bg-espresso" />
             {activeCategory !== undefined ? "Collection" : "Shop all"}
           </div>
-          <h1 className="mb-3 font-display text-h1 font-normal text-ink">
+          <h1 className="mb-2 font-display text-h1 font-normal text-ink max-sm:text-[30px] max-sm:leading-[1.1] sm:mb-3">
             {activeCategory?.name ?? "The Collection"}
           </h1>
-          <p className="max-w-[52ch] font-body text-lead text-ink-soft">
+          <p className="max-w-[52ch] font-body text-lead text-ink-soft max-sm:text-[15px]">
             {activeCategory?.description ??
-              `${total} chocolate${total === 1 ? "" : "s"}, all made by hand this week.`}
+              `${total} ${total === 1 ? vocabulary.noun.one : vocabulary.noun.many}, all made by hand this week.`}
           </p>
         </div>
-        <SortDropdown value={input.sort} />
+        <div className="max-sm:hidden">
+          <SortDropdown value={input.sort} />
+        </div>
       </div>
 
-      {/* Filter chip row */}
+      {/* Toolbar — phones: the chip rail and a compact sort on one row;
+          tablets up: the chip row alone. The rail hides its scrollbar and
+          fades at the right edge so a cut-off chip reads as "more". */}
+      <div className="mt-4 flex items-center gap-3 sm:mt-6 sm:block">
       <nav
         aria-label="Filter by collection"
-        className="-mx-6 mt-6 px-6 md:mx-0 md:px-0"
+        className="relative min-w-0 flex-1 max-sm:-ml-6 max-sm:pl-6 sm:-mx-6 sm:px-6 md:mx-0 md:px-0"
       >
-        <ul className="flex gap-2 overflow-x-auto pb-1">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-bg to-transparent sm:hidden"
+        />
+        <ul className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] max-sm:pr-8 [&::-webkit-scrollbar]:hidden">
           <li>
             <ChipLink
               href={shopHref({ sort: input.sort, q: input.q })}
@@ -249,21 +260,29 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           ))}
         </ul>
       </nav>
+      <div className="flex-none sm:hidden">
+        <SortDropdown value={input.sort} compact />
+      </div>
+      </div>
 
-      {/* Result count */}
+      {/* Result count — tablets up, and on phones only when it carries a
+          search term (the subtitle already states the total). */}
       <p
-        className="mt-6 mb-4 font-body text-[13px] text-ink-muted"
+        className={cx(
+          "mt-6 mb-4 font-body text-[13px] text-ink-muted",
+          input.q === undefined && "max-sm:hidden",
+        )}
         aria-live="polite"
       >
         {total === 0
-          ? "0 chocolates"
-          : `Showing ${rangeStart}–${rangeEnd} of ${total} chocolate${total === 1 ? "" : "s"}`}
+          ? `0 ${vocabulary.noun.many}`
+          : `Showing ${rangeStart}–${rangeEnd} of ${total} ${total === 1 ? vocabulary.noun.one : vocabulary.noun.many}`}
         {input.q !== undefined ? ` for “${input.q}”` : ""}
       </p>
 
       {/* Grid / empty state */}
       {products.length > 0 ? (
-        <ul className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-7 max-sm:mt-5 sm:gap-[22px] lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
             <li key={product.id}>
               <ProductCard
@@ -276,11 +295,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </ul>
       ) : (
         <EmptyState
-          title="No chocolates match"
+          title={`No ${vocabulary.noun.many} match`}
           description={
             hasFilters
               ? "Try clearing your filters — the good stuff is one tap away."
-              : "New chocolates land here soon — check back shortly."
+              : `New ${vocabulary.noun.many} land here soon — check back shortly.`
           }
           cta={{ label: "Reset filters", href: "/shop" }}
         />

@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { routeEnabled } from "@/lib/brand";
 
 export const metadata = { title: "Our stores" };
 
 /** Placeholder — replaced by the Content module (PROJECT_PLAN §3.7). */
 export default function LocatorPage() {
+  // A brand without stores (features.locator off) has no such page.
+  if (!routeEnabled("/locator")) notFound();
+
   return (
     <main className="mx-auto flex min-h-[50vh] w-full max-w-[720px] flex-col items-center justify-center gap-4 px-8 py-24 text-center">
       <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-espresso">

@@ -15,6 +15,7 @@ import { eq, sql } from 'drizzle-orm';
 
 import { jsonErr, jsonOk, NO_STORE } from '@/lib/api/http';
 import { getCurrentCustomer } from '@/lib/auth/session';
+import { isOrderNumber } from '@/lib/brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,15 +26,12 @@ const INTERNAL_MESSAGE = 'Something went wrong. Please try again.';
 /** Order `access_token` is a uuid; the ≤24h window is enforced on placed_at. */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** `KK-XXXXX` human order number. */
-const ORDER_NUMBER_RE = /^KK-[0-9]{5,}$/;
-
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ orderNumber: string }> },
 ): Promise<Response> {
   const { orderNumber } = await params;
-  if (!ORDER_NUMBER_RE.test(orderNumber)) {
+  if (!isOrderNumber(orderNumber)) {
     return jsonErr('NOT_FOUND', NOT_FOUND_MESSAGE);
   }
 

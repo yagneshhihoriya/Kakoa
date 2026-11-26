@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AttributeDef, Capability } from '@platform/kernel';
-import { isUuid, slugify, validateAttributes, validateVariantInput } from './product-validation';
+import { coerceProductContent, isUuid, slugify, validateAttributes, validateVariantInput } from './product-validation';
 
 describe('isUuid', () => {
   it('accepts a well-formed uuid (any case)', () => {
@@ -102,9 +102,67 @@ describe('validateVariantInput (guards the product_variants check constraints)',
     expect(validateVariantInput({ ...good, stockQuantity: -1 }).ok).toBe(false);
   });
 
+  it('leaves the tax class undefined when absent so the data layer applies the preset default', () => {
+    const r = validateVariantInput(good);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect('gstRateBp' in r.value).toBe(false);
+      expect('hsnCode' in r.value).toBe(false);
+    }
+    const blank = validateVariantInput({ ...good, gstRateBp: '', hsnCode: '' });
+    expect(blank.ok).toBe(true);
+    if (blank.ok) expect('hsnCode' in blank.value).toBe(false);
+  });
+
+  it('validates an explicit tax class (0–28% in bp; 4/6/8-digit HSN)', () => {
+    const r = validateVariantInput({ ...good, gstRateBp: 0, hsnCode: '1905' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value).toMatchObject({ gstRateBp: 0, hsnCode: '1905' });
+    expect(validateVariantInput({ ...good, gstRateBp: 2801 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, gstRateBp: -1 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, gstRateBp: 5.5 }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, hsnCode: '19' }).ok).toBe(false);
+    expect(validateVariantInput({ ...good, hsnCode: 'ABCD' }).ok).toBe(false);
+    const eight = validateVariantInput({ ...good, hsnCode: ' 19059010 ' });
+    expect(eight.ok).toBe(true);
+    if (eight.ok) expect(eight.value.hsnCode).toBe('19059010');
+  });
+
   it('honours explicit isActive / isDefault flags', () => {
     const r = validateVariantInput({ ...good, isActive: false, isDefault: true });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.value).toMatchObject({ isActive: false, isDefault: true });
+  });
+});
+
+describe('coerceProductContent (PDP content from an untrusted admin body)', () => {
+  const palette = { options: ['dark', 'milk'], fallback: 'dark' } as const;
+
+  it('keeps scalar nutrition values and drops nested objects instead of stringifying them', () => {
+    const r = coerceProductContent(
+      {
+        nutritionFacts: {
+          Energy: ' 540 kcal ',
+          Protein: 8,
+          per100g: { energy: '540 kcal' }, // a nested object must never become "[object Object]"
+          Fat: null,
+          ' ': 'blank key',
+        },
+      },
+      palette,
+    );
+    expect(r.nutritionFacts).toEqual({ Energy: '540 kcal', Protein: '8' });
+    expect(JSON.stringify(r.nutritionFacts)).not.toContain('[object Object]');
+  });
+
+  it('returns null nutrition facts when nothing survives coercion', () => {
+    expect(coerceProductContent({ nutritionFacts: { per100g: { energy: 1 } } }, palette).nutritionFacts).toBeNull();
+    expect(coerceProductContent({ nutritionFacts: [] }, palette).nutritionFacts).toBeNull();
+    expect(coerceProductContent({}, palette).nutritionFacts).toBeNull();
+  });
+
+  it('validates the tone against the palette and falls back otherwise', () => {
+    expect(coerceProductContent({ tone: 'milk' }, palette).tone).toBe('milk');
+    expect(coerceProductContent({ tone: 'ruby' }, palette).tone).toBe('dark');
   });
 });

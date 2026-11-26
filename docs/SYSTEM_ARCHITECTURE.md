@@ -1,6 +1,6 @@
 # KAKOA — System Architecture
 
-> **Master architecture document.** One deployable, one database, one async backbone. Sources of truth: `PROJECT_PLAN.md` §1 (Stack & Decision Record), §2 (Team Structure), §3.0 (Contract v1.0.0), §4 (Cross-Cutting Concerns); table-level detail in [DATABASE_ERD.md](DATABASE_ERD.md); module-level specs in [modules/README.md](modules/README.md).
+> **Master architecture document.** One codebase; **one deployment, one database and one media bucket per brand** (KAKOA, Khakhra House — see §3 and [brands/PROVISIONING.md](brands/PROVISIONING.md)); one async backbone per deployment. Sources of truth: `PROJECT_PLAN.md` §1 (Stack & Decision Record), §2 (Team Structure), §3.0 (Contract v1.0.0), §4 (Cross-Cutting Concerns); table-level detail in [DATABASE_ERD.md](DATABASE_ERD.md); module-level specs in [modules/README.md](modules/README.md).
 > Conventions everywhere: money is INR **integer paise**, timestamps `timestamptz` UTC displayed IST, API envelope + error codes per Contract §2.1.
 
 ---
@@ -25,9 +25,12 @@ flowchart TB
     WebhookRoutes["Route Handlers: /api/webhooks/razorpay, /api/webhooks/shiprocket"]
   end
 
-  subgraph Supabase["Supabase ap-south-1 (Mumbai)"]
+  subgraph Supabase["Supabase ap-south-1 (Mumbai) — one project per brand"]
     PG["Postgres via transaction pooler — single source of truth incl. webhook_events"]
-    Storage["Supabase Storage: product images, return-evidence photos"]
+  end
+
+  subgraph Cloudflare["Cloudflare R2 — one bucket per brand"]
+    Storage["R2 bucket: product images, Media Library (public URLs via a media subdomain)"]
   end
 
   subgraph Inngest["Inngest (Pro) — durable async"]
@@ -120,9 +123,19 @@ sequenceDiagram
 
 ---
 
-## 3. Runtime Topology — One Deployable
+## 3. Runtime Topology — One App, N Deployments
 
-There is exactly **one deployed application**: the Next.js App Router app on Vercel Pro, functions pinned to `bom1`, `output: 'standalone'` kept as the DO App Platform escape hatch (PROJECT_PLAN §1). A **modular monolith** — no microservices, no Kafka/Redis/event buses. Its surfaces:
+There is exactly **one application** — the Next.js App Router app on Vercel Pro, functions pinned to `bom1`, `output: 'standalone'` kept as the DO App Platform escape hatch (PROJECT_PLAN §1) — deployed **once per brand**. A **modular monolith** — no microservices, no Kafka/Redis/event buses, and no runtime brand switching: `BRAND_KEY` (required at build, no default) selects the brand profile from `packages/brands` and bundles that brand's presentation pack (`apps/web/src/brands/<key>` through the `@brand` alias), so a deployment *is* a brand.
+
+| | Per deployment (per brand) | Shared |
+|---|---|---|
+| Code | the same commit, built with a different `BRAND_KEY` | `apps/web`, every package, the vertical presets (`@platform/kernel`) |
+| Data | Supabase project (Postgres), R2 media bucket, `store_settings` (fees, policy, legal identity seeded from the profile) | — (no cross-brand reads; a brand's database holds one brand) |
+| Identity | domain, `NEXT_PUBLIC_SITE_URL`, session / OTP secrets, cookies (`<cookiePrefix>_*`), order & SKU prefix (`identifierPrefix`) | the legal entity when brands are trade names of one company (KAKOA + Khakhra House share the seller identity fixture) |
+| Vendors | webhook endpoints + secrets, Inngest app, Sentry project, cron (`apps/web/vercel.json`), DLT OTP template, Resend sending domain | Razorpay / Shiprocket / MSG91 accounts for same-entity brands |
+| Gates | `next build` prerenders *this* brand's catalogue from *its* database | CI runs the whole pipeline once per brand (`.github/workflows/ci.yml`); `pnpm brand-gate` keeps brand literals inside the packs |
+
+The surfaces of each deployment:
 
 | Surface | What runs there |
 |---|---|
@@ -133,7 +146,7 @@ There is exactly **one deployed application**: the Next.js App Router app on Ver
 | Route Handlers `/api/webhooks/*` | Raw-body HMAC verification, persist-then-ack; exempt from session middleware, `Cache-Control: no-store` |
 | Inngest functions | Same codebase, invoked by Inngest — webhook processors, fulfillment pipeline, emails, all named crons |
 
-State lives in exactly two places: **Supabase Postgres** (ap-south-1, transaction pooler — single-digit ms from `bom1`) and **Supabase Storage** (images, evidence photos). `webhook_events` in Postgres is the async source of truth; Inngest provides durability/retries but never holds authoritative state.
+State lives in exactly two places per brand: **Supabase Postgres** (ap-south-1, transaction pooler — single-digit ms from `bom1`) and a **Cloudflare R2 bucket** (product images and the Media Library — [MEDIA-STORAGE-R2.md](MEDIA-STORAGE-R2.md)). `webhook_events` in Postgres is the async source of truth; Inngest provides durability/retries but never holds authoritative state.
 
 ## 4. Package Dependency Rule (web → db → core)
 
@@ -192,7 +205,7 @@ Four environments; the full truth table is **PROJECT_PLAN.md §4.2** — this is
 
 | | Local | Preview (per-PR) | Staging | Production |
 |---|---|---|---|---|
-| DB | Docker Postgres / Supabase branch | Supabase branch, CI-migrated | Dedicated Supabase project | Supabase ap-south-1, PITR on |
+| DB | Docker Postgres / Supabase branch | Supabase branch, CI-migrated (GitHub Actions: `postgres:17` service, migrated + seeded per brand) | Dedicated Supabase project | Supabase ap-south-1, PITR on — one project per brand |
 | Razorpay | Test keys | Test keys + replay fixtures | Test keys + real webhook subscription | **Live keys**, distinct webhook secret |
 | Shiprocket | In-repo mock | In-repo mock (no sandbox exists) | Mock default; `SHIPROCKET_LIVE=1` drill | Real API, DB-cached 240 h token |
 | SMS / Email | Console log / Mailpit | Test code `000000` / capture | Real, team-scoped | Real, spend alerts + DMARC verified |
@@ -202,6 +215,7 @@ Four environments; the full truth table is **PROJECT_PLAN.md §4.2** — this is
 
 ## Related documents
 
+- [brands/PROVISIONING.md](brands/PROVISIONING.md) — standing up a brand deployment (Supabase → migrate → seed → R2 → Vercel → domain → vendors), CI matrix, migration runbook
 - [DATABASE_ERD.md](DATABASE_ERD.md) — full ERD and per-table specs
 - [modules/README.md](modules/README.md) — index of all 24 module specs
 - `PROJECT_PLAN.md` — §1 decisions, §2 team/lanes, §3.0 Contract v1.0.0, §4 cross-cutting (CI/CD, environments, monitoring, security, backup, launch gates)

@@ -1,6 +1,7 @@
 /**
  * POST /api/admin/products/[id]/variants — add a variant to a product
- * (`products:write`). Body validated against the product_variants constraints.
+ * (`products:write`). Body validated against the product_variants constraints;
+ * an omitted tax class falls back to the business's preset `taxDefaults`.
  */
 import { jsonErr, jsonOk, NO_STORE } from '@/lib/api/http';
 import { requireAdmin } from '@/lib/admin/guard';
@@ -21,7 +22,7 @@ export async function POST(
     return jsonErr('VALIDATION_ERROR', 'Invalid request body.');
   }
 
-  const result = await createVariant(id, body, auth.value.admin.id);
+  const result = await createVariant(id, body, auth.value.admin.id, auth.value.ctx.preset.taxDefaults);
   if (!result.ok) return jsonErr(result.code, result.message);
   return jsonOk({ id: result.id }, { cacheControl: NO_STORE, status: 201 });
 }

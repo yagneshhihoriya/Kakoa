@@ -7,7 +7,10 @@
  */
 import { adminAuditLog, db } from '@kakoa/db';
 import { getEmailProvider, getSmsProvider } from '@kakoa/integrations';
+import { EXAMPLE_ORDER_NUMBER, ORDER_NUMBER_PREFIX, emailIdentity } from '@/lib/brand';
+import { loadEmailIdentity } from '@/lib/email/identity';
 import { wrapEmailBody } from '@/lib/email/templates';
+import { siteUrl } from '@/lib/seo/site';
 import { getTemplate } from './notification-templates';
 import { recordNotification } from './notification-log';
 import { renderTemplate } from './notification-catalog';
@@ -15,13 +18,13 @@ import { renderTemplate } from './notification-catalog';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\+91[6-9][0-9]{9}$/;
 
-/** Sample substitution values for the preview / test render. */
+/** Sample substitution values for the preview / test render (brand-prefixed). */
 const SAMPLE_VARS: Record<string, string> = {
-  orderNumber: 'KK-TEST01',
+  orderNumber: EXAMPLE_ORDER_NUMBER,
   customerName: 'Test Customer',
-  trackingUrl: 'https://kakoa.in/account/track?order=KK-TEST01',
+  trackingUrl: `${siteUrl()}/account/track?order=${EXAMPLE_ORDER_NUMBER}`,
   amount: '₹1,299.00',
-  awb: 'KKTEST12345',
+  awb: `${ORDER_NUMBER_PREFIX}TEST12345`,
   courierName: 'Mock Express',
   eta: 'Fri, 10 Jul',
 };
@@ -73,9 +76,19 @@ export async function sendTestNotification(
   try {
     if (merged.channel === 'email') {
       const subject = `[TEST] ${renderTemplate(merged.subject ?? '', SAMPLE_VARS, { escapeHtml: false })}`;
-      const html = wrapEmailBody(renderTemplate(merged.body, SAMPLE_VARS, { escapeHtml: true }));
+      const html = wrapEmailBody(
+        renderTemplate(merged.body, SAMPLE_VARS, { escapeHtml: true }),
+        await loadEmailIdentity(),
+      );
       const text = renderTemplate(merged.body, SAMPLE_VARS, { escapeHtml: false });
-      const r = await getEmailProvider().send({ to, subject, html, text, idempotencyKey: `test-${input.key}-${Date.now()}` });
+      const r = await getEmailProvider().send({
+        to,
+        subject,
+        html,
+        text,
+        fromName: emailIdentity().fromName,
+        idempotencyKey: `test-${input.key}-${Date.now()}`,
+      });
       providerMessageId = r.providerMessageId;
     } else {
       const message = renderTemplate(merged.body, SAMPLE_VARS, { escapeHtml: false });

@@ -3,6 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
+import { presetHas, vocabulary } from "@/lib/brand";
 
 export interface PdpReview {
   id: string;
@@ -25,7 +26,11 @@ export interface PdpDetailsProps {
   codEnabled: boolean;
   /** Ingredients & nutrition accordion (FSSAI-required for packaged food). */
   ingredients: string;
+  /** Free-text allergen advisory ("Made on lines that also handle…"). */
   allergens: string;
+  /** Declared allergens (preset `allergens` attribute); rendered only with the capability. */
+  declaredAllergens: readonly string[];
+  /** Label rows; the reserved `basis` key names the reference quantity. */
   nutritionFacts: Record<string, string> | null;
   /** Product information (India Legal Metrology + FSSAI) — folded into the
    *  Ingredients & nutrition accordion (no separate "Product details" section). */
@@ -35,7 +40,19 @@ export interface PdpDetailsProps {
   shelfLifeDays: number | null;
   storageInstructions: string | null;
   fssaiLicense: string;
+  /** Accordion sections open on first render (ids below); default: the description. */
+  defaultOpen?: readonly PdpSectionId[];
 }
+
+export type PdpSectionId = "description" | "whatYoullGet" | "ingredients" | "shipping";
+
+/**
+ * Reserved nutrition key: its value is the reference quantity in the panel
+ * heading ("per 100 g"), not a row. Older records without it keep the
+ * historical 30 g serving heading.
+ */
+const NUTRITION_BASIS_KEY = "basis";
+const DEFAULT_NUTRITION_BASIS = "per 30 g";
 
 /** FSSAI square veg / non-veg mark (green = veg, brown = non-veg). */
 function VegMark({ isVeg }: { isVeg: boolean }): ReactNode {
@@ -151,6 +168,7 @@ export function PdpDetails({
   codEnabled,
   ingredients,
   allergens,
+  declaredAllergens,
   nutritionFacts,
   isVeg,
   netQuantities,
@@ -158,21 +176,29 @@ export function PdpDetails({
   shelfLifeDays,
   storageInstructions,
   fssaiLicense,
+  defaultOpen = ["description"],
 }: PdpDetailsProps): ReactNode {
-  const [open, setOpen] = useState<Record<string, boolean>>({
-    description: true,
-  });
+  const [open, setOpen] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(defaultOpen.map((id) => [id, true])),
+  );
   const toggle = (id: string): void =>
     setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
   // Guard against malformed nutrition data (e.g. a value that stringified to
   // "[object Object]" from a bad admin save) — never render coerced junk.
   const nutritionEntries =
     nutritionFacts !== null
-      ? Object.entries(nutritionFacts).filter(([, v]) => {
+      ? Object.entries(nutritionFacts).filter(([k, v]) => {
+          if (k === NUTRITION_BASIS_KEY) return false;
           const s = typeof v === "string" ? v.trim() : String(v ?? "").trim();
           return s !== "" && s !== "[object Object]";
         })
       : [];
+  const nutritionBasis = nutritionFacts?.[NUTRITION_BASIS_KEY]?.trim() || DEFAULT_NUTRITION_BASIS;
+  // Shelf life, storage and best-before are perishable-vertical rows; the
+  // declared-allergen list needs the `allergens` capability (the free-text
+  // advisory is FSSAI copy any packaged food may carry).
+  const perishable = presetHas("perishable");
+  const declared = presetHas("allergens") ? declaredAllergens : [];
 
   return (
     <section aria-label="Product information" className="mt-14 border-t border-line">
@@ -212,21 +238,28 @@ export function PdpDetails({
             <p className="mb-5 font-body text-[15px] leading-[1.7] text-ink-soft">
               {ingredients || "—"}
             </p>
-            {allergens !== "" ? (
+            {declared.length > 0 || allergens !== "" ? (
               <>
                 <h4 className="mb-2 font-body text-[14px] font-semibold text-ink">
                   Allergens
                 </h4>
-                <p className="font-body text-[15px] leading-[1.7] text-ink-soft">
-                  {allergens}
-                </p>
+                {declared.length > 0 ? (
+                  <p className="font-body text-[15px] leading-[1.7] text-ink">
+                    Contains {declared.join(", ")}.
+                  </p>
+                ) : null}
+                {allergens !== "" ? (
+                  <p className="font-body text-[15px] leading-[1.7] text-ink-soft">
+                    {allergens}
+                  </p>
+                ) : null}
               </>
             ) : null}
           </div>
           {nutritionEntries.length > 0 ? (
             <div className="h-fit rounded-[16px] border border-line-soft bg-cream-2 p-5">
               <h4 className="mb-3 font-mono text-[12px] font-semibold tracking-[0.12em] text-espresso uppercase">
-                Nutrition · per 30 g
+                Nutrition · {nutritionBasis}
               </h4>
               <div className="flex flex-col">
                 {nutritionEntries.map(([key, value]) => (
@@ -242,18 +275,28 @@ export function PdpDetails({
           <div className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-espresso uppercase">
             Product information
           </div>
-          <DetailRow
-            label={isVeg ? "Vegetarian" : "Non-vegetarian"}
-            value="MRP inclusive of all taxes"
-            icon={<VegMark isVeg={isVeg} />}
-          />
+          {/* FSSAI veg / non-veg mark only where the vertical declares it. */}
+          {presetHas("veg-mark") ? (
+            <DetailRow
+              label={isVeg ? "Vegetarian" : "Non-vegetarian"}
+              value="MRP inclusive of all taxes"
+              icon={<VegMark isVeg={isVeg} />}
+            />
+          ) : (
+            <DetailRow label="Pricing" value="MRP inclusive of all taxes" />
+          )}
           <DetailRow label="Net quantity" value={netQuantities} />
           <DetailRow label="Country of origin" value={countryOfOrigin} />
-          {shelfLifeDays !== null ? (
-            <DetailRow label="Shelf life" value={`${shelfLifeDays} days`} />
-          ) : null}
-          {storageInstructions !== null ? (
-            <DetailRow label="Storage" value={storageInstructions} />
+          {perishable ? (
+            <>
+              {shelfLifeDays !== null ? (
+                <DetailRow label="Shelf life" value={`${shelfLifeDays} days from packing`} />
+              ) : null}
+              <DetailRow label="Best before" value="See pack" />
+              {storageInstructions !== null ? (
+                <DetailRow label="Storage" value={storageInstructions} />
+              ) : null}
+            </>
           ) : null}
           <DetailRow
             label="FSSAI Lic. No."
@@ -274,11 +317,13 @@ export function PdpDetails({
           </p>
         ) : (
           <ul className="max-w-[62ch] space-y-2.5 font-body text-[15px] leading-[1.6] text-ink-soft">
-            <li>Ships cold &amp; insulated — packed with ice packs so every piece arrives perfect.</li>
+            <li>{vocabulary.packaging.pdpBullet.replace("{unit}", vocabulary.unitNoun.one)}</li>
             <li>
               {freeShippingThresholdPaise !== null
                 ? `Free shipping on orders over ${formatPaise(freeShippingThresholdPaise)}.`
-                : "Flat-rate insulated delivery across India."}
+                : vocabulary.coldChain
+                  ? "Flat-rate insulated delivery across India."
+                  : "Flat-rate delivery across India."}
             </li>
             <li>Dispatched in 1–2 business days.</li>
             <li>

@@ -43,6 +43,13 @@
       "when": 1783881692422,
       "tag": "0005_curved_old_lace",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793611070096,
+      "tag": "0006_freezing_blacklash",
+      "breakpoints": true
     }
   ]
 }

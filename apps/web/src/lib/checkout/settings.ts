@@ -3,15 +3,19 @@
  *
  * Every fee/policy value the quote engine and placement transaction need,
  * loaded live and SNAPSHOTTED onto the order at placement — a later settings
- * edit is never retroactive (checkout.md §3 caching table). Missing keys
+ * edit is never retroactive (checkout.md §3 caching table). Missing FEE keys
  * degrade to documented defaults rather than a 500 (the seed ships the fee
  * keys; `cod_max_order_paise` / `cod_rto_block_threshold` are cod.md config
- * defaults not yet in the seed).
+ * defaults not yet in the seed). The seller's GST state code has NO default —
+ * it is legal identity (lib/admin/legal-identity.ts) and a wrong guess would
+ * mis-split CGST/SGST vs IGST on every invoice — so a missing row fails loudly.
  *
  * SERVER-ONLY: uses @kakoa/db.
  */
 import { db, storeSettings } from '@kakoa/db';
 import { inArray } from 'drizzle-orm';
+
+import { legalIdentityMessage } from '@/lib/admin/legal-identity';
 
 /** cod.md §config default when the setting row is absent (₹3,000). */
 export const COD_MAX_ORDER_PAISE_DEFAULT = 300_000;
@@ -32,8 +36,8 @@ export interface CheckoutSettings {
   /** Repeat-RTO COD orders in the last 180d at/above this block COD. */
   codRtoBlockThreshold: number;
   /**
-   * Master COD switch. Default **false** (prepaid/online-only) — KAKOA launches
-   * without Cash on Delivery. Flip the `cod_enabled` store_settings row to `true`
+   * Master COD switch. Default **false** (prepaid/online-only) — the store
+   * launches without Cash on Delivery. Flip the `cod_enabled` store_settings row to `true`
    * to re-enable COD everywhere (checkout option, quote, placement) with no code
    * change. When false the checkout hides the COD option and placement rejects
    * `paymentMode: 'cod'` with COD_UNAVAILABLE.
@@ -83,9 +87,22 @@ function toStringSetting(value: unknown): string | null {
 }
 
 /**
+ * Thrown when `seller_state_code` has no store_settings row: checkout cannot
+ * split GST without the seller's state, and there is deliberately no brand
+ * default to guess from. Route handlers surface it as an internal error; the
+ * admin Settings page shows the "Legal identity not configured" banner.
+ */
+export class SellerIdentityNotConfiguredError extends Error {
+  constructor() {
+    super(legalIdentityMessage(['seller_state_code']));
+    this.name = 'SellerIdentityNotConfiguredError';
+  }
+}
+
+/**
  * Load the checkout fee/policy settings. Missing fee keys degrade to 0
- * (never a 500); `seller_state_code` degrades to '27' (Maharashtra, the
- * seeded seller) so the GST split stays deterministic.
+ * (never a 500); a missing `seller_state_code` throws
+ * `SellerIdentityNotConfiguredError` (see above).
  */
 export async function loadCheckoutSettings(): Promise<CheckoutSettings> {
   const rows = await db
@@ -95,9 +112,11 @@ export async function loadCheckoutSettings(): Promise<CheckoutSettings> {
 
   const byKey = new Map(rows.map((row) => [row.key, row.value]));
 
+  const sellerStateCode = toStringSetting(byKey.get('seller_state_code'));
+  if (sellerStateCode === null) throw new SellerIdentityNotConfiguredError();
+
   return {
-    sellerStateCode:
-      toStringSetting(byKey.get('seller_state_code')) ?? '27',
+    sellerStateCode,
     shippingFeeStandardPaise:
       toIntSetting(byKey.get('shipping_fee_standard_paise')) ?? 0,
     shippingFeeExpressPaise:

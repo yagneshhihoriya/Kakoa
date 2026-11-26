@@ -17,6 +17,7 @@ export interface SentEmail {
   subject: string;
   html: string;
   text?: string;
+  fromName?: string;
   idempotencyKey?: string;
   providerMessageId: string;
   at: string;
@@ -53,6 +54,7 @@ export class FakeEmailProvider implements EmailProvider {
     subject: string;
     html: string;
     text?: string;
+    fromName?: string;
     idempotencyKey?: string;
   }): Promise<{ providerMessageId: string | null }> {
     const providerMessageId = fakeMessageId(
@@ -64,6 +66,7 @@ export class FakeEmailProvider implements EmailProvider {
       subject: a.subject,
       html: a.html,
       ...(a.text !== undefined ? { text: a.text } : {}),
+      ...(a.fromName !== undefined ? { fromName: a.fromName } : {}),
       ...(a.idempotencyKey !== undefined
         ? { idempotencyKey: a.idempotencyKey }
         : {}),

@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { BRAND_KEYS } from "@kakoa/brands";
 
 /**
- * Environment variable contracts for KAKOA (PROJECT_PLAN §4.2).
+ * Environment variable contracts (PROJECT_PLAN §4.2).
  *
- * - Required at boot in every environment: DATABASE_URL, NEXT_PUBLIC_SITE_URL,
- *   OTP_PEPPER, SESSION_SECRET, APP_ENV.
+ * - Required at boot in every environment: BRAND_KEY, DATABASE_URL,
+ *   NEXT_PUBLIC_SITE_URL, OTP_PEPPER, SESSION_SECRET, APP_ENV.
  * - Integration keys (Razorpay, Shiprocket, MSG91, Resend, Inngest, Sentry) are
  *   .optional() for Phase 0/1 — checkout runs against in-repo mocks until real
  *   keys exist. Later phases tighten these via refinement at the call sites.
@@ -17,6 +18,12 @@ const nonEmpty = z.string().min(1);
 
 export const serverEnvSchema = z.object({
   // ── Core (required) ────────────────────────────────────────────────
+  // Which brand this deployment IS (one deployment = one brand). Selects the
+  // brand profile (@kakoa/brands) and, at build time, the presentation pack
+  // (apps/web/next.config.ts `@brand` alias). The tuple is imported rather
+  // than mirrored so a new brand is registered in exactly one place; brands is
+  // pure data with no dependency on this package, so there is no cycle.
+  BRAND_KEY: z.enum(BRAND_KEYS),
   DATABASE_URL: z.string().url(),
   NEXT_PUBLIC_SITE_URL: z.string().url(),
   OTP_PEPPER: z.string().min(32, "OTP_PEPPER must be at least 32 characters"),
@@ -49,6 +56,9 @@ export const serverEnvSchema = z.object({
   // ── Resend email (optional; mocked locally) ────────────────────────
   RESEND_API_KEY: nonEmpty.optional(),
   EMAIL_FROM: z.string().email().optional(),
+  // Display name for the From header ("Name <EMAIL_FROM>"); defaults to the
+  // brand profile's email.fromName when unset.
+  EMAIL_FROM_NAME: nonEmpty.optional(),
 
   // ── Inngest (optional; dev server needs no keys) ───────────────────
   INNGEST_EVENT_KEY: nonEmpty.optional(),
@@ -82,6 +92,11 @@ export const serverEnvSchema = z.object({
 
   // ── Razorpay client key (public; also passed via checkout response) ──
   NEXT_PUBLIC_RAZORPAY_KEY_ID: nonEmpty.optional(),
+
+  // ── Analytics (public, optional; consent-gated in components/analytics) ──
+  // Inlined at build time by Next — declared here so the contract is complete.
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: nonEmpty.optional(),
+  NEXT_PUBLIC_META_PIXEL_ID: nonEmpty.optional(),
 });
 
 export const clientEnvSchema = z.object({

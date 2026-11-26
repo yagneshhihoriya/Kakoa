@@ -36,7 +36,6 @@ import {
   multiplyPaise,
   normalizeGiftMessage,
   ok,
-  productToneSchema,
   removeCartItemInputSchema,
   setGiftOptionsInputSchema,
   stockStateForLine,
@@ -46,7 +45,6 @@ import {
   type CartLineView,
   type CartView,
   type ErrorCode,
-  type ProductTone,
 } from '@kakoa/core';
 import {
   cartItems,
@@ -60,6 +58,7 @@ import {
 } from '@kakoa/db';
 import { and, asc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 
+import { toTone } from '@/lib/brand';
 import { readCartToken, setCartCookie } from './cookies';
 
 /* ------------------------------------------------------------------ */
@@ -86,12 +85,6 @@ function validationErr(zodError: FlattenableError): ApiResult<CartView> {
   return err('VALIDATION_ERROR', 'Please check your input and try again.', {
     fieldErrors,
   });
-}
-
-/** `products.tone` is text — coerce defensively (same as catalog). */
-function toTone(value: string | null): ProductTone {
-  const parsed = productToneSchema.safeParse(value);
-  return parsed.success ? parsed.data : 'dark';
 }
 
 function toPaiseSetting(value: unknown): number | null {

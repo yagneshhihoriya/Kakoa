@@ -2,13 +2,13 @@
 
 import { Fragment, useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import type { Route } from "next";
 import type { ProductTone } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
 import { useCart } from "@/components/cart/CartProvider";
-import { ChocoPlaceholder } from "../ChocoPlaceholder";
+import { ProductPlaceholder } from "../ProductPlaceholder";
 
 /** One frequently-bought-together product beside the main PDP product. */
 export interface PdpBundleItem {
@@ -40,7 +40,7 @@ const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-cream-2";
 
 /**
- * A single square product tile: real image when present, else the tone
+ * A single square product tile: real image when present, else the swatch
  * gradient fallback (mirrors ProductCard). Used for the anchor main tile and
  * each FBT tile; the FBT variant layers the include checkbox + PDP link.
  */
@@ -56,7 +56,7 @@ function BundleImage({
   if (imageUrl !== null) {
     return (
       <div className="relative aspect-square overflow-hidden rounded-[18px] bg-cream-2">
-        <Image
+        <SafeImage
           src={imageUrl}
           alt={name}
           fill
@@ -66,7 +66,7 @@ function BundleImage({
       </div>
     );
   }
-  return <ChocoPlaceholder tone={tone} ratio="1 / 1" className="rounded-[18px]!" />;
+  return <ProductPlaceholder tone={tone} ratio="1 / 1" className="rounded-[18px]!" />;
 }
 
 /**

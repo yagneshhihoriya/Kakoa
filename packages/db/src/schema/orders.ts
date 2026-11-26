@@ -41,7 +41,11 @@ export interface AddressSnapshot {
   pincode: string;
 }
 
-/** Human order number: 'KK-' || lpad(nextval, 5, '0') → 'KK-48210'. */
+/**
+ * Human order number sequence: `<prefix>-` || lpad(nextval, 5, '0') →
+ * 'KK-48210'. The prefix is the brand's (`identifierPrefix`), so the column has
+ * NO default — checkout mints the number inside the placement transaction.
+ */
 export const orderNumberSeq = pgSequence('order_number_seq', {
   startWith: 48210,
 });
@@ -50,10 +54,7 @@ export const orders = pgTable(
   'orders',
   {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-    orderNumber: text('order_number')
-      .notNull()
-      .unique()
-      .default(sql`'KK-' || lpad(nextval('order_number_seq')::text, 5, '0')`),
+    orderNumber: text('order_number').notNull().unique(),
     invoiceNumber: text('invoice_number').unique(), // GST serial 'KK/25-26/00042'; assigned at packed
     customerId: uuid('customer_id').references(() => customers.id, {
       onDelete: 'set null',

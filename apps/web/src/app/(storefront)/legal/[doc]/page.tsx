@@ -2,8 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatPaise } from "@kakoa/core";
 import { getCompanyInfo, type CompanyInfo } from "@/lib/catalog/queries";
+import { brand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Vertical-specific clause variants (Terms §6, Refund §2 trigger, Shipping §5)
+ * come from the brand pack (`brand.legal`): a cold-chain brand speaks of
+ * temperature-sensitive goods and melted deliveries, a shelf-stable one of
+ * packaged food. Everything else is shared. The effective date and the SLA
+ * windows are `policy.*` store settings (CompanyInfo.policy).
+ */
+const LEGAL = brand.legal;
 
 /**
  * India-market legal pages (Privacy / Terms / Refund-Return-Cancellation /
@@ -22,8 +32,6 @@ const DOC_TITLES = {
   shipping: "Shipping Policy",
 } as const;
 type Doc = keyof typeof DOC_TITLES;
-
-const EFFECTIVE = "12 July 2026";
 
 /** A content block is a paragraph (string) or a bullet list (string[]). */
 type Block = string | string[];
@@ -45,9 +53,21 @@ export async function generateMetadata({
   if (!(doc in DOC_TITLES)) return { title: "Legal" };
   return {
     title: DOC_TITLES[doc as Doc],
-    description: `${DOC_TITLES[doc as Doc]} for KAKOA Chocolate.`,
+    description: `${DOC_TITLES[doc as Doc]} for ${brand.profile.name}.`,
     alternates: { canonical: `/legal/${doc}` },
   };
+}
+
+/**
+ * "operated by <legal name> (GSTIN …), registered office <address>" — each part
+ * only once configured in Settings; before that the trade name stands in (the
+ * legal identity has no code default).
+ */
+function operator(c: CompanyInfo): string {
+  if (!c.legalName) return brand.profile.name;
+  const gstin = c.gstin ? ` (GSTIN ${c.gstin})` : "";
+  const office = c.address ? `, registered office ${c.address}` : "";
+  return `${c.legalName}${gstin}${office}`;
 }
 
 function freeShipText(c: CompanyInfo): string {
@@ -61,13 +81,15 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
   const email = c.supportEmail;
   const phone = c.supportPhone;
   const addr = c.address;
+  const { damageReportWindowHours: hours, refundSlaDays, dispatchSlaDays, deliveryEtaDays } =
+    c.policy;
 
   if (doc === "privacy") {
     return [
       {
         heading: "1. Who we are",
         blocks: [
-          `This Privacy Policy explains how ${name} ("we", "us", "the Company"), with its registered office at ${addr}, collects, uses, shares and protects your personal data when you use our website and place orders. We are the data fiduciary for the personal data described below and process it in accordance with India's Digital Personal Data Protection Act, 2023 (DPDP Act) and applicable rules.`,
+          `This Privacy Policy explains how ${name || brand.profile.name} ("we", "us", "the Company")${addr ? `, with its registered office at ${addr},` : ""} collects, uses, shares and protects your personal data when you use our website and place orders. We are the data fiduciary for the personal data described below and process it in accordance with India's Digital Personal Data Protection Act, 2023 (DPDP Act) and applicable rules.`,
         ],
       },
       {
@@ -161,7 +183,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
       {
         heading: "1. Acceptance of these terms",
         blocks: [
-          `This website is operated by ${name} (GSTIN ${c.gstin}), registered office ${addr}. By browsing or purchasing from this website you agree to these Terms & Conditions, our Privacy Policy, Shipping Policy and Refund, Return & Cancellation Policy, each linked in the footer and accessible from checkout.`,
+          `This website is operated by ${operator(c)}. By browsing or purchasing from this website you agree to these Terms & Conditions, our Privacy Policy, Shipping Policy and Refund, Return & Cancellation Policy, each linked in the footer and accessible from checkout.`,
         ],
       },
       {
@@ -189,11 +211,8 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         ],
       },
       {
-        heading: "6. Perishable / food products",
-        blocks: [
-          "Our products are food items and may be temperature-sensitive and perishable. Please refer to the storage instructions and use-by information on each product and store them appropriately on receipt. We are an FSSAI-licensed food business" +
-            (c.fssai ? ` (FSSAI Lic. No. ${c.fssai}).` : "."),
-        ],
+        heading: LEGAL.foodProducts.heading,
+        blocks: [LEGAL.foodProducts.body + (c.fssai ? ` (FSSAI Lic. No. ${c.fssai}).` : ".")],
       },
       {
         heading: "7. Shipping, returns & refunds",
@@ -244,15 +263,15 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         ],
       },
       {
-        heading: "2. Returns — perishable food items",
+        heading: LEGAL.returns.heading,
         blocks: [
           "Because our products are food items, for hygiene and safety reasons we cannot accept returns of products that have been opened, consumed or tampered with. However, you are fully protected if something is wrong with your order. You are eligible for a replacement or refund if:",
           [
-            "the product arrived damaged, melted, spoilt or leaking;",
+            LEGAL.returns.damagedTrigger,
             "you received the wrong item; or",
             "the product was past or near its use-by date on arrival.",
           ],
-          "Please report such issues within 48 hours of delivery, with your order number and clear photographs of the product and packaging, so we can resolve it quickly.",
+          `Please report such issues within ${hours} hours of delivery, with your order number and clear photographs of the product and packaging, so we can resolve it quickly.`,
         ],
       },
       {
@@ -264,7 +283,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
       {
         heading: "4. How to raise a request",
         blocks: [
-          `Email ${email} or call ${phone} within 48 hours of delivery with your order number and photos (for damage/defect claims). Our team will acknowledge your request and confirm the resolution — replacement, refund, or store credit — after a quick review.`,
+          `Email ${email} or call ${phone} within ${hours} hours of delivery with your order number and photos (for damage/defect claims). Our team will acknowledge your request and confirm the resolution — replacement, refund, or store credit — after a quick review.`,
         ],
       },
       {
@@ -272,8 +291,8 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         blocks: [
           "Once a refund is approved:",
           [
-            "Prepaid orders (card/UPI/net-banking): refunded to your original payment method within 5–7 business days of approval.",
-            "Cash on Delivery orders: refunded via bank transfer/UPI to the details you provide, within 5–7 business days of approval.",
+            `Prepaid orders (card/UPI/net-banking): refunded to your original payment method within ${refundSlaDays} business days of approval.`,
+            `Cash on Delivery orders: refunded via bank transfer/UPI to the details you provide, within ${refundSlaDays} business days of approval.`,
             "The exact time for the amount to reflect depends on your bank or payment provider.",
           ],
         ],
@@ -305,13 +324,13 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
     {
       heading: "2. Order processing & dispatch",
       blocks: [
-        "Orders are processed and dispatched within 1–2 business days of successful payment (or order confirmation for Cash on Delivery). Business days exclude Sundays and public holidays.",
+        `Orders are processed and dispatched within ${dispatchSlaDays} business days of successful payment (or order confirmation for Cash on Delivery). Business days exclude Sundays and public holidays.`,
       ],
     },
     {
       heading: "3. Delivery timelines",
       blocks: [
-        "Once dispatched, orders are typically delivered within 2–7 business days depending on your location. Metro cities are usually faster; remote PIN codes may take longer. A tracking link is shared by email/SMS once your order ships.",
+        `Once dispatched, orders are typically delivered within ${deliveryEtaDays} business days depending on your location. Metro cities are usually faster; remote PIN codes may take longer. A tracking link is shared by email/SMS once your order ships.`,
       ],
     },
     {
@@ -321,12 +340,7 @@ function buildSections(doc: Doc, c: CompanyInfo): Section[] {
         shippingChargeLines(c),
       ],
     },
-    {
-      heading: "5. Perishable / cold-chain handling",
-      blocks: [
-        "Our chocolates are temperature-sensitive. We use protective and, where needed, insulated packaging, and plan dispatch to reduce time in transit. During warmer months or to certain regions we may adjust dispatch scheduling to protect product quality.",
-      ],
-    },
+    { heading: LEGAL.handling.heading, blocks: [LEGAL.handling.body] },
     {
       heading: "6. Tracking your order",
       blocks: [
@@ -370,8 +384,8 @@ function grievanceSection(c: CompanyInfo): Section {
       "In accordance with the Consumer Protection (E-Commerce) Rules, 2020 and the Information Technology Act, 2000, the Grievance Officer for this platform is:",
       [
         `Name: ${c.grievanceName}`,
-        `Company: ${c.legalName}`,
-        `Address: ${c.address}`,
+        ...(c.legalName ? [`Company: ${c.legalName}`] : []),
+        ...(c.address ? [`Address: ${c.address}`] : []),
         `Email: ${c.supportEmail}`,
         `Phone: ${c.supportPhone}`,
         `Hours: ${c.supportHours}`,
@@ -398,7 +412,9 @@ export default async function LegalPage({
       <h1 className="mt-2 text-[34px] leading-tight text-ink md:text-[40px]" style={{ fontFamily: "var(--font-display), serif" }}>
         {DOC_TITLES[key]}
       </h1>
-      <p className="mt-2 font-body text-[13px] text-[#8a7a68]">Effective date: {EFFECTIVE}</p>
+      <p className="mt-2 font-body text-[13px] text-ink-muted">
+        Effective date: {company.policy.legalEffectiveDate}
+      </p>
 
       <div className="mt-8 flex flex-col gap-7">
         {sections.map((section) => (
@@ -407,13 +423,13 @@ export default async function LegalPage({
             <div className="flex flex-col gap-3">
               {section.blocks.map((block, i) =>
                 Array.isArray(block) ? (
-                  <ul key={i} className="ml-5 flex list-disc flex-col gap-1.5 font-body text-[14.5px] leading-[1.7] text-[#4C3B2A]">
+                  <ul key={i} className="ml-5 flex list-disc flex-col gap-1.5 font-body text-[14.5px] leading-[1.7] text-ink-body">
                     {block.map((li, j) => (
                       <li key={j}>{li}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p key={i} className="font-body text-[14.5px] leading-[1.75] text-[#4C3B2A]">
+                  <p key={i} className="font-body text-[14.5px] leading-[1.75] text-ink-body">
                     {block}
                   </p>
                 ),
@@ -423,7 +439,7 @@ export default async function LegalPage({
         ))}
       </div>
 
-      <p className="mt-10 border-t border-[#EEE1CE] pt-5 font-body text-[13px] text-[#8a7a68]">
+      <p className="mt-10 border-t border-line-soft pt-5 font-body text-[13px] text-ink-muted">
         Questions about this policy? Email{" "}
         <a href={`mailto:${company.supportEmail}`} className="font-semibold text-espresso underline">
           {company.supportEmail}

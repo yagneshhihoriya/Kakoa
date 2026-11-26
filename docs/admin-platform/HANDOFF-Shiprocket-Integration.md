@@ -170,7 +170,8 @@ cron can hit, and note that a real cron/Inngest is the productionization step.)
 ## 8. Config & secrets
 - **Env** (`.env.local`, gitignored — never commit): `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD` (the API
   user). Setting `SHIPROCKET_EMAIL` **auto‑switches `getShippingProvider()` to the real provider**.
-- **`store_settings`** (via the Settings module): `shiprocket_pickup_location` (nickname), the cached
+- **`store_settings`** (via the Settings module): `shipping.shiprocket_pickup_location` (nickname; the
+  namespaced key — the reader falls back to the retired flat `shiprocket_pickup_location`), the cached
   `shiprocket_token` + `shiprocket_token_expires_at`, `shiprocket_webhook_token` (the `x-api-key`), and
   optional default `courier_company_id` (leave empty = auto‑pick). Seller identity (name/address/pincode)
   already in settings.

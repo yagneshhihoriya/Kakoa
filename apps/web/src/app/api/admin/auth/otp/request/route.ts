@@ -14,6 +14,7 @@ import { jsonErr, jsonOk, NO_STORE } from '@/lib/api/http';
 import { createChallenge } from '@/lib/auth/otp';
 import { isOtpTestMode } from '@/lib/auth/otp-crypto';
 import { clientIp } from '@/lib/auth/request-context';
+import { brand, emailIdentity } from '@/lib/brand';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -65,7 +66,8 @@ export async function POST(req: Request): Promise<Response> {
   void getEmailProvider()
     .send({
       to: email,
-      subject: 'Your KAKOA admin sign-in code',
+      subject: `Your ${brand.profile.name} admin sign-in code`,
+      fromName: emailIdentity().fromName,
       html: `<p>Your admin sign-in code is <strong>${code}</strong>. It expires in 10 minutes.</p>`,
       text: `Your admin sign-in code is ${code}. It expires in 10 minutes.`,
       idempotencyKey: `admin-otp-${challengeId}`,

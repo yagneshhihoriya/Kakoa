@@ -26,6 +26,8 @@ export const categories = pgTable(
     slug: text('slug').notNull().unique(),
     name: text('name').notNull(),
     description: text('description'),
+    /** Collection tile image (Media Library URL); NULL → preset swatch fallback. */
+    imageUrl: text('image_url'),
     position: integer('position').notNull().default(0),
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
@@ -46,10 +48,6 @@ export const products = pgTable(
       .references(() => categories.id, { onDelete: 'restrict' }),
     blurb: text('blurb').notNull().default(''),
     description: text('description').notNull().default(''),
-    tastingNotes: text('tasting_notes')
-      .array()
-      .notNull()
-      .default(sql`'{}'::text[]`),
     ingredients: text('ingredients').notNull().default(''),
     allergens: text('allergens').notNull().default(''),
     nutritionFacts: jsonb('nutrition_facts'),
@@ -57,12 +55,15 @@ export const products = pgTable(
     storageInstructions: text('storage_instructions'),
     isVeg: boolean('is_veg').notNull().default(true), // FSSAI green/brown dot
     badge: text('badge'), // 'Best seller' | 'New' | 'Limited' | 'Vegan' | 'Seasonal'
+    /** Placeholder swatch key — valid keys come from the preset's `presentation.swatches`. */
     tone: text('tone').notNull().default('dark'),
     /**
      * Generic per-business product attributes (docs/admin-platform §2.4, A5).
      * Keyed by the active vertical preset's `attributeSchema` — the admin
      * Products form reads/writes these, so the catalog is business-agnostic
      * (chocolate/coffee/bakery/…) without schema changes per vertical.
+     * Former dedicated columns live here too (e.g. `tasting_notes`, migrated
+     * into this jsonb by 0006).
      */
     attributes: jsonb('attributes').notNull().default(sql`'{}'::jsonb`),
     ratingAvg: numeric('rating_avg', { precision: 3, scale: 2 })
@@ -91,6 +92,9 @@ export const products = pgTable(
  * The purchasable SKU. Owns price (MRP, GST-inclusive), GST rate as data,
  * HSN, physicals for Shiprocket, and the authoritative stock counter
  * (oversell prevention via atomic conditional decrement, §1.28.1).
+ * `gst_rate_bp` / `hsn_code` carry NO database default: the app writes the
+ * vertical preset's `taxDefaults` explicitly, so a forgotten insert path fails
+ * on NOT NULL instead of silently inheriting one vertical's tax class.
  */
 export const productVariants = pgTable(
   'product_variants',
@@ -103,8 +107,8 @@ export const productVariants = pgTable(
     name: text('name').notNull(), // '16-piece box', '70g bar'
     pricePaise: integer('price_paise').notNull(), // MRP, GST-inclusive
     compareAtPricePaise: integer('compare_at_price_paise'),
-    gstRateBp: integer('gst_rate_bp').notNull().default(500),
-    hsnCode: text('hsn_code').notNull().default('1806'),
+    gstRateBp: integer('gst_rate_bp').notNull(),
+    hsnCode: text('hsn_code').notNull(),
     weightGrams: integer('weight_grams').notNull(), // net quantity (Legal Metrology)
     shipWeightGrams: integer('ship_weight_grams').notNull(), // packed weight
     lengthCm: numeric('length_cm', { precision: 6, scale: 2 }),

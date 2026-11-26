@@ -38,7 +38,7 @@ export default async function AdminProductsPage({
 
   return (
     <div className="mx-auto max-w-7xl">
-      <div className="mb-5 flex items-end justify-between">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1
             className="text-[24px] text-[#2a1d12]"
@@ -48,7 +48,7 @@ export default async function AdminProductsPage({
           </h1>
           <p className="text-[13px] text-[#8a7a68]">{list.total} total</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <form action="/admin/products" className="flex gap-2">
             <input
               name="search"

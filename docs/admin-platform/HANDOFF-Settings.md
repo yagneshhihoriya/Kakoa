@@ -121,6 +121,10 @@ the same "schema drives the form" pattern the Products attribute form uses.
 - **`int‑paise`**: the UI shows/edits **₹ (rupees)**; convert ₹→paise on submit
   (`Math.round(rupees*100)`), cap at **1,00,00,000 paise (₹10,00,000)** well under int4.
 - **`int`**: whole‑number bounds as above.
+- Legal identity (`seller_legal_name`, `seller_gstin`, `seller_state_code`, `seller_address`,
+  `origin_pincode`, `fssai_license_number`) has NO code default: the catalog marks these
+  `required: true`, a missing row is an explicit "not configured" state (banner in Settings /
+  Taxes, invoice withheld, storefront omits the lines) — never another brand's GSTIN.
 - Keep a `SETTINGS_DEFAULTS` map so a missing row falls back to the default (never
   render `undefined`). The seed already inserts all 15 — but code defensively.
 
@@ -278,7 +282,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 | route guard + envelope | `app/api/admin/inventory/[variantId]/adjust/route.ts` |
 | settings table + reader | `packages/db/src/schema/settings.ts`, `apps/web/src/lib/admin/context.ts` (`makeSettingsReader`) |
 | settings consumers (don't break) | `apps/web/src/lib/checkout/quote.ts` |
-| seed defaults (the 15 keys) | `packages/db/src/seed.ts` (`const SETTINGS`) |
+| seed defaults (the 15 keys) | `packages/db/src/seeds/spec.ts` (`storeSettingsRows` — legal identity + `POLICY_KEYS`, per brand) |
 
 After Settings, the remaining modules are **Shipping** (Shiprocket — external/mocked,
 `shipments` table), **Taxes** (GST rate/HSN config), **Media** (uploads — needs

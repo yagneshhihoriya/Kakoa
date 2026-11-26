@@ -15,13 +15,12 @@
 import { cancelOrderSchema } from '@kakoa/core';
 
 import { jsonErr, jsonOk, NO_STORE, toFieldErrors } from '@/lib/api/http';
+import { isOrderNumber } from '@/lib/brand';
 import { getCurrentCustomer } from '@/lib/auth/session';
 import { cancelOrder } from '@/lib/orders/cancel';
 import { resolveTrackingAuth } from '@/lib/orders/tracking';
 
 export const dynamic = 'force-dynamic';
-
-const ORDER_NUMBER_RE = /^KK-\d{5}$/;
 
 const NOT_FOUND_MESSAGE = "We couldn't find that order.";
 const UNAUTHORIZED_MESSAGE = 'Sign in or verify with OTP to cancel this order.';
@@ -35,7 +34,7 @@ export async function POST(
 ): Promise<Response> {
   const { orderNumber: raw } = await params;
   const orderNumber = raw.trim().toUpperCase();
-  if (!ORDER_NUMBER_RE.test(orderNumber)) {
+  if (!isOrderNumber(orderNumber)) {
     return jsonErr('NOT_FOUND', NOT_FOUND_MESSAGE);
   }
 

@@ -19,6 +19,7 @@ import {
   EMPTY_ADDRESS_FORM,
   type AddressFormValues,
 } from "@/components/account/AddressForm";
+import { brand, vocabulary } from "@/lib/brand";
 import { LogoutButton } from "./LogoutButton";
 import { CustomerAvatar } from "./CustomerAvatar";
 
@@ -212,7 +213,7 @@ export function AccountDashboard({
             />
             <div className="min-w-0 flex-1">
               <div className="truncate font-body text-[15.5px] font-semibold text-ink">
-                {customer.name ?? "KAKOA member"}
+                {customer.name ?? `${brand.profile.name} member`}
               </div>
               <div className="truncate font-body text-[12.5px] text-[#8a7a68]">
                 {customer.phone ?? customer.email ?? ""}
@@ -314,7 +315,7 @@ function OrdersSection({
           title="No orders yet"
           body="When you place an order it'll show up here with live tracking."
           ctaHref="/shop"
-          ctaLabel="Browse chocolates"
+          ctaLabel={`Browse ${vocabulary.noun.many}`}
         />
         <p className="mt-5 font-body text-[13px] text-[#8a7a68]">
           Placed an order as a guest?{" "}
@@ -753,9 +754,9 @@ function WishlistSection({
       {items.length === 0 ? (
         <EmptyState
           title="Nothing saved yet"
-          body="Tap the heart on any chocolate to save it here."
+          body={`Tap the heart on any ${vocabulary.noun.one} to save it here.`}
           ctaHref="/shop"
-          ctaLabel="Browse chocolates"
+          ctaLabel={`Browse ${vocabulary.noun.many}`}
         />
       ) : (
         <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">

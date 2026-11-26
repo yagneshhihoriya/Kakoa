@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { brand } from "@/lib/brand";
 
 interface Row {
   id: string;
@@ -113,7 +114,7 @@ export function StaffManager({
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-[12px] text-[#5c4b3a]">
             <span className="mb-1 block font-medium">Email</span>
-            <input className={INPUT + " w-56"} type="email" value={invite.email} placeholder="name@kakoa.in"
+            <input className={INPUT + " w-56"} type="email" value={invite.email} placeholder={`name@${brand.profile.defaults.support_email.split("@")[1] ?? "example.com"}`}
               onChange={(e) => setInvite({ ...invite, email: e.target.value })} />
           </label>
           <label className="text-[12px] text-[#5c4b3a]">

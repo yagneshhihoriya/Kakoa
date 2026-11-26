@@ -7,8 +7,9 @@
  * SERVER-ONLY: uses @kakoa/db + @kakoa/integrations.
  */
 import { adminAuditLog, db, mediaAssets } from "@kakoa/db";
-import { desc, eq, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, sql, type SQL } from "drizzle-orm";
 import { getMediaProvider } from "@kakoa/integrations";
+import { GENERAL_MEDIA_FOLDER, parseMediaFolder } from "./media-folder";
 import {
   mediaKey,
   sanitizeFilename,
@@ -24,6 +25,8 @@ export interface MediaAssetRow {
   mimeType: string;
   sizeBytes: number;
   alt: string;
+  /** `general` (shared library) or `products/<uuid>` (one product's gallery). */
+  folder: string;
   createdAt: string;
 }
 
@@ -39,9 +42,14 @@ function likeParam(s: string): string {
   return `%${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }
 
+/**
+ * List assets newest first. `folder` narrows to one folder (a product's own
+ * gallery); without it the whole library is listed.
+ */
 export async function listMedia(input: {
   search?: string;
   page?: number;
+  folder?: string;
 }): Promise<MediaList> {
   const page = Math.min(1_000_000, Math.max(1, Math.floor(Number(input.page ?? 1)) || 1));
   const pageSize = MEDIA_PAGE_SIZE;
@@ -49,7 +57,9 @@ export async function listMedia(input: {
   const conds: SQL[] = [];
   const search = input.search?.trim();
   if (search) conds.push(sql`${mediaAssets.filename} ilike ${likeParam(search)}`);
-  const where = conds.length > 0 ? conds[0] : undefined;
+  const folder = input.folder === undefined ? null : parseMediaFolder(input.folder);
+  if (folder !== null) conds.push(eq(mediaAssets.folder, folder));
+  const where = conds.length > 0 ? and(...conds) : undefined;
 
   const [totalRow] = await db
     .select({ total: sql<number>`count(*)::int` })
@@ -65,6 +75,7 @@ export async function listMedia(input: {
       mimeType: mediaAssets.mimeType,
       sizeBytes: mediaAssets.sizeBytes,
       alt: mediaAssets.alt,
+      folder: mediaAssets.folder,
       createdAt: mediaAssets.createdAt,
     })
     .from(mediaAssets)
@@ -81,6 +92,7 @@ export async function listMedia(input: {
       mimeType: r.mimeType,
       sizeBytes: r.sizeBytes,
       alt: r.alt,
+      folder: r.folder,
       createdAt: new Date(r.createdAt).toISOString(),
     })),
     total,
@@ -97,14 +109,18 @@ export type UploadResult =
 /**
  * Validate raw bytes, store via the provider, and record the asset. The stored
  * MIME/extension come from the SNIFFED type, never the client's declared type.
+ * `folder` (default `general`) must be a folder `parseMediaFolder` accepts.
  */
 export async function uploadMedia(input: {
   bytes: Uint8Array;
   filename: string;
   adminUserId: string;
+  folder?: string;
 }): Promise<UploadResult> {
   const check = validateUpload(input.bytes);
   if (!check.ok) return { ok: false, code: "VALIDATION_ERROR", message: check.message };
+  const folder = input.folder === undefined ? GENERAL_MEDIA_FOLDER : parseMediaFolder(input.folder);
+  if (folder === null) return { ok: false, code: "VALIDATION_ERROR", message: "That folder is not valid." };
 
   const id = crypto.randomUUID();
   const key = mediaKey(id, check.ext);
@@ -125,6 +141,7 @@ export async function uploadMedia(input: {
       filename,
       mimeType: check.mime,
       sizeBytes: input.bytes.length,
+      folder,
       uploadedBy: input.adminUserId,
     })
     .returning({
@@ -134,6 +151,7 @@ export async function uploadMedia(input: {
       mimeType: mediaAssets.mimeType,
       sizeBytes: mediaAssets.sizeBytes,
       alt: mediaAssets.alt,
+      folder: mediaAssets.folder,
       createdAt: mediaAssets.createdAt,
     });
   if (!row) return { ok: false, code: "VALIDATION_ERROR", message: "Could not save the upload." };
@@ -144,7 +162,7 @@ export async function uploadMedia(input: {
     entityType: "media",
     entityId: row.id,
     before: null,
-    after: { key, filename, mimeType: check.mime, sizeBytes: input.bytes.length },
+    after: { key, filename, mimeType: check.mime, sizeBytes: input.bytes.length, folder },
   });
 
   return {
@@ -156,6 +174,7 @@ export async function uploadMedia(input: {
       mimeType: row.mimeType,
       sizeBytes: row.sizeBytes,
       alt: row.alt,
+      folder: row.folder,
       createdAt: new Date(row.createdAt).toISOString(),
     },
   };

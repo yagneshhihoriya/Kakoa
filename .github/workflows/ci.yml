@@ -1,0 +1,119 @@
+# CI — one job, run once per brand. Every brand the repo ships must typecheck,
+# test, pass the brand gate, seed a fresh database and build the storefront
+# from the same commit; a leak or a pack that only compiles for KAKOA fails
+# here, not on the second brand's first deploy. Local mirror of this sequence:
+# docs/brands/PROVISIONING.md § "Continuous integration".
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    name: ${{ matrix.brand }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # Mirrors BRAND_KEYS in packages/brands/src/keys.ts — add a key here
+        # when a brand is registered there.
+        brand: [kakoa, khakhra]
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: storefront
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # The six vars packages/config requires at boot. The secrets are CI-only
+      # dummies (the schema wants 32+ characters); nothing here reaches a real
+      # environment. Build-time vars must also be declared in turbo.json
+      # `tasks.build.env` / `passThroughEnv` — turbo runs in strict env mode.
+      BRAND_KEY: ${{ matrix.brand }}
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/storefront
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      APP_ENV: preview
+      SESSION_SECRET: ci-only-session-secret-not-used-anywhere-0123456789
+      OTP_PEPPER: ci-only-otp-pepper-not-used-anywhere-0123456789abcdef
+      # The owner admin the seed creates (passwordless; no mailbox is contacted).
+      SEED_OWNER_EMAIL: owner@example.com
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # pnpm/action-setup reads the version from package.json `packageManager`
+      # (pnpm@9.x) — no second copy of the version here.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # tsconfig.json aliases `@brand` to the kakoa pack, so `pnpm typecheck`
+      # proves that one; every other brand has a tsconfig.<key>.json that
+      # re-points the alias (the packs share one contract, but a consumer typed
+      # against one pack's literals would only surface here).
+      - name: Typecheck against the ${{ matrix.brand }} pack
+        if: matrix.brand != 'kakoa'
+        run: pnpm --filter web exec tsc --noEmit -p tsconfig.${{ matrix.brand }}.json
+
+      - name: Test
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Brand gate
+        run: pnpm brand-gate
+
+      # The migrations assume these extensions exist (Supabase ships them;
+      # a bare postgres image does not).
+      - name: Database extensions
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+            create extension if not exists citext;
+            create extension if not exists pgcrypto;
+            create extension if not exists pg_trgm;
+          "
+
+      - name: Migrate
+        run: pnpm db:migrate
+
+      - name: Seed ${{ matrix.brand }}
+        run: pnpm db:seed
+
+      # `next build` prerenders the catalogue from the seeded database, so a
+      # pack/preset/seed mismatch fails the build rather than a shopper's page.
+      - name: Build apps/web
+        run: pnpm exec turbo build --filter=web

@@ -23,7 +23,7 @@ export {
   clearSentEmails,
 } from "./email/fake";
 export type { SentEmail } from "./email/fake";
-export { ResendEmailProvider } from "./email/resend";
+export { ResendEmailProvider, composeFrom } from "./email/resend";
 
 // ── Payments (checkout.md §3) ────────────────────────────────────────
 export type { PaymentProvider } from "./payments/provider";

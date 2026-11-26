@@ -1,7 +1,7 @@
 /**
  * Transactional email delivery abstraction (storefront launch-gate).
  *
- * KAKOA composes the subject + HTML/text bodies itself (apps/web owns the
+ * The app composes the subject + HTML/text bodies itself (apps/web owns the
  * templates); the provider is purely the delivery pipe. Every consumer depends
  * on this interface only — no file outside `packages/integrations/src/email/**`
  * may import Resend specifics.
@@ -19,6 +19,8 @@ export interface EmailProvider {
    * @param a.subject        - Rendered subject line.
    * @param a.html           - Rendered HTML body.
    * @param a.text           - Optional plain-text alternative.
+   * @param a.fromName       - Optional From display name ("Name <EMAIL_FROM>");
+   *   the app passes the brand's, EMAIL_FROM_NAME overrides it, else bare address.
    * @param a.idempotencyKey - Optional dedup key so a retried send (e.g. verify
    *   + webhook both confirming a prepaid order) never mails the customer twice.
    * @returns The upstream message id when available, else `null`.
@@ -29,6 +31,7 @@ export interface EmailProvider {
     subject: string;
     html: string;
     text?: string;
+    fromName?: string;
     idempotencyKey?: string;
   }): Promise<{ providerMessageId: string | null }>;
 }

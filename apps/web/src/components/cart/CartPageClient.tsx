@@ -1,13 +1,14 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
-import Image from "next/image";
+import { useId, useState, useSyncExternalStore, type ReactNode } from "react";
+import { SafeImage } from "@/components/media/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CartView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { Skeleton, cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { vocabulary } from "@/lib/brand";
 import { useCart } from "@/components/cart/CartProvider";
 
 type CartLine = CartView["lines"][number];
@@ -64,6 +65,16 @@ function SnowIcon(): ReactNode {
   );
 }
 
+/** Sealed-carton cue for room-temperature verticals (the non-cold-chain twin of SnowIcon). */
+function BoxIcon(): ReactNode {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 8l9-4 9 4v9l-9 4-9-4V8z" />
+      <path d="M3 8l9 4 9-4M12 12v9" />
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Loading / error / empty states                                      */
 /* ------------------------------------------------------------------ */
@@ -103,7 +114,7 @@ function CartError({ onRetry }: { onRetry: () => void }): ReactNode {
       <button
         type="button"
         onClick={onRetry}
-        className={cx("rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]", FOCUS_RING)}
+        className={cx("rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field", FOCUS_RING)}
       >
         Retry
       </button>
@@ -124,9 +135,9 @@ function CartEmpty(): ReactNode {
       </div>
       <Link
         href="/shop"
-        className={cx("rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] no-underline", FOCUS_RING)}
+        className={cx("rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field no-underline", FOCUS_RING)}
       >
-        Browse chocolates
+        Browse {vocabulary.noun.many}
       </Link>
     </div>
   );
@@ -200,7 +211,7 @@ function GiftEditor({ line }: { line: CartLine }): ReactNode {
           onChange={(event) => {
             setMessage(event.target.value);
           }}
-          className={cx("w-full resize-none rounded-none border border-[#683126] bg-[#FEF6EB] px-3 py-2 text-[13.5px] text-ink placeholder:text-ink-muted", FOCUS_RING)}
+          className={cx("w-full resize-none rounded-none border border-field bg-cream px-3 py-2 text-[13.5px] text-ink placeholder:text-ink-muted", FOCUS_RING)}
         />
         <div className="mt-1 flex items-center justify-between">
           <span id={`${fieldId}-count`} className="font-mono text-[11.5px] text-ink-soft">
@@ -213,7 +224,7 @@ function GiftEditor({ line }: { line: CartLine }): ReactNode {
               onClick={() => {
                 persist(line.giftWrap, message);
               }}
-              className={cx("rounded-none bg-[#FEF6EB] border border-[#683126] px-3.5 py-1.5 text-[12.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
+              className={cx("rounded-none bg-cream border border-field px-3.5 py-1.5 text-[12.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
             >
               Save note
             </button>
@@ -244,7 +255,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
         )}
       >
         {line.imageUrl !== null ? (
-          <Image
+          <SafeImage
             src={line.imageUrl}
             alt=""
             fill
@@ -252,7 +263,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
             className="object-cover transition-transform duration-[var(--duration-base)] ease-brand group-hover:scale-[1.04] motion-reduce:transition-none"
           />
         ) : (
-          <ChocoPlaceholder tone={line.tone} ratio="6 / 7" />
+          <ProductPlaceholder tone={line.tone} ratio="6 / 7" />
         )}
       </Link>
 
@@ -288,7 +299,7 @@ function LineRow({ line }: { line: CartLine }): ReactNode {
           <div
             role="group"
             aria-label={`Quantity for ${line.name}`}
-            className={cx("flex items-center overflow-hidden rounded-none border border-[#683126] bg-[#FEF6EB] shadow-soft", unavailable && "opacity-50")}
+            className={cx("flex items-center overflow-hidden rounded-none border border-field bg-cream shadow-soft", unavailable && "opacity-50")}
           >
             <button
               type="button"
@@ -359,7 +370,11 @@ function TrustLine(): ReactNode {
   const items: { icon: ReactNode; label: string }[] = [
     { icon: <LockIcon />, label: "Secure checkout" },
     { icon: <HeartIcon />, label: "Satisfaction promise" },
-    { icon: <SnowIcon />, label: "Ships cold & insulated" },
+    // The vertical's shipping claim, with the icon chosen by the claim it makes:
+    // a snowflake only for cold-chain verticals, a sealed carton otherwise.
+    ...(vocabulary.packaging.trustLabel === null
+      ? []
+      : [{ icon: vocabulary.coldChain ? <SnowIcon /> : <BoxIcon />, label: vocabulary.packaging.trustLabel }]),
   ];
   return (
     <ul className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-5">
@@ -406,7 +421,7 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
   return (
     <aside
       aria-label="Order summary"
-      className="sticky top-[98px] border border-[#683126]/25 bg-[#FEF6EB] p-6 max-[980px]:static sm:p-7"
+      className="sticky top-[98px] border border-field/25 bg-cream p-6 max-[980px]:static sm:p-7"
     >
       <h2 className="mb-5 text-[22px] leading-none font-medium text-[#000]">Order summary</h2>
 
@@ -496,12 +511,12 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
               onBlur={(event) => {
                 setCode(event.target.value.trim().toUpperCase());
               }}
-              className={cx("min-w-0 flex-1 rounded-none border border-[#683126] bg-[#FEF6EB] px-4 py-3 text-sm font-medium text-ink placeholder:text-ink-muted", FOCUS_RING)}
+              className={cx("min-w-0 flex-1 rounded-none border border-field bg-cream px-4 py-3 text-sm font-medium text-ink placeholder:text-ink-muted", FOCUS_RING)}
             />
             <button
               type="submit"
               disabled={pending || code.trim() === ""}
-              className={cx("rounded-none bg-[#683126] text-[#FCF5E8] px-[18px] text-[13.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
+              className={cx("rounded-none bg-field text-field-ink px-[18px] text-[13.5px] font-bold text-ink transition-colors hover:bg-line disabled:opacity-50", FOCUS_RING)}
             >
               Apply
             </button>
@@ -529,7 +544,7 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
           router.push("/checkout");
         }}
         className={cx(
-          "mt-5 flex w-full items-center justify-center gap-2 rounded-none bg-[#683126] px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-[#FCF5E8] uppercase border border-[#683126] transition-colors hover:bg-[#FCF5E8] hover:text-[#683126] disabled:cursor-not-allowed disabled:opacity-60",
+          "mt-5 flex w-full items-center justify-center gap-2 rounded-none bg-field px-5 py-3 text-[14px] font-normal tracking-[1.4px] text-field-ink uppercase border border-field transition-colors hover:bg-field-ink hover:text-field disabled:cursor-not-allowed disabled:opacity-60",
           FOCUS_RING,
         )}
       >
@@ -559,9 +574,30 @@ function OrderSummary({ cart }: { cart: CartView }): ReactNode {
  * left and a sticky summary card on the right. Presentation only — cart
  * actions, pricing, coupons, and checkout routing are unchanged.
  */
+const subscribeNever = (): (() => void) => () => {};
+
+/**
+ * `false` while the server renders and while React hydrates, `true` after.
+ * The layout mounts CartProvider without a server-read cart, so the server
+ * always paints the skeleton here; the provider then fetches the cart right
+ * after it mounts, which can land before this page segment hydrates. Rendering
+ * the live cart on that first client pass would not match the server HTML
+ * (React logs a hydration error and re-renders the segment), so the island
+ * mirrors the server until hydration is done.
+ */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+}
+
 export function CartPageClient(): ReactNode {
   const { cart, status, refresh } = useCart();
+  const hydrated = useHydrated();
 
+  if (!hydrated) return <CartSkeleton />;
   if (status === "error" && cart === null) {
     return (
       <CartError
@@ -594,7 +630,7 @@ export function CartPageClient(): ReactNode {
         <Link
           href="/shop"
           className={cx(
-            "mt-8 inline-flex items-center gap-2 rounded-none border border-[#683126] px-5 py-3 text-[14px] tracking-[1.4px] text-[#683126] uppercase no-underline transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
+            "mt-8 inline-flex items-center gap-2 rounded-none border border-field px-5 py-3 text-[14px] tracking-[1.4px] text-field uppercase no-underline transition-colors hover:bg-field hover:text-field-ink",
             FOCUS_RING,
           )}
         >

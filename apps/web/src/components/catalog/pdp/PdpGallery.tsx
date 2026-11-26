@@ -10,11 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 import type { ProductTone } from "@kakoa/core";
-import { PRODUCT_TONES } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "../ChocoPlaceholder";
+import { SWATCH_KEYS } from "@/lib/brand";
+import { ProductPlaceholder } from "../ProductPlaceholder";
 
 export interface PdpGalleryImage {
   url: string;
@@ -47,15 +47,15 @@ const ZOOM_SCALE = 1.8;
 
 /**
  * Derive 4 gallery tones deterministically for the no-photo fallback: the
- * product's own tone first, then the next tones in enum order.
+ * product's own tone first, then the next swatches in preset order.
  */
 function galleryTones(
   base: ProductTone,
 ): [ProductTone, ProductTone, ProductTone, ProductTone] {
-  const start = PRODUCT_TONES.indexOf(base);
+  const start = Math.max(0, SWATCH_KEYS.indexOf(base));
   const rotated = Array.from(
     { length: 4 },
-    (_, i) => PRODUCT_TONES[(start + i) % PRODUCT_TONES.length] as ProductTone,
+    (_, i) => SWATCH_KEYS[(start + i) % SWATCH_KEYS.length] ?? base,
   );
   return rotated as [ProductTone, ProductTone, ProductTone, ProductTone];
 }
@@ -185,7 +185,7 @@ function Lightbox({
 
         <div className="relative flex flex-1 items-center justify-center overflow-hidden">
           <div className="relative flex max-h-[82vh] w-full items-center justify-center">
-            <Image
+            <SafeImage
               key={active.url}
               src={active.url}
               alt={active.alt || name}
@@ -318,7 +318,7 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
                     : "border-transparent opacity-90 hover:opacity-100",
                 )}
               >
-                <Image src={img.url} alt={img.alt || name} fill sizes="78px" className="object-cover" />
+                <SafeImage src={img.url} alt={img.alt || name} fill sizes="78px" className="object-cover" />
               </button>
             ))}
           </div>
@@ -340,7 +340,7 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
             single ? "" : "order-1 md:order-none",
           )}
         >
-          <Image
+          <SafeImage
             key={active.url}
             src={active.url}
             alt={active.alt || name}
@@ -393,12 +393,12 @@ export function PdpGallery({ tone, name, images = [] }: PdpGalleryProps): ReactN
               selected === index ? "border-ink" : "border-transparent opacity-90 hover:opacity-100",
             )}
           >
-            <ChocoPlaceholder tone={thumbTone} />
+            <ProductPlaceholder tone={thumbTone} />
           </button>
         ))}
       </div>
       <div className={cx(MAIN, "order-1 md:order-none")}>
-        <ChocoPlaceholder tone={active} />
+        <ProductPlaceholder tone={active} />
       </div>
     </div>
   );

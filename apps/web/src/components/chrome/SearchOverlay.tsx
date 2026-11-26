@@ -17,7 +17,9 @@ import {
   type SearchHitView,
 } from "@kakoa/core";
 import { cx } from "@kakoa/ui";
-import { ChocoPlaceholder } from "@/components/catalog/ChocoPlaceholder";
+import { ProductPlaceholder } from "@/components/catalog/ProductPlaceholder";
+import { SafeImage } from "@/components/media/SafeImage";
+import { vocabulary } from "@/lib/brand";
 import { useOverlay } from "./useOverlay";
 
 const DEBOUNCE_MS = 200;
@@ -25,14 +27,8 @@ const MIN_QUERY_LENGTH = 2;
 /** Exit-animation duration (must outlast the .24s CSS animation below). */
 const CLOSE_MS = 260;
 
-/** Static idle-state chips (prototype `searchPopular`). */
-const POPULAR_SEARCHES = [
-  "Dark chocolate",
-  "Gift box",
-  "Truffles",
-  "Single origin",
-  "Sea salt",
-] as const;
+/** Idle-state chips (prototype `searchPopular`) — the vertical's vocabulary. */
+const POPULAR_SEARCHES: readonly string[] = vocabulary.popularSearches;
 
 /** Contract §2.1 envelope, narrowed to what this island reads. */
 type Envelope<T> = { ok: true; data: T } | { ok: false };
@@ -287,7 +283,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
           if (closing && event.target === event.currentTarget) finishClose();
         }}
         className={cx(
-          "fixed inset-x-0 top-0 z-[71] flex max-h-[90vh] flex-col bg-[#FEF6EB] shadow-[0_24px_60px_rgba(42,29,18,.26)] focus-visible:outline-none",
+          "fixed inset-x-0 top-0 z-[71] flex max-h-[90vh] flex-col bg-cream shadow-[0_24px_60px_rgb(var(--shadow-tint)_/_.26)] focus-visible:outline-none",
           panelClass,
         )}
       >
@@ -315,8 +311,8 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
               }}
               onKeyDown={handleInputKeyDown}
               enterKeyHint="search"
-              placeholder="Search chocolates, gifts, collections…"
-              aria-label="Search chocolates, gifts, collections"
+              placeholder={vocabulary.searchPlaceholder}
+              aria-label={vocabulary.searchPlaceholder.replace(/…$/, "")}
               role="combobox"
               aria-expanded={hasResults}
               aria-controls={hasResults ? "kk-search-results" : undefined}
@@ -350,7 +346,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                       setQuery(label);
                     }}
                     className={cx(
-                      "rounded-none border border-[#683126] bg-transparent px-[18px] py-2.5 text-[13px] tracking-[0.4px] text-[#683126] transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
+                      "rounded-none border border-field bg-transparent px-[18px] py-2.5 text-[13px] tracking-[0.4px] text-field transition-colors hover:bg-field hover:text-field-ink",
                       FOCUS_RING,
                     )}
                   >
@@ -373,7 +369,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                         )}
                       >
                         <div className="relative w-12 flex-none overflow-hidden rounded-[9px]">
-                          <ChocoPlaceholder tone={product.tone} ratio="6 / 7" />
+                          {product.imageUrl !== null ? (
+                            <div className="relative aspect-[6/7] bg-cream-2">
+                              <SafeImage src={product.imageUrl} alt="" fill sizes="48px" className="object-cover" />
+                            </div>
+                          ) : (
+                            <ProductPlaceholder tone={product.tone} ratio="6 / 7" />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-ink">
@@ -427,7 +429,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                       )}
                     >
                       <div className="relative w-[52px] flex-none overflow-hidden rounded-[10px]">
-                        <ChocoPlaceholder tone={hit.tone} ratio="13 / 15" />
+                        {hit.imageUrl !== null ? (
+                          <div className="relative aspect-[13/15] bg-cream-2">
+                            <SafeImage src={hit.imageUrl} alt="" fill sizes="52px" className="object-cover" />
+                          </div>
+                        ) : (
+                          <ProductPlaceholder tone={hit.tone} ratio="13 / 15" />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-base font-semibold text-ink">
@@ -453,7 +461,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                 type="button"
                 onClick={goToShop}
                 className={cx(
-                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-[#683126] bg-transparent px-4 py-3 text-[13px] tracking-[0.4px] text-[#683126] uppercase transition-colors hover:bg-[#683126] hover:text-[#FCF5E8]",
+                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-field bg-transparent px-4 py-3 text-[13px] tracking-[0.4px] text-field uppercase transition-colors hover:bg-field hover:text-field-ink",
                   FOCUS_RING,
                 )}
               >
@@ -480,11 +488,11 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps): ReactNode 
                 href="/shop"
                 onClick={onClose}
                 className={cx(
-                  "inline-block rounded-none border border-[#683126] bg-[#683126] px-5 py-3 text-[14px] tracking-[1.4px] text-[#FCF5E8] uppercase no-underline transition-colors hover:bg-[#FCF5E8] hover:text-[#683126]",
+                  "inline-block rounded-none border border-field bg-field px-5 py-3 text-[14px] tracking-[1.4px] text-field-ink uppercase no-underline transition-colors hover:bg-field-ink hover:text-field",
                   FOCUS_RING,
                 )}
               >
-                Browse all chocolate
+                Browse all {vocabulary.noun.collective}
               </Link>
             </div>
           ) : null}

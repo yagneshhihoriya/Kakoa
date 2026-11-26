@@ -1,59 +1,95 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cx } from "@kakoa/ui";
 import { useAuthOptional, type AuthContextValue } from "@/components/auth/AuthProvider";
 import { CustomerAvatar } from "@/components/auth/CustomerAvatar";
+import { brand, routeEnabled, staticNav, vocabulary } from "@/lib/brand";
 import { BrandLockup } from "./BrandMark";
 import { MegaMenu } from "./MegaMenu";
+import { categoryHref, type NavCategory } from "./nav";
 import { SearchOverlay } from "./SearchOverlay";
 import { useCartChrome } from "./useCartChrome";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold";
 
-/** Desktop nav — inline links (≥1000px). `activeOn` drives the active
- * underline; `mega` marks the item that opens the Shop mega-menu on hover/focus. */
-const NAV_LINKS = [
-  { href: "/shop", label: "Shop", activeOn: ["/shop", "/product"], mega: true },
-  { href: "/shop?category=gifts", label: "Gifts", activeOn: [], mega: false },
-  { href: "/about", label: "Our Story", activeOn: ["/about"], mega: false },
-  { href: "/journal", label: "Journal", activeOn: ["/journal"], mega: false },
-] as const;
+/** The Shop item — always first, opens the mega-menu on hover/focus. */
+const SHOP_NAV = {
+  href: "/shop" as Route,
+  label: "Shop",
+  activeOn: ["/shop", "/product"],
+  mega: true,
+} as const;
+
+interface NavItem {
+  href: Route;
+  label: string;
+  /** Pathname prefixes that light the active underline (none for query links). */
+  activeOn: readonly string[];
+  mega: boolean;
+}
 
 /**
- * Mobile menu (< 1000px) — primary nav shown as a serif list. `children`, when
- * present, renders an inline accordion (the collections drill-down).
+ * Desktop nav — inline links (≥1000px): Shop, then the brand's static pages
+ * (profile.nav.primary) with feature-gated routes dropped. A query-string link
+ * (e.g. a category shortcut) never claims the active state.
+ */
+const NAV_LINKS: readonly NavItem[] = [
+  SHOP_NAV,
+  ...staticNav(brand.profile.nav.primary).map(
+    (link): NavItem => ({
+      href: link.href as Route,
+      label: link.label,
+      activeOn: link.href.includes("?") ? [] : [link.href],
+      mega: false,
+    }),
+  ),
+];
+
+interface MobileItem {
+  label: string;
+  href: Route;
+  /** Inline accordion (the collections drill-down). */
+  children?: readonly { href: Route; label: string }[];
+}
+
+/**
+ * Mobile menu (< 1000px) — primary nav shown as a serif list: Shop with the
+ * live collections as its accordion, then the brand's static pages.
  * Subscription & gift cards are deferred (PROJECT_PLAN §6).
  */
-const MOBILE_PRIMARY = [
-  {
-    label: "Shop",
-    href: "/shop",
-    children: [
-      { href: "/shop", label: "All chocolate" },
-      { href: "/shop?category=bars", label: "Bars" },
-      { href: "/shop?category=pralines", label: "Pralines" },
-      { href: "/shop?category=signature", label: "Signature" },
-      { href: "/shop?category=gifts", label: "Gifts" },
-    ],
-  },
-  { label: "Gifts", href: "/shop?category=gifts" },
-  { label: "Our Story", href: "/about" },
-  { label: "Journal", href: "/journal" },
-] as const;
+function mobilePrimary(categories: readonly NavCategory[]): MobileItem[] {
+  return [
+    {
+      label: "Shop",
+      href: "/shop" as Route,
+      children: [
+        { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}` },
+        ...categories.map((category) => ({
+          href: categoryHref(category.slug),
+          label: category.name,
+        })),
+      ],
+    },
+    ...staticNav(brand.profile.nav.primary).map(
+      (link): MobileItem => ({ label: link.label, href: link.href as Route }),
+    ),
+  ];
+}
 
 /** Mobile menu — secondary utility links (accent colour, below the primary list). */
 const MOBILE_SECONDARY = [
   { href: "/support", label: "Help centre" },
   { href: "/locator", label: "Store locator" },
   { href: "/account/track", label: "Track an order" },
-] as const;
+].filter((link) => routeEnabled(link.href)) as readonly { href: Route; label: string }[];
 
 const ICON_BUTTON_CLASSES = cx(
-  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-[#683126]",
+  "flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field",
   FOCUS_RING,
 );
 
@@ -164,8 +200,16 @@ function Chevron({ open }: { open: boolean }): ReactNode {
  * underlines, icon buttons, dark cart pill with kk-pop count, mobile menu
  * sheet, and the search overlay island.
  */
-export function Header(): ReactNode {
+export interface HeaderProps {
+  /** Active catalogue categories — the mobile drill-down and mega-menu collections. */
+  categories: readonly NavCategory[];
+  /** `brand.logo_url` setting; null renders the pack's drawn mark. */
+  logoUrl: string | null;
+}
+
+export function Header({ categories, logoUrl }: HeaderProps): ReactNode {
   const pathname = usePathname();
+  const mobilePrimaryItems = mobilePrimary(categories);
   const router = useRouter();
   const cartCtx = useCartChrome();
   const auth = useAuthOptional();
@@ -311,7 +355,7 @@ export function Header(): ReactNode {
       aria-label={`Open cart, ${count} ${count === 1 ? "item" : "items"}`}
       onClick={openCart}
       className={cx(
-        "relative flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-[#683126]",
+        "relative flex h-12 w-14 flex-col items-center justify-center gap-[3px] text-[#000] transition-colors hover:text-field",
         FOCUS_RING,
       )}
     >
@@ -320,7 +364,7 @@ export function Header(): ReactNode {
         {count > 0 ? (
           <span
             className={cx(
-              "absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-pill bg-[#683126] px-1 text-[10px] font-medium text-[#FCF5E8]",
+              "absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-pill bg-field px-1 text-[10px] font-medium text-field-ink",
               pop && "animate-[kk-pop_.45s_ease]",
             )}
           >
@@ -336,8 +380,8 @@ export function Header(): ReactNode {
     <>
       <header
         className={cx(
-          "sticky top-0 z-40 bg-[#FEF6EB] transition-shadow duration-300",
-          scrolled ? "shadow-[0_4px_16px_rgba(42,29,18,0.10)]" : "shadow-none",
+          "sticky top-0 z-40 bg-cream transition-shadow duration-300",
+          scrolled ? "shadow-[0_4px_16px_rgb(var(--shadow-tint)_/_0.10)]" : "shadow-none",
         )}
         style={{ fontFamily: "var(--font-ui)" }}
       >
@@ -349,8 +393,8 @@ export function Header(): ReactNode {
         >
           {/* DESKTOP (≥1000px) — unchanged: logo left · inline nav · actions right */}
           <div className="hidden h-full items-center justify-between gap-6 min-[1000px]:flex">
-            <Link href="/" aria-label="KAKOA home" className={cx("no-underline", FOCUS_RING)}>
-              <BrandLockup size="header" />
+            <Link href="/" aria-label={`${brand.profile.name} home`} className={cx("no-underline", FOCUS_RING)}>
+              <BrandLockup size="header" logoUrl={logoUrl} />
             </Link>
             <nav
               aria-label="Primary"
@@ -375,7 +419,7 @@ export function Header(): ReactNode {
                     {...megaProps}
                     className={cx(
                       "relative flex items-center p-[10px] text-[14px] font-medium tracking-normal uppercase no-underline transition-colors",
-                      active ? "text-[#683126]" : "text-[#000] hover:text-[#683126]",
+                      active ? "text-field" : "text-[#000] hover:text-field",
                       FOCUS_RING,
                     )}
                   >
@@ -410,9 +454,9 @@ export function Header(): ReactNode {
                 aria-label="Shop menu"
                 onMouseEnter={openMega}
                 onMouseLeave={closeMegaSoon}
-                className="absolute inset-x-0 top-full z-40 border-b border-line bg-cream shadow-[0_22px_44px_-18px_rgba(42,29,18,0.30)] animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none"
+                className="absolute inset-x-0 top-full z-40 border-b border-line bg-cream shadow-[0_22px_44px_-18px_rgb(var(--shadow-tint)_/_0.30)] animate-[kk-rise_.2s_var(--ease-entrance)] motion-reduce:animate-none"
               >
-                <MegaMenu onNavigate={closeMegaNow} />
+                <MegaMenu categories={categories} onNavigate={closeMegaNow} />
               </div>
             ) : null}
             <div className="flex items-center gap-1.5">
@@ -447,10 +491,10 @@ export function Header(): ReactNode {
             </div>
             <Link
               href="/"
-              aria-label="KAKOA home"
+              aria-label={`${brand.profile.name} home`}
               className={cx("justify-self-center no-underline", FOCUS_RING)}
             >
-              <BrandLockup size="header" />
+              <BrandLockup size="header" logoUrl={logoUrl} />
             </Link>
             <div className="flex items-center justify-self-end gap-0.5">
               {searchButton}
@@ -489,13 +533,13 @@ export function Header(): ReactNode {
             </button>
             <Link
               href="/"
-              aria-label="KAKOA home"
+              aria-label={`${brand.profile.name} home`}
               onClick={() => {
                 setMenuOpen(false);
               }}
               className={cx("no-underline", FOCUS_RING)}
             >
-              <BrandLockup size="header" />
+              <BrandLockup size="header" logoUrl={logoUrl} />
             </Link>
             <div className="flex items-center gap-0.5">{cartButton}</div>
           </div>
@@ -510,18 +554,18 @@ export function Header(): ReactNode {
                 setSearchOpen(true);
               }}
               className={cx(
-                "mb-6 flex w-full items-center gap-3 rounded-none border border-[#683126] bg-transparent px-4 py-3 text-left text-[13px] font-light tracking-[0.4px] text-[#000]/60 transition-colors hover:border-[#000]",
+                "mb-6 flex w-full items-center gap-3 rounded-none border border-field bg-transparent px-4 py-3 text-left text-[13px] font-light tracking-[0.4px] text-[#000]/60 transition-colors hover:border-[#000]",
                 FOCUS_RING,
               )}
             >
               <SearchIcon />
-              Search chocolate…
+              Search {vocabulary.noun.collective}…
             </button>
 
             {/* Primary — serif list, hairline dividers, collections accordion. */}
             <nav aria-label="Primary" className="border-t border-black/10">
-              {MOBILE_PRIMARY.map((item) => {
-                const kids = "children" in item ? item.children : null;
+              {mobilePrimaryItems.map((item) => {
+                const kids = item.children ?? null;
                 const expanded = openSection === item.label;
                 return (
                   <div key={item.label} className="border-b border-black/10">
@@ -533,7 +577,7 @@ export function Header(): ReactNode {
                         }}
                         aria-current={isActive([item.href]) ? "page" : undefined}
                         className={cx(
-                          "flex-1 py-5 text-[14px] font-medium tracking-[0.42px] text-[#000] uppercase no-underline transition-colors hover:text-[#683126]",
+                          "flex-1 py-5 text-[14px] font-medium tracking-[0.42px] text-[#000] uppercase no-underline transition-colors hover:text-field",
                           FOCUS_RING,
                         )}
                       >
@@ -548,7 +592,7 @@ export function Header(): ReactNode {
                             setOpenSection(expanded ? null : item.label);
                           }}
                           className={cx(
-                            "-mr-1.5 grid h-12 w-12 place-items-center text-[#000] transition-colors hover:text-[#683126]",
+                            "-mr-1.5 grid h-12 w-12 place-items-center text-[#000] transition-colors hover:text-field",
                             FOCUS_RING,
                           )}
                         >
@@ -566,7 +610,7 @@ export function Header(): ReactNode {
                                 setMenuOpen(false);
                               }}
                               className={cx(
-                                "block py-2.5 text-[13px] font-light tracking-[0.4px] text-[#000]/70 no-underline transition-colors hover:text-[#683126]",
+                                "block py-2.5 text-[13px] font-light tracking-[0.4px] text-[#000]/70 no-underline transition-colors hover:text-field",
                                 FOCUS_RING,
                               )}
                             >
@@ -591,7 +635,7 @@ export function Header(): ReactNode {
                     setMenuOpen(false);
                   }}
                   className={cx(
-                    "py-1.5 text-[13px] font-light tracking-[0.4px] text-[#683126] underline underline-offset-[3px] transition-colors hover:text-[#000]",
+                    "py-1.5 text-[13px] font-light tracking-[0.4px] text-field underline underline-offset-[3px] transition-colors hover:text-[#000]",
                     FOCUS_RING,
                   )}
                 >

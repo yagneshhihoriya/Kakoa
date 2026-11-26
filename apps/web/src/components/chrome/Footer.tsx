@@ -1,12 +1,20 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
-import { getCompanyInfo, getFssaiLicense } from "@/lib/catalog/queries";
+import {
+  getCompanyInfo,
+  getFssaiLicense,
+  type StorefrontSettings,
+} from "@/lib/catalog/queries";
+import { cx } from "@kakoa/ui";
+import { brand, staticNav, vocabulary } from "@/lib/brand";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { BrandLockup } from "./BrandMark";
+import { categoryHref, type NavCategory } from "./nav";
 
 /* ------------------------------------------------------------------ */
-/* Link data — every href maps to a real app route (kept working).     */
+/* Link data — categories from the catalogue, static pages from the    */
+/* brand pack; every href maps to a real app route (kept working).     */
 /* ------------------------------------------------------------------ */
 
 interface FooterLink {
@@ -14,20 +22,19 @@ interface FooterLink {
   label: string;
 }
 
-const SHOP_LINKS: FooterLink[] = [
-  { href: "/shop" as Route, label: "All chocolate" },
-  { href: "/shop?category=bars" as Route, label: "Bars" },
-  { href: "/shop?category=pralines" as Route, label: "Pralines" },
-  { href: "/shop?category=signature" as Route, label: "Signature" },
-  { href: "/shop?category=gifts" as Route, label: "Gift boxes" },
-];
+/** "Shop" column — "All <collective>" then every active category (position order). */
+function shopLinks(categories: readonly NavCategory[]): FooterLink[] {
+  return [
+    { href: "/shop" as Route, label: `All ${vocabulary.noun.collective}` },
+    ...categories.map((category) => ({ href: categoryHref(category.slug), label: category.name })),
+  ];
+}
 
-const COMPANY_LINKS: FooterLink[] = [
-  { href: "/about" as Route, label: "Our story" },
-  { href: "/journal" as Route, label: "Journal" },
-  { href: "/locator" as Route, label: "Store locator" },
-  { href: "/account" as Route, label: "My account" },
-];
+/** "Company" column — the pack's static pages, feature-gated routes dropped. */
+const COMPANY_LINKS: FooterLink[] = staticNav(brand.profile.nav.footerCompany).map((link) => ({
+  href: link.href as Route,
+  label: link.label,
+}));
 
 const SUPPORT_LINKS: FooterLink[] = [
   { href: "/contact" as Route, label: "Contact us" },
@@ -44,10 +51,12 @@ const LEGAL_LINKS: FooterLink[] = [
 
 /**
  * Global storefront footer — styled to match the Valrhona reference 1:1:
- * flat #683126 field, #FCF5E8 text, Poppins (via --font-footer), underlined
+ * flat `field` band with `field-ink` text, Poppins (via --font-ui), underlined
  * links at 75% opacity that brighten on hover, square bordered email input and
- * a solid cream rectangular submit. Mobile centres the brand, socials and
- * signup, as the reference does below 750px.
+ * a solid cream rectangular submit. Below the desktop breakpoint the brand
+ * block and the signup span the full row and the three link lists sit side by
+ * side (two columns on phones, three on tablets), everything left-aligned, so
+ * the footer stays short on a phone instead of one long centred column.
  *
  * ONE dark band, replacing
  * the previous dark-newsletter-over-cream-body split. Layout: brand + contact
@@ -56,9 +65,19 @@ const LEGAL_LINKS: FooterLink[] = [
  * (FSSAI / MRP) and the accepted payment methods.
  *
  * Server component; the only client island is the newsletter form. All routes
- * and compliance content preserved — presentation only.
+ * and compliance content preserved — presentation only. Copy is the brand
+ * pack's; social links and the newsletter offer are store settings. The legal
+ * bar also carries the pack's font attribution when its typeface licence
+ * requires one (CC BY-ND faces).
  */
-export async function Footer(): Promise<ReactNode> {
+export interface FooterProps {
+  /** Active catalogue categories — the "Shop" column. */
+  categories: readonly NavCategory[];
+  /** Storefront settings — social links, newsletter offer, logo. */
+  settings: StorefrontSettings;
+}
+
+export async function Footer({ categories, settings }: FooterProps): Promise<ReactNode> {
   const [fssai, company] = await Promise.all([
     getFssaiLicense().catch(() => null),
     getCompanyInfo(),
@@ -66,116 +85,139 @@ export async function Footer(): Promise<ReactNode> {
   const year = new Date().getFullYear();
 
   const payments = ["UPI", "Cards", "Netbanking", ...(company.codEnabled ? ["Cash on delivery"] : [])];
+  const { fontAttribution, profile, copy } = brand;
+  const { footer } = copy;
+  const socials = [
+    { key: "instagram", label: "Instagram", href: settings.social.instagram, Icon: InstagramIcon },
+    { key: "facebook", label: "Facebook", href: settings.social.facebook, Icon: FacebookIcon },
+    { key: "pinterest", label: "Pinterest", href: settings.social.pinterest, Icon: PinterestIcon },
+    { key: "youtube", label: "YouTube", href: settings.social.youtube, Icon: YouTubeIcon },
+  ].filter((social): social is typeof social & { href: string } => social.href !== null);
 
   return (
     <footer
-      className="relative overflow-hidden bg-[#683126] text-[#FCF5E8]"
+      className="relative overflow-hidden bg-field text-field-ink"
       style={{ fontFamily: "var(--font-ui)" }}
     >
       <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8">
         {/* ---- Brand · link columns · newsletter ---- */}
-        <div className="grid gap-x-8 gap-y-10 py-12 sm:py-14 max-[680px]:grid-cols-1 max-[1023px]:grid-cols-2 lg:grid-cols-[1.55fr_.85fr_.85fr_.85fr_1.3fr]">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 py-10 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 sm:py-14 lg:grid-cols-[1.55fr_.85fr_.85fr_.85fr_1.3fr]">
           {/* Brand · about · contact · social */}
-          <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:flex max-[749px]:flex-col max-[749px]:items-center max-[749px]:text-center">
-            <BrandLockup size="footer" />
-            <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-[#FCF5E8]">
-              Chocolate that tastes of somewhere.
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <BrandLockup size="footer" logoUrl={settings.logoUrl} />
+            <p className="mt-3.5 max-w-[320px] text-[14px] leading-[21px] tracking-[0.4px] text-field-ink">
+              {footer.tagline}
             </p>
-            <p className="mt-2 max-w-[320px] text-[13px] leading-[19.5px] tracking-[0.4px] text-[#FCF5E8]/75">
-              Small-batch, single-origin chocolate, roasted and hand-finished in
-              our own kitchen.
+            <p className="mt-2 max-w-[320px] text-[13px] leading-[19.5px] tracking-[0.4px] text-field-ink/75">
+              {footer.blurb}
             </p>
 
-            <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic max-[749px]:items-center">
+            <address className="mt-5 flex flex-col gap-1 text-[13px] font-light not-italic">
               <a
                 href={`mailto:${company.supportEmail}`}
-                className="w-fit tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                className="w-fit tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
               >
                 {company.supportEmail}
               </a>
               <a
                 href={`tel:${company.supportPhone.replace(/\s/g, "")}`}
-                className="w-fit tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+                className="w-fit tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
               >
                 {company.supportPhone}
               </a>
-              <span className="mt-2 text-[13px] font-light leading-[19.5px] text-[#FCF5E8]/60">
-                <span className="block font-normal text-[#FCF5E8]/80">
-                  {company.legalName}
+              {/* Legal identity has no code default — rendered once configured. */}
+              {company.legalName || company.address ? (
+                <span className="mt-2 text-[13px] font-light leading-[19.5px] text-field-ink/60">
+                  {company.legalName ? (
+                    <span className="block font-normal text-field-ink/80">
+                      {company.legalName}
+                    </span>
+                  ) : null}
+                  {company.address}
                 </span>
-                {company.address}
-              </span>
+              ) : null}
             </address>
 
-            <div className="mt-6 flex items-center gap-1 max-[749px]:justify-center">
-              <SocialLink label="KAKOA on Instagram" href="https://instagram.com">
-                <InstagramIcon />
-              </SocialLink>
-              <SocialLink label="KAKOA on Facebook" href="https://facebook.com">
-                <FacebookIcon />
-              </SocialLink>
-              <SocialLink label="KAKOA on Pinterest" href="https://pinterest.com">
-                <PinterestIcon />
-              </SocialLink>
-              <SocialLink label="KAKOA on YouTube" href="https://youtube.com">
-                <YouTubeIcon />
-              </SocialLink>
-            </div>
+            {socials.length > 0 ? (
+              <div className="mt-5 -ml-3 flex items-center gap-1">
+                {socials.map(({ key, label, href, Icon }) => (
+                  <SocialLink key={key} label={`${profile.name} on ${label}`} href={href}>
+                    <Icon />
+                  </SocialLink>
+                ))}
+              </div>
+            ) : null}
           </div>
 
-          <FooterColumn heading="Shop" links={SHOP_LINKS} />
+          {/* Phones: Shop fills the left column while Company and Support stack
+              on the right, so no column sits beside an empty cell. */}
+          <FooterColumn heading="Shop" links={shopLinks(categories)} className="row-span-2 sm:row-span-1" />
           <FooterColumn heading="Company" links={COMPANY_LINKS} />
           <FooterColumn heading="Support" links={SUPPORT_LINKS} />
 
           {/* Newsletter — inline final column */}
-          <div className="max-[1023px]:col-span-2 max-[680px]:col-span-1 max-[749px]:text-center">
-            <p className="text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase">
-              The KAKOA Club
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <p className="text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
+              {footer.clubHeading}
             </p>
-            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase max-[749px]:mx-auto">
-              15% off your first box
+            <p className="mt-1.5 max-w-[300px] text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
+              {settings.newsletterOffer}
             </p>
             <div className="mt-4">
-              <NewsletterForm variant="square" />
+              <NewsletterForm variant="square" offer={settings.newsletterOffer} />
             </div>
           </div>
         </div>
 
         {/* ---- Legal bar ---- */}
-        <div className="flex flex-col gap-3 border-t border-[#FCF5E8]/15 py-6 max-[749px]:items-center max-[749px]:text-center sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light tracking-[0.4px] text-[#FCF5E8]/60 max-[749px]:justify-center">
-            <span>© {year} KAKOA Chocolates. All rights reserved.</span>
-            {LEGAL_LINKS.map((link) => (
-              <span key={link.label} className="flex items-center gap-x-2.5">
-                <span aria-hidden="true" className="text-[#FCF5E8]/25">
-                  ·
+        {/* On phones each group gets its own line (no mid-line dot wrapping) and
+            the extra bottom padding keeps the last line clear of the floating
+            back-to-top button; from sm up they run inline, dot-separated, with
+            payments at the end. */}
+        <div className="flex flex-col gap-4 border-t border-field-ink/15 pt-6 pb-20 sm:flex-row sm:items-center sm:justify-between sm:pb-6">
+          <div className="flex flex-col gap-1.5 text-[12.5px] font-light tracking-[0.4px] text-field-ink/60 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2.5 sm:gap-y-1 sm:text-[13px]">
+            <span>© {year} {footer.copyrightHolder}. All rights reserved.</span>
+            <span className="flex flex-wrap items-center gap-x-2.5">
+              <Dot className="hidden sm:inline" />
+              {LEGAL_LINKS.map((link, i) => (
+                <span key={link.label} className="flex items-center gap-x-2.5">
+                  {i > 0 ? <Dot /> : null}
+                  <Link
+                    href={link.href}
+                    className="tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
+                  >
+                    {link.label}
+                  </Link>
                 </span>
-                <Link
-                  href={link.href}
-                  className="tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
-                >
-                  {link.label}
-                </Link>
+              ))}
+            </span>
+            <span className="flex items-center gap-x-2.5">
+              <Dot className="hidden sm:inline" />
+              <span>
+                {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
+                inclusive of all taxes
               </span>
-            ))}
-            <span aria-hidden="true" className="text-[#FCF5E8]/25">
-              ·
             </span>
-            <span>
-              {fssai !== null ? `FSSAI Lic. No. ${fssai}` : "FSSAI licensed"} · MRP
-              inclusive of all taxes
-            </span>
+            {fontAttribution !== null ? (
+              <span className="flex items-center gap-x-2.5">
+                <Dot className="hidden sm:inline" />
+                <a
+                  href={fontAttribution.href}
+                  target="_blank"
+                  rel="license noopener noreferrer"
+                  className="tracking-[0.4px] text-field-ink/60 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
+                >
+                  {fontAttribution.text}
+                </a>
+              </span>
+            ) : null}
           </div>
 
           {/* Accepted payment methods — text, not vendor logos */}
-          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-[#FCF5E8]/55 max-[749px]:justify-center">
+          <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] font-light tracking-[0.4px] text-field-ink/55">
             {payments.map((method, i) => (
               <span key={method} className="flex items-center gap-x-2">
-                {i > 0 && (
-                  <span aria-hidden="true" className="text-[#FCF5E8]/25">
-                    ·
-                  </span>
-                )}
+                {i > 0 ? <Dot /> : null}
                 {method}
               </span>
             ))}
@@ -193,13 +235,15 @@ export async function Footer(): Promise<ReactNode> {
 function FooterColumn({
   heading,
   links,
+  className,
 }: {
   heading: string;
   links: FooterLink[];
+  className?: string;
 }): ReactNode {
   return (
-    <nav aria-label={heading} className="max-[749px]:text-center">
-      <div className="mb-4 text-[12px] font-medium tracking-[2.4px] text-[#FCF5E8] uppercase">
+    <nav aria-label={heading} className={className}>
+      <div className="mb-4 text-[12px] font-medium tracking-[2.4px] text-field-ink uppercase">
         {heading}
       </div>
       <ul className="flex flex-col gap-1">
@@ -207,7 +251,7 @@ function FooterColumn({
           <li key={link.label}>
             <Link
               href={link.href}
-              className="inline-block w-fit py-[5px] text-[13px] font-light leading-[19.5px] tracking-[0.65px] text-[#FCF5E8]/75 underline underline-offset-[3px] transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+              className="inline-block w-fit py-[5px] text-[13px] font-light leading-[19.5px] tracking-[0.65px] text-field-ink/75 underline underline-offset-[3px] transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
             >
               {link.label}
             </Link>
@@ -215,6 +259,15 @@ function FooterColumn({
         ))}
       </ul>
     </nav>
+  );
+}
+
+/** Hairline dot separator between inline legal-bar items. */
+function Dot({ className }: { className?: string }): ReactNode {
+  return (
+    <span aria-hidden="true" className={cx("text-field-ink/25", className)}>
+      ·
+    </span>
   );
 }
 
@@ -233,7 +286,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="grid h-11 w-11 place-items-center text-[#FCF5E8]/75 transition-colors hover:text-[#FCF5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FCF5E8]"
+      className="grid h-11 w-11 place-items-center text-field-ink/75 transition-colors hover:text-field-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-field-ink"
     >
       {children}
     </a>

@@ -13,6 +13,7 @@ import {
 } from '@/lib/admin/analytics';
 import { resolveRange, type Bucket } from '@/lib/admin/analytics-range';
 import { toCsv } from '@/lib/admin/csv';
+import { brand } from '@/lib/brand';
 
 const REPORTS = ['orders', 'best-sellers', 'revenue'] as const;
 type Report = (typeof REPORTS)[number];
@@ -61,7 +62,7 @@ export async function GET(req: Request): Promise<Response> {
   return new Response(csv, {
     headers: {
       'content-type': 'text/csv; charset=utf-8',
-      'content-disposition': `attachment; filename="kakoa-${report}-${label}.csv"`,
+      'content-disposition': `attachment; filename="${brand.profile.key}-${report}-${label}.csv"`,
       'cache-control': 'no-store',
     },
   });

@@ -77,6 +77,11 @@ Covers **Phase 6**. Sequenced so **Kakao becomes operable early** while the plat
 **Risks:** rename churn on a live app → its own PR, no logic changes, green gate before merge.
 **Extensibility unlocked:** a fully white-label storefront to match the platform admin.
 
+**Status (2026-11-12) — de-hardcoding DONE, rename pending.** Delivered on `feat/phase1-brand-packs` → `feat/phase2-khakhra` (see `docs/brands/PROVISIONING.md`):
+- **Phase 1 (brand packs):** brand identity, copy, FAQ, legal, journal, email, OG, fonts, theme tokens and illustrations live in a presentation pack per brand (`apps/web/src/brands/<key>/**`, one contract in `contract.ts`) selected at build by `BRAND_KEY` through the `@brand` alias; the brand profile (`packages/brands`, zod contract, shared seller-identity fixture) carries cookie/prefix/identity and the policy defaults; the storefront vocabulary, swatches, attributes and tax defaults come from the vertical preset (`@platform/kernel` presets — `chocolate`, `snacks`); `tone`/food fields became preset attributes and the `veg-mark` / `perishable` / `allergens` capabilities; navigation and the settings catalogue are data-driven; migration 0006 dropped the chocolate-shaped column defaults; `scripts/brand-gate.sh` (`pnpm brand-gate`) fails the build on any brand or vertical literal outside the packs.
+- **Phase 2 (second brand — Khakhra House, `snacks` preset):** profile + pack; the seed split into a brand-agnostic writer and per-brand content (`packages/db/src/seeds/<key>.ts`, KAKOA rows verified identical before/after); PDP perishable / veg-mark / allergen rendering; a two-brand CI matrix (`.github/workflows/ci.yml`: typecheck → test → lint → brand-gate → migrate → seed → `next build`, per brand, on a `postgres:17` service); the gate extended to khakhra literals and `KH-` identifiers; provisioning, CI and migration runbooks. This is also Phase 4's "second vertical" proof — a real brand rather than a demo instance — stood up from a profile, a pack and a seed with zero module code changes.
+- **Remaining:** the `@kakoa/*` → `@platform/*` package rename (A2; the brand gate allow-lists the scope until then); the khakhra brand-name / launch-value decisions (PROVISIONING.md §6); per-brand smoke tests against the standalone server; the production deployments themselves (PROVISIONING.md §1 steps 3–10).
+
 ---
 
 ## Sequence & dependency view
@@ -104,7 +109,7 @@ Phase 0 (kernel: RBAC, registry, settings, admin shell, audit)
 | Multi-tenant retrofit demanded later | any | `BusinessContext` + data-access seam designed for it now (§1.2) — additive, not a rewrite |
 | Over-abstraction (YAGNI) | 1, 4 | Ship chocolate concretely first, generalize with the 2nd-vertical test as the forcing function |
 | Storefront regression from generalization | 0, P | Compat shims + green gate + live check every phase; storefront changes isolated to Phase P |
-| Hidden chocolate/India assumptions | 4 | CI grep-gate (no business literals in `@platform/*`) + second-vertical smoke test |
+| Hidden chocolate/India assumptions | 4 | CI grep-gate (`pnpm brand-gate`, in the CI matrix — shipped) + second-vertical smoke test (khakhra builds in CI; standalone smoke pending) |
 | RBAC/settings migration breakage | 0 | Additive migrations + presets + back-compat reads + tests |
 | Scope creep (tax regimes, currencies, restaurant vertical) | 3, 4 | Interfaces documented now, only India-GST + food/retail verticals implemented; rest are future capabilities |
 

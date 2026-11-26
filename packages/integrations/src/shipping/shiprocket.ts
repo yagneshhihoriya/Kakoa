@@ -77,9 +77,9 @@ export function buildAdhocOrderBody(input: CreateShipmentInput): Record<string, 
     payment_method: input.cod ? "COD" : "Prepaid",
     // 🔴 sub_total is NOT auto-computed by Shiprocket — send the real value.
     sub_total: subTotalRupees,
-    length: input.lengthCm ?? 10,
-    breadth: input.breadthCm ?? 10,
-    height: input.heightCm ?? 10,
+    length: input.lengthCm,
+    breadth: input.breadthCm,
+    height: input.heightCm,
     weight: Math.max(0.001, input.weightGrams / 1000), // kg
   };
 }

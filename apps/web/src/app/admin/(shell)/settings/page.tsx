@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { getAllSettings } from "@/lib/admin/settings";
+import { LegalIdentityBanner } from "@/components/admin/LegalIdentityBanner";
 import { NoAccess } from "@/components/admin/NoAccess";
 import { SettingsForm } from "@/components/admin/SettingsForm";
 
@@ -28,6 +29,8 @@ export default async function AdminSettingsPage(): Promise<ReactNode> {
           {canWrite ? "" : " You have read-only access."}
         </p>
       </div>
+
+      <LegalIdentityBanner missing={settings.missingRequired} />
 
       <SettingsForm
         values={settings.values}

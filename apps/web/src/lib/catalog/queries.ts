@@ -15,13 +15,11 @@
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 
 import {
-  productToneSchema,
   type CategoryView,
   type ProductCardView,
   type ProductDetailView,
   type ProductImageView,
   type ProductListInput,
-  type ProductTone,
   type ProductVariantView,
   type SearchHitView,
 } from '@kakoa/core';
@@ -38,15 +36,20 @@ import {
 } from '@kakoa/db';
 import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { getPreset } from '@platform/kernel';
-import { SETTINGS_DEFAULTS } from '@/lib/admin/settings-schema';
+import { resolveLegalIdentity } from '@/lib/admin/legal-identity';
+import {
+  SETTINGS_DEFAULTS,
+  SETTINGS_KEYS,
+  THEME_TOKENS,
+  flatKey,
+  normalizeSettingUrl,
+  type ThemeTokenKey,
+} from '@/lib/admin/settings-schema';
 import { displayReviewerName } from '@/lib/admin/review-format';
-
-/**
- * Active business vertical (mirrors admin `lib/admin/context.ts` VERTICAL —
- * config-driven later). Drives which product attributes surface on the PDP.
- */
-const VERTICAL = 'chocolate' as const;
+// `preset` = the brand's vertical preset (same resolution the admin
+// BusinessContext uses) — drives which product attributes surface on the PDP;
+// `toTone` coerces the free-text tone column to one of its swatch keys.
+import { preset, presetHas, toTone } from '@/lib/brand';
 
 /** Present a stored attribute value (array/number/string) as display text. */
 function formatAttrValue(v: unknown): string {
@@ -63,13 +66,26 @@ function attrString(attributes: unknown, key: string): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
+/**
+ * The allergens a product declares through the preset's `allergens` attribute
+ * (multi-enum → string[]). Empty unless the vertical has the capability, so
+ * the PDP never renders a declaration list a business cannot maintain.
+ */
+function declaredAllergens(attributes: unknown): string[] {
+  if (!presetHas('allergens') || attributes === null || typeof attributes !== 'object') return [];
+  const value = (attributes as Record<string, unknown>).allergens;
+  return Array.isArray(value)
+    ? value.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+    : [];
+}
+
 /** Resolve preset attributes flagged showOnPdp into label/value/unit rows. */
 function buildPdpAttributes(
   attributes: unknown,
 ): { label: string; value: string; unit: string | null }[] {
   const attrs = (attributes !== null && typeof attributes === 'object' ? attributes : {}) as Record<string, unknown>;
-  return getPreset(VERTICAL)
-    .attributeSchema.filter((d) => d.showOnPdp === true)
+  return preset.attributeSchema
+    .filter((d) => d.showOnPdp === true)
     .map((d) => ({ label: d.label, value: formatAttrValue(attrs[d.key]), unit: d.unit ?? null }))
     .filter((a) => a.value !== '');
 }
@@ -83,6 +99,7 @@ const REVALIDATE_SECONDS = 900;
 
 /** Matches the DB CHECK `slug ~ '^[a-z0-9-]+$'` (spec §1.2, max 120). */
 const SLUG_RE = /^[a-z0-9-]{1,120}$/;
+const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
 /** RFC-4122 UUID (case-insensitive) — pre-filter before the IN query. */
 const UUID_RE =
@@ -152,12 +169,6 @@ const cardColumns = {
   )`,
 };
 
-/** `products.tone` is a text column — coerce defensively to the enum. */
-function toTone(value: string): ProductTone {
-  const parsed = productToneSchema.safeParse(value);
-  return parsed.success ? parsed.data : 'dark';
-}
-
 function toCard(row: CardRow): ProductCardView {
   return {
     id: row.id,
@@ -200,6 +211,7 @@ const getCategoriesCached = unstable_cache(
         name: categories.name,
         description: categories.description,
         position: categories.position,
+        imageUrl: categories.imageUrl,
       })
       .from(categories)
       .where(eq(categories.isActive, true))
@@ -339,7 +351,10 @@ function toNutritionFacts(value: unknown): Record<string, string> | null {
   }
   const out: Record<string, string> = {};
   for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
-    out[key] = typeof raw === 'string' ? raw : String(raw);
+    // Scalars only, and never the junk a bad admin save once stored by
+    // stringifying a nested object — the PDP must not receive "[object Object]".
+    const text = typeof raw === 'string' ? raw.trim() : typeof raw === 'number' ? String(raw) : '';
+    if (text !== '' && text !== '[object Object]') out[key] = text;
   }
   return Object.keys(out).length > 0 ? out : null;
 }
@@ -465,7 +480,6 @@ async function fetchProductDetail(
       ratingCount: products.ratingCount,
       tone: products.tone,
       description: products.description,
-      tastingNotes: products.tastingNotes,
       ingredients: products.ingredients,
       allergens: products.allergens,
       nutritionFacts: products.nutritionFacts,
@@ -589,9 +603,9 @@ async function fetchProductDetail(
     inStock: row.inStock,
     imageUrl: images[0]?.url ?? null,
     description: row.description,
-    tastingNotes: row.tastingNotes,
     ingredients: row.ingredients,
     allergens: row.allergens,
+    declaredAllergens: declaredAllergens(row.attributes),
     nutritionFacts: toNutritionFacts(row.nutritionFacts),
     shelfLifeDays: row.shelfLifeDays,
     storageInstructions: row.storageInstructions,
@@ -655,6 +669,14 @@ export async function searchProducts(
       tone: products.tone,
       fromPricePaise: variantAgg.fromPricePaise,
       categorySlug: categories.slug,
+      // Primary image = lowest-position row, as on the card (null → swatch).
+      imageUrl: sql<string | null>`(
+        select ${productImages.url}
+        from ${productImages}
+        where ${productImages.productId} = ${products.id}
+        order by ${productImages.position} asc, ${productImages.createdAt} asc
+        limit 1
+      )`,
     })
     .from(products)
     .innerJoin(variantAgg, eq(variantAgg.productId, products.id))
@@ -679,6 +701,7 @@ export async function searchProducts(
     tone: toTone(row.tone),
     fromPricePaise: row.fromPricePaise,
     categorySlug: row.categorySlug,
+    imageUrl: row.imageUrl ?? null,
   }));
 }
 
@@ -784,6 +807,141 @@ export async function getCatalogSettings(): Promise<CatalogSettings> {
 }
 
 /* ------------------------------------------------------------------ */
+/* getStorefrontSettings — storefront / brand presentation settings    */
+/* ------------------------------------------------------------------ */
+
+export interface StorefrontSocialLinks {
+  instagram: string | null;
+  facebook: string | null;
+  pinterest: string | null;
+  youtube: string | null;
+}
+
+export interface StorefrontSettings {
+  /** `storefront.announcement_segments` — ribbon lines (first always visible). */
+  announcementSegments: string[];
+  /**
+   * `storefront.home_hero_product_slug` — the product the home hero spotlights;
+   * null (unset / blank) → the page falls back to the first featured product.
+   */
+  homeHeroProductSlug: string | null;
+  /** `storefront.hero_image_url` / `_mobile_url` — null → the pack's bundled photo. */
+  heroImageUrl: string | null;
+  heroImageMobileUrl: string | null;
+  /** `storefront.newsletter_offer` — the incentive line in the footer club column. */
+  newsletterOffer: string;
+  /** `brand.logo_url` — null → the pack's drawn mark. */
+  logoUrl: string | null;
+  /** `brand.og_image_url` — null → the generated share card. */
+  ogImageUrl: string | null;
+  /** `brand.social_*` — null hides that icon. */
+  social: StorefrontSocialLinks;
+  /** `brand.theme.*` — configured `#RRGGBB` overrides keyed by token (ink, cream, …). */
+  theme: Partial<Record<ThemeTokenKey, string>>;
+}
+
+/** Catalogued namespaced keys this reader resolves (plus their flat fallbacks). */
+const STOREFRONT_SETTING_KEYS = SETTINGS_KEYS.filter(
+  (key) => key.startsWith('storefront.') || key.startsWith('brand.'),
+);
+
+/**
+ * Read a namespaced setting the way the admin SettingsReader does: the
+ * `namespace.key` row first, then the flat `key` row, then the catalog default.
+ */
+function namespaced(byKey: ReadonlyMap<string, unknown>, key: string): unknown {
+  if (byKey.has(key)) return byKey.get(key);
+  const flat = flatKey(key);
+  return byKey.has(flat) ? byKey.get(flat) : SETTINGS_DEFAULTS[key];
+}
+
+/** A non-blank string setting, else null. */
+function optionalString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+}
+
+/** An https:// or same-origin URL setting, else null (never render a malformed src). */
+function optionalUrl(value: unknown): string | null {
+  const s = optionalString(value);
+  return s === null ? null : normalizeSettingUrl(s);
+}
+
+const getStorefrontSettingsCached = unstable_cache(
+  async (): Promise<StorefrontSettings> => {
+    const rows = await db
+      .select({ key: storeSettings.key, value: storeSettings.value })
+      .from(storeSettings)
+      .where(
+        inArray(storeSettings.key, [
+          ...STOREFRONT_SETTING_KEYS,
+          ...STOREFRONT_SETTING_KEYS.map(flatKey),
+        ]),
+      );
+    const byKey = new Map(rows.map((row) => [row.key, row.value]));
+    const get = (key: string): unknown => namespaced(byKey, key);
+
+    const segments = get('storefront.announcement_segments');
+    const slug = get('storefront.home_hero_product_slug');
+    const offer = optionalString(get('storefront.newsletter_offer'));
+
+    const theme: Partial<Record<ThemeTokenKey, string>> = {};
+    for (const token of Object.keys(THEME_TOKENS) as ThemeTokenKey[]) {
+      const hex = optionalString(get(`brand.theme.${token}`));
+      if (hex !== null && HEX_RE.test(hex)) theme[token] = hex;
+    }
+
+    return {
+      announcementSegments: Array.isArray(segments)
+        ? segments.filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+        : [],
+      homeHeroProductSlug:
+        typeof slug === 'string' && SLUG_RE.test(slug.trim()) ? slug.trim() : null,
+      heroImageUrl: optionalUrl(get('storefront.hero_image_url')),
+      heroImageMobileUrl: optionalUrl(get('storefront.hero_image_mobile_url')),
+      newsletterOffer: offer ?? String(SETTINGS_DEFAULTS['storefront.newsletter_offer'] ?? ''),
+      logoUrl: optionalUrl(get('brand.logo_url')),
+      ogImageUrl: optionalUrl(get('brand.og_image_url')),
+      social: {
+        instagram: optionalUrl(get('brand.social_instagram')),
+        facebook: optionalUrl(get('brand.social_facebook')),
+        pinterest: optionalUrl(get('brand.social_pinterest')),
+        youtube: optionalUrl(get('brand.social_youtube')),
+      },
+      theme,
+    };
+  },
+  ['storefront-settings'],
+  { tags: ['settings'], revalidate: REVALIDATE_SECONDS },
+);
+
+/** Storefront presentation settings (read-only here; Admin owns writes). */
+export async function getStorefrontSettings(): Promise<StorefrontSettings> {
+  return getStorefrontSettingsCached();
+}
+
+/** The catalog defaults — what the storefront renders before any row exists or when the DB is unreachable. */
+export function defaultStorefrontSettings(): StorefrontSettings {
+  const str = (key: string): string => String(SETTINGS_DEFAULTS[key] ?? '');
+  const list = SETTINGS_DEFAULTS['storefront.announcement_segments'];
+  return {
+    announcementSegments: Array.isArray(list) ? [...list] : [],
+    homeHeroProductSlug: null,
+    heroImageUrl: null,
+    heroImageMobileUrl: null,
+    newsletterOffer: str('storefront.newsletter_offer'),
+    logoUrl: null,
+    ogImageUrl: null,
+    social: {
+      instagram: optionalUrl(str('brand.social_instagram')),
+      facebook: optionalUrl(str('brand.social_facebook')),
+      pinterest: optionalUrl(str('brand.social_pinterest')),
+      youtube: optionalUrl(str('brand.social_youtube')),
+    },
+    theme: {},
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* getFssaiLicense — legal display value (footer, PDP, invoices)       */
 /* ------------------------------------------------------------------ */
 
@@ -816,10 +974,17 @@ export async function getFssaiLicense(): Promise<string | null> {
 /* ------------------------------------------------------------------ */
 
 export interface CompanyInfo {
+  /**
+   * Legal identity straight from store_settings — `''` when the row is missing
+   * (there is NO brand default for these; see lib/admin/legal-identity.ts).
+   * Pages render the GSTIN / legal-name lines only when present.
+   */
   legalName: string;
   address: string;
   gstin: string;
   fssai: string;
+  /** `true` once every legal-identity row exists (admin sees a banner until then). */
+  legalIdentityConfigured: boolean;
   supportEmail: string;
   supportPhone: string;
   supportHours: string;
@@ -830,12 +995,38 @@ export interface CompanyInfo {
   expressShippingPaise: number | null;
   codEnabled: boolean;
   codFeePaise: number | null;
+  /** `policy.*` — the dates and SLA windows the FAQ and legal pages print. */
+  policy: CompanyPolicy;
 }
 
+export interface CompanyPolicy {
+  /** "Effective date" line under every policy title. */
+  legalEffectiveDate: string;
+  /** Hours after delivery within which damage / wrong-item claims must be raised. */
+  damageReportWindowHours: number;
+  /** Business-day windows as printed ("5–7", "1–2", "2–7"). */
+  refundSlaDays: string;
+  dispatchSlaDays: string;
+  deliveryEtaDays: string;
+}
+
+/** Namespaced policy keys (+ flat fallbacks) the company reader resolves. */
+const POLICY_KEYS = [
+  'policy.legal_effective_date',
+  'policy.damage_report_window_hours',
+  'policy.refund_sla_days',
+  'policy.dispatch_sla_days',
+  'policy.delivery_eta_days',
+] as const;
+
 const COMPANY_KEYS = [
+  ...POLICY_KEYS,
+  ...POLICY_KEYS.map(flatKey),
   'seller_legal_name',
   'seller_address',
   'seller_gstin',
+  'seller_state_code',
+  'origin_pincode',
   'fssai_license_number',
   'support_email',
   'support_phone',
@@ -849,6 +1040,21 @@ const COMPANY_KEYS = [
   'cod_fee_paise',
 ];
 
+/** A `policy.*` string: the namespaced row, the flat row, else the brand default. */
+function policyString(byKey: ReadonlyMap<string, unknown>, key: string): string {
+  const v = namespaced(byKey, key);
+  return typeof v === 'string' && v.trim() !== '' ? v.trim() : String(SETTINGS_DEFAULTS[key] ?? '');
+}
+
+/** A `policy.*` integer with the same resolution order. */
+function policyInt(byKey: ReadonlyMap<string, unknown>, key: string): number {
+  const v = namespaced(byKey, key);
+  const n = typeof v === 'string' ? Number(v) : v;
+  if (typeof n === 'number' && Number.isSafeInteger(n) && n > 0) return n;
+  const fallback = SETTINGS_DEFAULTS[key];
+  return typeof fallback === 'number' ? fallback : 0;
+}
+
 const getCompanyInfoCached = unstable_cache(
   async (): Promise<CompanyInfo> => {
     const rows = await db
@@ -856,15 +1062,19 @@ const getCompanyInfoCached = unstable_cache(
       .from(storeSettings)
       .where(inArray(storeSettings.key, COMPANY_KEYS));
     const byKey = new Map(rows.map((r) => [r.key, r.value]));
+    // Policy / support keys fall back to THIS brand's defaults; the legal
+    // identity never falls back (empty strings + `configured: false`).
     const str = (key: string): string => {
       const v = byKey.has(key) ? byKey.get(key) : SETTINGS_DEFAULTS[key];
       return typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v);
     };
+    const legal = resolveLegalIdentity(byKey);
     return {
-      legalName: str('seller_legal_name'),
-      address: str('seller_address'),
-      gstin: str('seller_gstin'),
-      fssai: str('fssai_license_number'),
+      legalName: legal.legalName,
+      address: legal.address,
+      gstin: legal.gstin,
+      fssai: legal.fssai,
+      legalIdentityConfigured: legal.configured,
       supportEmail: str('support_email'),
       supportPhone: str('support_phone'),
       supportHours: str('support_hours'),
@@ -875,6 +1085,13 @@ const getCompanyInfoCached = unstable_cache(
       expressShippingPaise: toPaiseSetting(byKey.get('shipping_fee_express_paise')),
       codEnabled: toBoolSetting(byKey.get('cod_enabled')) ?? false,
       codFeePaise: toPaiseSetting(byKey.get('cod_fee_paise')),
+      policy: {
+        legalEffectiveDate: policyString(byKey, 'policy.legal_effective_date'),
+        damageReportWindowHours: policyInt(byKey, 'policy.damage_report_window_hours'),
+        refundSlaDays: policyString(byKey, 'policy.refund_sla_days'),
+        dispatchSlaDays: policyString(byKey, 'policy.dispatch_sla_days'),
+        deliveryEtaDays: policyString(byKey, 'policy.delivery_eta_days'),
+      },
     };
   },
   ['company-info'],
@@ -884,7 +1101,8 @@ const getCompanyInfoCached = unstable_cache(
 /**
  * The business's legal identity + contact block for the Contact and policy
  * pages (and PDP country-of-origin). Cached + `settings`-tagged so admin edits
- * propagate. Defaults from the settings catalog when a key is unset.
+ * propagate. Policy/support defaults from the settings catalog when a key is
+ * unset; the legal identity has no default and reads as empty until configured.
  */
 export async function getCompanyInfo(): Promise<CompanyInfo> {
   return getCompanyInfoCached();
@@ -900,9 +1118,15 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
  * the blanket 'products' tag on every product entry.
  */
 export async function revalidateCatalog(): Promise<void> {
-  // Tag purge (data cache) …
-  revalidateTag('products', 'max');
-  revalidateTag('categories', 'max');
+  // Tag purge (data cache). `{ expire: 0 }` expires the entries now, so the
+  // very next storefront request re-queries. Next 16's 'max' profile only
+  // marks them stale: the first request after an admin change still serves
+  // the old rows (stale-while-revalidate), which is how a freshly uploaded
+  // product photo kept showing the seed placeholder for one more page view.
+  // (`updateTag` expires immediately too but is Server-Action-only; these
+  // purges run from Route Handlers.)
+  revalidateTag('products', { expire: 0 });
+  revalidateTag('categories', { expire: 0 });
   // … plus explicit path revalidation, which is the reliable purge on this
   // Next setup (tag purge alone was observed to miss the built data cache).
   // 'page' invalidates every /product/[slug] instance without needing a slug.

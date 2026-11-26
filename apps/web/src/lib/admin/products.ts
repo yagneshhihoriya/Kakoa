@@ -17,6 +17,7 @@ import {
   productVariants,
 } from '@kakoa/db';
 import { and, asc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
+import type { TaxDefault } from '@platform/kernel';
 import { revalidateCatalog } from '@/lib/catalog/queries';
 import { withConstraintMapping } from './db-errors';
 import {
@@ -135,7 +136,6 @@ export interface AdminProductDetail {
   attributes: Record<string, unknown>;
   /** Storefront content columns (drive the PDP). */
   blurb: string;
-  tastingNotes: string[];
   ingredients: string;
   allergens: string;
   nutritionFacts: Record<string, string> | null;
@@ -152,6 +152,8 @@ export interface AdminProductDetail {
     pricePaise: number;
     weightGrams: number;
     stockQuantity: number;
+    gstRateBp: number;
+    hsnCode: string;
     isDefault: boolean;
     isActive: boolean;
   }[];
@@ -172,6 +174,8 @@ export async function getProductForEdit(
       pricePaise: productVariants.pricePaise,
       weightGrams: productVariants.weightGrams,
       stockQuantity: productVariants.stockQuantity,
+      gstRateBp: productVariants.gstRateBp,
+      hsnCode: productVariants.hsnCode,
       isDefault: productVariants.isDefault,
       isActive: productVariants.isActive,
     })
@@ -194,7 +198,6 @@ export async function getProductForEdit(
     active: p.isActive,
     attributes: (p.attributes as Record<string, unknown>) ?? {},
     blurb: p.blurb,
-    tastingNotes: p.tastingNotes,
     ingredients: p.ingredients,
     allergens: p.allergens,
     nutritionFacts: (p.nutritionFacts as Record<string, string> | null) ?? null,
@@ -286,7 +289,6 @@ export async function updateProduct(
         categoryId: patch.categoryId,
         attributes: patch.attributes,
         blurb: c.blurb,
-        tastingNotes: c.tastingNotes,
         ingredients: c.ingredients,
         allergens: c.allergens,
         nutritionFacts: c.nutritionFacts,
@@ -520,17 +522,30 @@ export type VariantResult =
  * a product is forced to be the default (checkout needs one); a variant can also
  * request default — which unsets the previous default in the same tx to honour
  * the one-default-per-product unique index. `shipWeightGrams` defaults to net
- * weight (refine later in a fulfilment pass). Audited in-tx.
+ * weight (refine later in a fulfilment pass). The tax class (`gstRateBp` /
+ * `hsnCode`) comes from the body, else from the vertical preset's
+ * `taxDefaults` — the columns have no database default, so this is the ONE
+ * place a new SKU's tax class is decided. Audited in-tx.
  */
 export async function createVariant(
   productId: string,
   input: unknown,
   adminUserId: string,
+  taxDefaults: TaxDefault,
 ): Promise<VariantResult> {
   if (!isUuid(productId)) return { ok: false, code: 'NOT_FOUND', message: "We couldn't find that product." };
   const parsed = validateVariantInput(input);
   if (!parsed.ok) return { ok: false, code: 'VALIDATION_ERROR', message: parsed.message };
   const v: VariantInput = parsed.value;
+  const gstRateBp = v.gstRateBp ?? taxDefaults.rateBp;
+  const hsnCode = v.hsnCode ?? taxDefaults.code;
+  if (hsnCode === undefined) {
+    return {
+      ok: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Enter an HSN code — this business has no default tax classification code.',
+    };
+  }
 
   const result = await withConstraintMapping<VariantResult>(() =>
     db.transaction(async (tx): Promise<VariantResult> => {
@@ -579,6 +594,8 @@ export async function createVariant(
         sku: v.sku,
         name: v.name,
         pricePaise: v.pricePaise,
+        gstRateBp,
+        hsnCode,
         weightGrams: v.weightGrams,
         shipWeightGrams: v.weightGrams,
         stockQuantity: v.stockQuantity,
@@ -593,7 +610,7 @@ export async function createVariant(
       entityType: 'variant',
       entityId: row.id,
       before: null,
-      after: { productId, sku: v.sku, pricePaise: v.pricePaise, isDefault: makeDefault },
+      after: { productId, sku: v.sku, pricePaise: v.pricePaise, gstRateBp, hsnCode, isDefault: makeDefault },
     });
     return { ok: true, id: row.id };
     }),
@@ -606,7 +623,9 @@ export async function createVariant(
 /**
  * Update a variant. Promoting to default unsets the prior default in-tx. A
  * default variant cannot be deactivated (promote another first) — this keeps
- * the default always active so publish/checkout have a valid default. Audited.
+ * the default always active so publish/checkout have a valid default. The tax
+ * class is updated only when the body carries it (the editor always does);
+ * an omitted field keeps the stored value. Audited.
  */
 export async function updateVariant(
   productId: string,
@@ -681,6 +700,8 @@ export async function updateVariant(
         shipWeightGrams: v.weightGrams,
         stockQuantity: v.stockQuantity,
         isActive: v.isActive,
+        ...(v.gstRateBp !== undefined ? { gstRateBp: v.gstRateBp } : {}),
+        ...(v.hsnCode !== undefined ? { hsnCode: v.hsnCode } : {}),
         // Never turn the current default OFF here; only promotion sets it true.
         ...(promoteDefault ? { isDefault: true } : {}),
         updatedAt: sql`now()`,

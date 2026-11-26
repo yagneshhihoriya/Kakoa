@@ -70,9 +70,14 @@ export interface CreateShipmentInput {
   items: CreateShipmentItem[];
   /** Total packed weight in grams (> 0, validated by the caller). */
   weightGrams: number;
-  lengthCm?: number;
-  breadthCm?: number;
-  heightCm?: number;
+  /**
+   * Outer parcel dimensions in cm — ALWAYS decided by the caller (variant
+   * physicals when every line carries them, else the vertical preset's
+   * `defaultParcelCm`); the provider never invents a box size.
+   */
+  lengthCm: number;
+  breadthCm: number;
+  heightCm: number;
 }
 
 /** A normalized courier scan (from `track` / webhook), pre-mapping. */

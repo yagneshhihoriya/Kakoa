@@ -3,16 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import type { AttributeDef } from "@platform/kernel";
+import type { AttributeDef, TaxDefault } from "@platform/kernel";
 import { VariantEditor } from "@/components/admin/VariantEditor";
 import { ProductImagesCard } from "@/components/admin/ProductImagesCard";
 import { PRODUCT_BADGES } from "@/lib/admin/product-validation";
+import { presetHas, vocabulary } from "@/lib/brand";
 
-const TONE_OPTIONS = ["dark", "milk", "caramel", "ruby", "white", "matcha"] as const;
-
-/** Attribute keys that now have dedicated content editors — hide from the generic list. */
+/** Attribute keys that have dedicated content editors — hide from the generic list. */
 const CONTENT_ATTR_KEYS = new Set([
-  "tasting_notes",
   "tone",
   "whatYoullGet",
   "shipping",
@@ -44,6 +42,8 @@ interface Variant {
   pricePaise: number;
   weightGrams: number;
   stockQuantity: number;
+  gstRateBp: number;
+  hsnCode: string;
   isDefault: boolean;
   isActive: boolean;
 }
@@ -57,7 +57,6 @@ interface Product {
   active: boolean;
   attributes: Record<string, unknown>;
   blurb: string;
-  tastingNotes: string[];
   ingredients: string;
   allergens: string;
   nutritionFacts: Record<string, string> | null;
@@ -78,12 +77,18 @@ export function ProductEditForm({
   product,
   categories,
   attributeSchema,
+  toneOptions,
+  taxDefaults,
   canWrite,
   canPublish,
 }: {
   product: Product;
   categories: { id: string; name: string }[];
   attributeSchema: readonly AttributeDef[];
+  /** Placeholder swatch keys from the preset's `presentation.swatches`. */
+  toneOptions: readonly string[];
+  /** Preset tax class pre-filled for new variants. */
+  taxDefaults: TaxDefault;
   canWrite: boolean;
   canPublish: boolean;
 }): React.ReactNode {
@@ -96,7 +101,6 @@ export function ProductEditForm({
   // Hidden from the admin UI (moved to storefront accordions / retired), but the
   // persisted values are still seeded + re-sent on save so no data is wiped by
   // updateProduct's unconditional column write. See PdpDetails for display.
-  const [tastingNotes] = useState(product.tastingNotes.join(", "));
   const [ingredients] = useState(product.ingredients);
   const [allergens] = useState(product.allergens);
   const [nutrition] = useState(recordToLines(product.nutritionFacts));
@@ -129,7 +133,6 @@ export function ProductEditForm({
           categoryId,
           attributes: attrs,
           blurb,
-          tastingNotes: tastingNotes.split(",").map((s) => s.trim()).filter((s) => s !== ""),
           ingredients,
           allergens,
           nutritionFacts: linesToRecord(nutrition),
@@ -241,7 +244,7 @@ export function ProductEditForm({
               <textarea id="p-wyg" rows={4} className={INPUT}
                 value={typeof attrs.whatYoullGet === "string" ? attrs.whatYoullGet : ""}
                 disabled={!canWrite}
-                placeholder={"One 70 g bar, individually wrapped and ready to enjoy or gift."}
+                placeholder={vocabulary.packaging.whatYoullGet}
                 onChange={(e) => setAttr("whatYoullGet", e.target.value)} />
               <p className="mt-1 text-[11px] text-[#8a7a68]">Shown in the “What You’ll Get” accordion. Leave blank for a default line.</p>
             </div>
@@ -250,7 +253,10 @@ export function ProductEditForm({
               <textarea id="p-shipping" rows={4} className={INPUT}
                 value={typeof attrs.shipping === "string" ? attrs.shipping : ""}
                 disabled={!canWrite}
-                placeholder={"Ships cold & insulated. Free shipping over ₹999. Dispatched in 1–2 business days."}
+                placeholder={
+                  (vocabulary.packaging.trustLabel === null ? "" : `${vocabulary.packaging.trustLabel}. `) +
+                  "Free shipping over ₹999. Dispatched in 1–2 business days."
+                }
                 onChange={(e) => setAttr("shipping", e.target.value)} />
               <p className="mt-1 text-[11px] text-[#8a7a68]">Shown in the “Shipping” accordion. Leave blank for the store’s standard shipping info.</p>
             </div>
@@ -279,33 +285,41 @@ export function ProductEditForm({
                 <label className={LABEL} htmlFor="p-tone">Tone (art direction)</label>
                 <select id="p-tone" className={INPUT} value={tone} disabled={!canWrite}
                   onChange={(e) => setTone(e.target.value)}>
-                  {TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {toneOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {/* A stored value outside the palette stays selectable so a save doesn't silently change it. */}
+                  {!toneOptions.includes(tone) ? <option value={tone}>{tone} (not in palette)</option> : null}
                 </select>
               </div>
             </div>
-            {/* Tasting notes / Ingredients / Allergens / Nutrition inputs
-                retired from the admin UI (storefront no longer renders them as
-                separate fields). Existing values are preserved via the seeded
-                state above + save() payload. Use "What you'll get" (Attributes
-                card) for the storefront copy. */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className={LABEL} htmlFor="p-shelf">Shelf life (days)</label>
-                <input id="p-shelf" type="number" min={1} className={INPUT} value={shelfLifeDays} disabled={!canWrite}
-                  onChange={(e) => setShelfLifeDays(e.target.value)} />
+            {/* Ingredients / Allergens / Nutrition inputs retired from the admin
+                UI (storefront no longer renders them as separate fields).
+                Existing values are preserved via the seeded state above +
+                save() payload. Tasting notes are a preset attribute now
+                (Attributes card). */}
+            {/* Perishable verticals only — the PDP's "Shelf life / Best before /
+                Storage" rows render from these (PdpDetails). */}
+            {presetHas("perishable") ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={LABEL} htmlFor="p-shelf">Shelf life (days from packing)</label>
+                  <input id="p-shelf" type="number" min={1} className={INPUT} value={shelfLifeDays} disabled={!canWrite}
+                    onChange={(e) => setShelfLifeDays(e.target.value)} />
+                </div>
+                <div>
+                  <label className={LABEL} htmlFor="p-storage">Storage</label>
+                  <input id="p-storage" className={INPUT} value={storage} disabled={!canWrite}
+                    placeholder="Store in a cool, dry place, away from sunlight"
+                    onChange={(e) => setStorage(e.target.value)} />
+                </div>
               </div>
-              <div>
-                <label className={LABEL} htmlFor="p-storage">Storage</label>
-                <input id="p-storage" className={INPUT} value={storage} disabled={!canWrite}
-                  placeholder="Store below 18°C, away from sunlight"
-                  onChange={(e) => setStorage(e.target.value)} />
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-[13px] text-[#5c4b3a]">
-              <input type="checkbox" className="h-4 w-4 accent-[#2a1d12]" checked={isVeg} disabled={!canWrite}
-                onChange={(e) => setIsVeg(e.target.checked)} />
-              Vegetarian (green FSSAI mark)
-            </label>
+            ) : null}
+            {presetHas("veg-mark") ? (
+              <label className="flex items-center gap-2 text-[13px] text-[#5c4b3a]">
+                <input type="checkbox" className="h-4 w-4 accent-[#2a1d12]" checked={isVeg} disabled={!canWrite}
+                  onChange={(e) => setIsVeg(e.target.checked)} />
+                Vegetarian (green FSSAI mark)
+              </label>
+            ) : null}
           </div>
         </Card>
 
@@ -335,6 +349,7 @@ export function ProductEditForm({
           <VariantEditor
             productId={product.id}
             initial={product.variants}
+            taxDefaults={taxDefaults}
             canWrite={canWrite}
           />
         </Card>

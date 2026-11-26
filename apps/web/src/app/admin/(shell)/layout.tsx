@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { adminRegistry } from "@/lib/admin/modules";
@@ -80,13 +81,13 @@ export default async function AdminShellLayout({
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center justify-end gap-4 border-b border-[#eadbc6] bg-white/80 px-6 py-3 backdrop-blur">
-          <button
-            type="button"
+          <Link
+            href="/admin/notifications"
             aria-label="Notifications"
             className="grid h-9 w-9 place-items-center rounded-full text-[#6b5844] transition-colors hover:bg-[#f3e7d5]"
           >
             <AdminIcon name="bell" className="h-[18px] w-[18px]" />
-          </button>
+          </Link>
           <div className="flex items-center gap-2.5">
             <div className="text-right leading-tight">
               <div className="text-[13px] font-semibold text-[#2a1d12]">

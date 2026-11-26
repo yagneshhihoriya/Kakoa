@@ -3,6 +3,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { resolveAdminContext } from "@/lib/admin/context";
 import { getSellerTaxIdentity, listTaxGroups } from "@/lib/admin/taxes";
+import { LegalIdentityBanner } from "@/components/admin/LegalIdentityBanner";
 import { NoAccess } from "@/components/admin/NoAccess";
 import { TaxGroupsTable } from "@/components/admin/TaxGroupsTable";
 
@@ -27,9 +28,11 @@ export default async function AdminTaxesPage(): Promise<ReactNode> {
         </p>
       </div>
 
+      <LegalIdentityBanner missing={seller.missing} linkToSettings />
+
       {/* Seller GST identity (read-only; edited in Settings) */}
       <div className="mb-4 rounded-2xl border border-[#eadbc6] bg-white p-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="text-[12px] font-semibold uppercase tracking-wider text-[#8a7a68]">Seller GST identity</div>
           <Link href={"/admin/settings" as Route} className="text-[12px] font-medium text-[#8a5a34] hover:underline">
             Edit in Settings →
@@ -55,7 +58,7 @@ export default async function AdminTaxesPage(): Promise<ReactNode> {
         <div className="mb-1 font-semibold text-[#2a1d12]">How GST is applied</div>
         <p>
           Prices are GST-inclusive. At checkout the tax is extracted from the price using the variant’s rate, then split{" "}
-          <span className="font-medium">CGST + SGST</span> when the buyer’s state matches the seller’s state ({seller.stateName ?? seller.stateCode}),
+          <span className="font-medium">CGST + SGST</span> when the buyer’s state matches the seller’s state ({seller.stateName ?? (seller.stateCode || "not configured")}),
           or charged as <span className="font-medium">IGST</span> for other states.
         </p>
         <p className="mt-1.5">

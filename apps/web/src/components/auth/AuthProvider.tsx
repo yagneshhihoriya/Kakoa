@@ -103,17 +103,20 @@ export function AuthProvider({
   }, []);
 
   // `?login=1` deep-link (e.g. account page redirect) opens the sheet once,
-  // then strips the param so a refresh/back doesn't re-open it.
+  // then strips the param so a refresh/back doesn't re-open it. The flag is
+  // read from the live URL rather than `searchParams`: on a statically cached
+  // route (the home page, which `/login` redirects to) the hook's value can
+  // lag the address bar on first paint and the sheet never opened. The hook
+  // stays in the deps so client-side navigations still re-run the check.
   useEffect(() => {
     if (status !== "ready") return;
-    if (searchParams.get("login") !== "1") return;
-    if (customer !== null) {
-      // Already signed in — just clean the URL.
-      router.replace(pathname as Route);
-      return;
-    }
-    setIsOpen(true);
-    router.replace(pathname as Route);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") !== "1") return;
+    if (customer === null) setIsOpen(true);
+    // Already signed in → just clean the URL; keep any other params.
+    params.delete("login");
+    const qs = params.toString();
+    router.replace((qs === "" ? pathname : `${pathname}?${qs}`) as Route);
   }, [status, searchParams, customer, pathname, router]);
 
   const value = useMemo<AuthContextValue>(

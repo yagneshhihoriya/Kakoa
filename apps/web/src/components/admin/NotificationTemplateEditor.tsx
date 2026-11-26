@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { renderTemplate } from "@/lib/admin/notification-catalog";
+import { EXAMPLE_ORDER_NUMBER, ORDER_NUMBER_PREFIX } from "@/lib/brand";
+import { siteUrl } from "@/lib/seo/site";
 
 interface Template {
   key: string;
@@ -17,12 +19,13 @@ interface Template {
   updatedAt: string | null;
 }
 
+/** Preview substitution values — brand-prefixed, same as the server send-test. */
 const SAMPLE: Record<string, string> = {
-  orderNumber: "KK-TEST01",
+  orderNumber: EXAMPLE_ORDER_NUMBER,
   customerName: "Test Customer",
-  trackingUrl: "https://kakoa.in/account/track?order=KK-TEST01",
+  trackingUrl: `${siteUrl()}/account/track?order=${EXAMPLE_ORDER_NUMBER}`,
   amount: "₹1,299.00",
-  awb: "KKTEST12345",
+  awb: `${ORDER_NUMBER_PREFIX}TEST12345`,
   courierName: "Mock Express",
   eta: "Fri, 10 Jul",
 };

@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { DM_Serif_Display, DM_Mono, Poppins } from "next/font/google";
-import localFont from "next/font/local";
+import { fonts } from "@brand/fonts";
+import { assertBrandMatchesEnv, brand } from "@/lib/brand";
 import {
-  BRAND,
   absoluteUrl,
   isProductionEnv,
   serializeJsonLd,
@@ -11,87 +10,54 @@ import {
 } from "@/lib/seo/site";
 import { Analytics } from "@/components/analytics/Analytics";
 import "./globals.css";
+// AFTER globals.css: the pack's unlayered :root override wins over @theme.
+import "@brand/theme.css";
 
-const fontDisplay = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-});
+const { profile, copy } = brand;
 
-/**
- * Infini (Sandrine Nugue, CNAP 2014) — the UI/body face. Self-hosted because it
- * is not on Google Fonts. Served as the ORIGINAL unmodified OTFs on purpose:
- * Infini is CC BY-ND, which forbids altering the work, so converting to WOFF2
- * (or subsetting) would be a derivative. Costs ~110 KB per cut over WOFF2.
- * Attribution is required — see fonts/LICENSE.txt.
- */
-const fontBody = localFont({
-  src: [
-    { path: "./fonts/infini-romain.otf", weight: "400", style: "normal" },
-    { path: "./fonts/infini-italique.otf", weight: "400", style: "italic" },
-    { path: "./fonts/infini-gras.otf", weight: "700", style: "normal" },
-  ],
-  variable: "--font-body",
-  display: "swap",
-});
+/** Home <title> — inner pages get the `template` suffix instead. */
+const SITE_TITLE = `${profile.name} · ${copy.titleTagline}`;
 
-/**
- * Poppins — the site "chrome" face, used by the header and footer, which are
- * styled to match the Valrhona reference. Deliberately NOT the body face; page
- * content stays on Infini via --font-body.
- */
-const fontUi = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-ui",
-  display: "swap",
-});
-
-const fontMono = DM_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
-});
-
-const SITE_DESCRIPTION =
-  "Small-batch bean-to-bar chocolate, crafted in India. Bars, pralines, and signature collections.";
+/** BCP-47 "en-IN" → the <html lang> language and the OpenGraph "en_IN" locale. */
+const LANG = profile.locale.slice(0, 2);
+const OG_LOCALE = profile.locale.replace("-", "_");
 
 /**
  * Root metadata. `metadataBase` makes every relative canonical / OG URL a page
  * sets resolve to an absolute one (crawlers reject relative OG images). The
- * title `template` gives inner pages a "Page · KAKOA" suffix while the home
+ * title `template` gives inner pages a "Page · <brand>" suffix while the home
  * page keeps the bare `default`.
  */
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: `${BRAND.name} · Small-Batch Chocolate`,
-    template: `%s · ${BRAND.name}`,
+    default: SITE_TITLE,
+    template: `%s · ${profile.name}`,
   },
-  description: SITE_DESCRIPTION,
-  applicationName: BRAND.name,
+  description: profile.seo.description,
+  applicationName: profile.name,
   // Belt-and-braces with robots.txt: a meta X-Robots-Tag noindex on every page
   // for non-production hosts (preview/staging), off the same predicate.
   ...(isProductionEnv() ? {} : { robots: { index: false, follow: false } }),
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    siteName: BRAND.name,
-    title: `${BRAND.name} · Small-Batch Chocolate`,
-    description: SITE_DESCRIPTION,
+    siteName: profile.name,
+    title: SITE_TITLE,
+    description: profile.seo.description,
     url: siteUrl(),
-    locale: "en_IN",
+    locale: OG_LOCALE,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${BRAND.name} · Small-Batch Chocolate`,
-    description: SITE_DESCRIPTION,
+    title: SITE_TITLE,
+    description: profile.seo.description,
   },
 };
 
-/** Emits <meta name="theme-color"> so the mobile browser address bar takes the cocoa tint. */
+/** Emits <meta name="theme-color"> so the mobile browser address bar takes the brand tint. */
 export const viewport: Viewport = {
-  themeColor: BRAND.themeColor,
+  themeColor: profile.themeColor,
 };
 
 /**
@@ -102,31 +68,33 @@ export const viewport: Viewport = {
 const ORGANIZATION_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: BRAND.name,
+  name: profile.name,
   url: siteUrl(),
   logo: absoluteUrl("/icon"),
-  description: SITE_DESCRIPTION,
+  description: profile.seo.description,
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer support",
-    email: "support@kakoa.in",
-    areaServed: "IN",
-    availableLanguage: ["en", "hi"],
+    email: profile.defaults.support_email,
+    areaServed: profile.country,
+    availableLanguage: [...profile.availableLanguages],
   },
   address: {
     "@type": "PostalAddress",
-    addressCountry: "IN",
-    addressRegion: "Maharashtra",
+    addressCountry: profile.country,
+    addressRegion: profile.organization.addressRegion,
   },
 } as const;
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
+  // Fail fast if this build's pack is not the brand the environment names.
+  assertBrandMatchesEnv();
   return (
     <html
-      lang="en"
-      className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} ${fontUi.variable}`}
+      lang={LANG}
+      className={`${fonts.display.variable} ${fonts.body.variable} ${fonts.mono.variable} ${fonts.ui.variable}`}
     >
       <body>
         <script

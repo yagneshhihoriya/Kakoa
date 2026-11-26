@@ -5,11 +5,13 @@ import type { ProductDetailView } from "@kakoa/core";
 import { formatPaise } from "@kakoa/core";
 import { StarRating } from "@kakoa/ui";
 import { absoluteUrl } from "@/lib/seo/site";
+import { brand, vocabulary } from "@/lib/brand";
 import {
   getCatalogSettings,
   getCategories,
   getCompanyInfo,
   getProductBySlug,
+  getPublishedProductSlugs,
 } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PdpGallery } from "@/components/catalog/pdp/PdpGallery";
@@ -23,22 +25,14 @@ import { getDefaultVariantIds } from "../../shop/default-variants";
 /** ISR: tag-driven purges (`product:{slug}`) + 5-min time fallback. */
 export const revalidate = 300;
 
-/** The 10 Phase-0 seeded slugs (packages/db/src/seed.ts) — prebuilt at deploy. */
-const SEEDED_SLUGS = [
-  "midnight-72-dark",
-  "sea-salt-caramel-bar",
-  "roasted-hazelnut-crunch",
-  "madagascar-85-single-origin",
-  "truffle-noir",
-  "pistachio-praline-collection",
-  "salted-caramel-pralines",
-  "raspberry-ganache-squares",
-  "single-origin-tasting-library",
-  "kakoa-celebration-hamper",
-] as const;
-
-export function generateStaticParams(): { slug: string }[] {
-  return SEEDED_SLUGS.map((slug) => ({ slug }));
+/**
+ * Prebuild every published PDP at deploy (the same visibility predicate as the
+ * shop grid), whatever catalogue this brand's database holds. An unreachable
+ * database prerenders nothing and every PDP renders on demand (ISR).
+ */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const published = await getPublishedProductSlugs().catch(() => []);
+  return published.map(({ slug }) => ({ slug }));
 }
 
 interface ProductPageProps {
@@ -64,10 +58,10 @@ export async function generateMetadata({
     description: product.blurb,
     alternates: { canonical: `/product/${slug}` },
     openGraph: {
-      title: `${product.name} · KAKOA`,
+      title: `${product.name} · ${brand.profile.name}`,
       description: product.blurb,
       type: "website",
-      siteName: "KAKOA",
+      siteName: brand.profile.name,
       url: `/product/${slug}`,
       ...(ogImage !== null ? { images: [{ url: ogImage, alt: product.name }] } : {}),
     },
@@ -109,7 +103,7 @@ function buildProductJsonLd(product: ProductDetailView, slug: string): string {
         name: product.name,
         description: product.blurb,
         ...(defaultVariant !== undefined ? { sku: defaultVariant.sku } : {}),
-        brand: { "@type": "Brand", name: "KAKOA" },
+        brand: { "@type": "Brand", name: brand.profile.name },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",
@@ -183,10 +177,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     .map((v) => `${v.weightGrams} g (${v.name})`)
     .join(" · ");
 
-  /** "What you'll get" — admin copy (attributes.whatYoullGet) or a graceful default. */
-  const whatYoullGet =
-    product.whatYoullGet ??
-    "Freshly made in small batches and packed ready to enjoy or gift. Every order ships cold and insulated so it arrives in perfect condition.";
+  /** "What you'll get" — admin copy (attributes.whatYoullGet) or the vertical's default. */
+  const whatYoullGet = product.whatYoullGet ?? vocabulary.packaging.whatYoullGet;
 
   /** FBT bundle math — default-variant price + the smallest size of each. */
   const defaultVariant =
@@ -295,6 +287,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             codEnabled={settings.codEnabled}
             ingredients={product.ingredients}
             allergens={product.allergens}
+            declaredAllergens={product.declaredAllergens}
             nutritionFacts={product.nutritionFacts}
             isVeg={product.isVeg}
             netQuantities={netQuantities}
@@ -306,7 +299,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
       </div>
 
-      {/* Frequently bought together — reference `#F6EEE1` band. Degrades to
+      {/* Frequently bought together — reference `cream-2` band. Degrades to
           omission when the co-occurrence query returned []. */}
       {product.frequentlyBoughtTogether.length > 0 ? (
         <Reveal index={2} className="mt-16">
@@ -342,7 +335,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             >
               You may also like
             </h2>
-            <ul className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:gap-[22px] lg:grid-cols-4">
               {product.related.map((card) => (
                 <li key={card.id}>
                   <ProductCard product={card} className="h-full" />

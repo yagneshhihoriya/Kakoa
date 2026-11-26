@@ -1,0 +1,31 @@
+import { KAKOA } from "@kakoa/brands/kakoa";
+import type { BrandPack } from "../contract";
+import { copy } from "./copy";
+import { email } from "./email";
+import { buildFaq } from "./faq";
+import { journal } from "./journal";
+import { legal } from "./legal";
+import { icon, og } from "./og";
+
+/**
+ * The KAKOA pack. Fonts (`./fonts`), the logo mark (`./Mark`), illustrations
+ * (`./illustrations`) and imagery (`./assets`) are imported by their consumers
+ * directly so this entry stays free of next/font, component and static-image
+ * side effects (client components and unit tests import it).
+ */
+export const brand = {
+  profile: KAKOA,
+  copy,
+  faq: buildFaq,
+  legal,
+  journal,
+  og,
+  icon,
+  email,
+  // Infini is CC BY-ND 3.0 — attribution is a licence condition, rendered in
+  // the footer legal bar (see fonts.ts).
+  fontAttribution: {
+    text: "Typeset in Infini by Sandrine Nugue (CNAP), CC BY-ND 3.0",
+    href: "https://creativecommons.org/licenses/by-nd/3.0/",
+  },
+} satisfies BrandPack;

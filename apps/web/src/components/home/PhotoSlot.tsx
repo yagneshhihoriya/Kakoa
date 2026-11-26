@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { SafeImage } from "@/components/media/SafeImage";
 
 /**
  * Photo-ready presentational slot. When `src` is provided it renders a real
  * `next/image` (cover-fit, fills the positioned parent); otherwise it falls
- * back to `children` — typically a `ChocoScene`/`ChocoPlaceholder` gradient.
+ * back to `children` — typically the pack's Story illustration or a `ProductPlaceholder` gradient.
  *
  * The caller owns the frame (aspect-ratio, radius, clip, positioning); this
  * component only decides "real photo or art-directed placeholder", so real
@@ -32,7 +32,7 @@ export function PhotoSlot({
 }: PhotoSlotProps): ReactNode {
   if (typeof src === "string" && src !== "") {
     return (
-      <Image
+      <SafeImage
         src={src}
         alt={alt}
         fill

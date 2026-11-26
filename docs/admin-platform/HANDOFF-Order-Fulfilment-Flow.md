@@ -79,7 +79,8 @@ So you're not refreshing all day.
 - **Simplest (do this first):** on new order, send an **admin email/SMS alert** (best‑effort, via the
   Notifications module) — "New order #KK‑… ₹X — N items." Add a `sendAdminNewOrderAlert(orderId)` in
   `lib/email/send.ts`, called from the same place as `sendOrderConfirmation` (`checkout/place.ts` +
-  `checkout/confirm.ts`), gated by a `store_settings` recipient (`ops_alert_email` / `ops_alert_phone`).
+  `checkout/confirm.ts`), gated by a `store_settings` recipient (`ops.alert_email` / `ops.alert_phone` —
+  the namespaced keys in the Settings catalog's Operations group).
 - **Nicer (optional):** a lightweight **live badge** on the admin Orders nav — poll `/api/admin/orders?
   status=confirmed&since=…` every ~30s from a client component and show an unseen‑count badge (no
   websocket infra needed). A true push/SSE is a later nicety; the email alert covers the need now.

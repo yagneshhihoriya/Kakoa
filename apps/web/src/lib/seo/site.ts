@@ -1,22 +1,15 @@
 /**
  * SEO shared building blocks — Module: content-blog-seo.
  *
- * Single source of truth for the site origin, brand constants, and the
- * JSON-LD serializer used across metadata routes (robots/sitemap/manifest),
- * the root layout, the storefront layout, /shop, and the PDP.
+ * Single source of truth for the site origin and the JSON-LD serializer used
+ * across metadata routes (robots/sitemap/manifest), the root layout, the
+ * storefront layout, /shop, and the PDP. Brand identity (name, palette) lives
+ * in the brand profile — `import { brand } from "@/lib/brand"`.
  *
  * `NEXT_PUBLIC_SITE_URL` is a required boot env (packages/config); we still
  * degrade to VERCEL_URL / localhost so a metadata route can never throw at
  * request time and 500 a crawler.
  */
-
-/** Brand palette used by manifest + generated icons (cocoa / cream). */
-export const BRAND = {
-  name: "KAKOA",
-  shortName: "KAKOA",
-  themeColor: "#2A1D12",
-  backgroundColor: "#FBF6EF",
-} as const;
 
 /**
  * Absolute site origin without a trailing slash. Prefers the required

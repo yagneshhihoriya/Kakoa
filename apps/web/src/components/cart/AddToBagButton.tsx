@@ -9,7 +9,11 @@ import {
 } from "react";
 import { cx } from "@kakoa/ui";
 import { useToast } from "@kakoa/ui/client";
-import { ADD_TO_BAG_CLASSES } from "@/components/cart/add-to-bag-classes";
+import {
+  ADD_TO_BAG_CLASSES,
+  ADD_TO_BAG_ICON_CLASSES,
+} from "@/components/cart/add-to-bag-classes";
+import { BagCheckIcon, BagPlusIcon } from "@/components/cart/bag-icons";
 import { useCart } from "@/components/cart/CartProvider";
 import { useAddedToBag } from "@/components/cart/AddedToBagSheet";
 
@@ -35,6 +39,12 @@ export interface AddToBagButtonProps {
   className?: string;
   /** Resting CTA label. Defaults to "Add" (card price-row pill). */
   label?: string;
+  /**
+   * `pill` (default) — the price-row CTA with a text label.
+   * `icon` — the square bag+plus tile that sits in the photo corner on phone
+   * grids; the label lives in `aria-label` and the added state swaps the glyph.
+   */
+  variant?: "pill" | "icon";
 }
 
 /**
@@ -48,6 +58,7 @@ export function AddToBagButton({
   productName,
   className,
   label = "Add",
+  variant = "pill",
 }: AddToBagButtonProps): ReactNode {
   const { toast } = useToast();
   const { addItem } = useCart();
@@ -94,6 +105,25 @@ export function AddToBagButton({
       }
     });
   };
+
+  if (variant === "icon") {
+    return (
+      <button
+        type="button"
+        onClick={handleAdd}
+        aria-label={added ? `${productName} added to bag` : `Add ${productName} to bag`}
+        className={cx(ADD_TO_BAG_ICON_CLASSES, className)}
+      >
+        {added ? (
+          <span className="inline-grid animate-[kk-pop_0.4s_ease-out] motion-reduce:animate-none">
+            <BagCheckIcon />
+          </span>
+        ) : (
+          <BagPlusIcon />
+        )}
+      </button>
+    );
+  }
 
   return (
     <button

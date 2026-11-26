@@ -1,21 +1,21 @@
 import type { MetadataRoute } from "next";
-import { BRAND } from "@/lib/seo/site";
+import { brand } from "@/lib/brand";
 
 /**
  * PWA web app manifest — brand identity for installable/standalone mode.
  * Icons reference the build-time generated `app/icon.tsx` output at their
- * conventional public paths; theme/background use the cocoa/cream brand.
+ * conventional public paths; theme/background come from the brand profile.
  */
 export default function manifest(): MetadataRoute.Manifest {
+  const { profile } = brand;
   return {
-    name: BRAND.name,
-    short_name: BRAND.shortName,
-    description:
-      "Small-batch bean-to-bar chocolate, crafted in India. Bars, pralines, and signature collections.",
+    name: profile.name,
+    short_name: profile.shortName,
+    description: profile.seo.description,
     start_url: "/",
     display: "standalone",
-    background_color: BRAND.backgroundColor,
-    theme_color: BRAND.themeColor,
+    background_color: profile.backgroundColor,
+    theme_color: profile.themeColor,
     icons: [
       {
         src: "/icon-192.png",

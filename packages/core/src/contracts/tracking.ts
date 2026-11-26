@@ -27,14 +27,48 @@ import type { PAYMENT_MODES } from '../enums';
 /* ------------------------------------------------------------------ */
 
 /**
- * Human order number: `KK-` + exactly 5 digits (e.g. `KK-48210`). Pinned to
- * five digits to match the tracking lookup contract; wider order numbers are a
- * separate (future) concern and are rejected here rather than silently matched.
+ * Order-number prefix: 2–4 upper-case letters (`KK`, `KH`, …). The brand's
+ * `identifierPrefix`; validated here so a malformed prefix can never build a
+ * permissive regex.
  */
-const orderNumberSchema = z
+const ORDER_PREFIX_RE = /^[A-Z]{2,4}$/;
+
+/**
+ * Human order number: `<PREFIX>-` + exactly 5 digits (e.g. `KK-48210`). Pinned
+ * to five digits to match the tracking lookup contract; wider order numbers are
+ * a separate (future) concern and are rejected here rather than silently
+ * matched. The prefix is the brand's `identifierPrefix` — core must not import
+ * brands, so this is a factory and the app binds it once (lib/brand.ts).
+ */
+export function makeOrderNumberRegex(prefix: string): RegExp {
+  if (!ORDER_PREFIX_RE.test(prefix)) {
+    throw new Error(`Order-number prefix must be 2–4 upper-case letters (got ${JSON.stringify(prefix)})`);
+  }
+  return new RegExp(`^${prefix}-\\d{5}$`);
+}
+
+/** An example order number for placeholders / error messages (`KK-48210`). */
+export function exampleOrderNumber(prefix: string): string {
+  return `${prefix}-48210`;
+}
+
+export function makeOrderNumberSchema(prefix: string): z.ZodString {
+  const re = makeOrderNumberRegex(prefix);
+  return z
+    .string()
+    .trim()
+    .regex(re, `Enter a valid order number (e.g., ${exampleOrderNumber(prefix)}).`);
+}
+
+/**
+ * Prefix-agnostic order number — ANY 2–4-letter prefix + 5 digits. The shape
+ * every brand's numbers share; a brand-bound schema (`makeOrderNumberSchema`)
+ * is what the routes actually validate with.
+ */
+const anyOrderNumberSchema = z
   .string()
   .trim()
-  .regex(/^KK-\d{5}$/, "Enter a valid order number (e.g., KK-48210).");
+  .regex(/^[A-Z]{2,4}-\d{5}$/, 'Enter a valid order number.');
 
 /**
  * Indian mobile INPUT for lookup: accepts the raw `+91`/`91`/`0`/bare
@@ -102,10 +136,20 @@ const cancelReasonSchema = z
  * `POST /api/orders/lookup/request-otp` body. Fires an OTP to the order's
  * contact phone IFF `{orderNumber, phone}` match — but the route returns an
  * identical `200` regardless, so this schema is the ONLY gate the client sees.
+ * `makeLookupRequestSchema(prefix)` binds the brand's order-number prefix; the
+ * bare export accepts any brand's shape (same output type).
  */
+export function makeLookupRequestSchema(prefix: string) {
+  return z
+    .object({
+      orderNumber: makeOrderNumberSchema(prefix),
+      phone: phoneLookupSchema,
+    })
+    .strict();
+}
 export const lookupRequestSchema = z
   .object({
-    orderNumber: orderNumberSchema,
+    orderNumber: anyOrderNumberSchema,
     phone: phoneLookupSchema,
   })
   .strict();
@@ -113,11 +157,20 @@ export type LookupRequestInput = z.infer<typeof lookupRequestSchema>;
 
 /**
  * `POST /api/orders/lookup/verify` body. On success the route mints a 30-min
- * tracking JWT scoped to the resolved order.
+ * tracking JWT scoped to the resolved order. Same prefix binding as above.
  */
+export function makeLookupVerifySchema(prefix: string) {
+  return z
+    .object({
+      orderNumber: makeOrderNumberSchema(prefix),
+      phone: phoneLookupSchema,
+      code: codeSchema,
+    })
+    .strict();
+}
 export const lookupVerifySchema = z
   .object({
-    orderNumber: orderNumberSchema,
+    orderNumber: anyOrderNumberSchema,
     phone: phoneLookupSchema,
     code: codeSchema,
   })
