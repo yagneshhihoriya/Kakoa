@@ -1,6 +1,7 @@
 import type { BrandAssets } from "../../contract";
 import desktop from "./hero.jpg";
 import mobile from "./hero-mobile.jpg";
+import story from "./story.jpg";
 
 /**
  * Hero fallback — two art-directed crops of an original illustration (a
@@ -10,6 +11,8 @@ import mobile from "./hero-mobile.jpg";
  * that bundles this pack. The owner's uploaded hero (storefront.hero_image_url)
  * replaces them without a rebuild.
  */
-export const assets = {
+export const assets: BrandAssets = {
   heroPhoto: { desktop, mobile },
-} satisfies BrandAssets;
+  /** Pressing a round on the tava — generated for this pack, 5:4, ~140 KB. */
+  storyPhoto: story,
+};

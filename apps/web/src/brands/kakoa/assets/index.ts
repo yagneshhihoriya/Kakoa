@@ -7,6 +7,8 @@ import mobile from "./hero-mobile.jpg";
  * Static imports hash the files into /_next/static/media so they are cached
  * immutably and only ship in the build that bundles this pack.
  */
-export const assets = {
+export const assets: BrandAssets = {
   heroPhoto: { desktop, mobile },
-} satisfies BrandAssets;
+  /** No kitchen photograph yet — the Story illustration renders. */
+  storyPhoto: null,
+};
