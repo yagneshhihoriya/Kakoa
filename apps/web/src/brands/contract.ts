@@ -97,6 +97,16 @@ export interface ClosingCtaCopy {
  */
 export type TrustIconName = "snowflake" | "flame" | "shield" | "box";
 export type GiftIconName = "wrap" | "note" | "truck";
+/** Line icons for the process band — one per step; see components/home/CraftIcon. */
+export type ProcessIconName =
+  | "knead"
+  | "roll"
+  | "roast"
+  | "pack"
+  | "source"
+  | "flame"
+  | "conch"
+  | "temper";
 
 export interface TrustSignalCopy {
   readonly icon: TrustIconName;
@@ -114,6 +124,13 @@ export interface ProcessStepCopy {
   readonly step: string;
   readonly title: string;
   readonly body: string;
+  /** Line icon shown on the card until a photo is supplied. */
+  readonly icon: ProcessIconName;
+  /**
+   * Optional photograph of the step (4:3 crop). When set it replaces the
+   * icon; any host works — SafeImage degrades to an unoptimised image.
+   */
+  readonly photo?: { readonly src: string; readonly alt: string };
 }
 
 export interface StatCopy {
@@ -175,6 +192,8 @@ export interface HomeCopy {
   readonly process: {
     readonly eyebrow: string;
     readonly title: string;
+    /** One sentence beside the title on wide screens; omitted on narrow ones. */
+    readonly lede?: string;
     readonly steps: readonly ProcessStepCopy[];
   };
   readonly gifting: {

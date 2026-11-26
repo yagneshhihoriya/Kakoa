@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import { SafeImage } from "@/components/media/SafeImage";
+import { CraftIcon } from "@/components/home/CraftIcon";
 import Link from "next/link";
 import type { ProductCardView } from "@kakoa/core";
 import { EmptyState } from "@kakoa/ui";
@@ -488,10 +489,10 @@ export default async function HomePage() {
           <p className="mb-7 max-w-[62ch] font-body text-lead text-ink-soft">
             {home.story.body}
           </p>
-          <dl className="mb-8 flex flex-wrap gap-x-12 gap-y-5">
+          <dl className="mb-8 grid grid-cols-3 gap-x-4 sm:flex sm:flex-wrap sm:gap-x-12 sm:gap-y-5">
             {home.story.stats.map((stat) => (
               <div key={stat.label}>
-                <dt className="font-display text-[32px] leading-none text-ink">
+                <dt className="font-display text-[28px] leading-none text-ink sm:text-[32px]">
                   {stat.value}
                 </dt>
                 <dd className="mt-1.5 font-mono text-[11px] tracking-[0.12em] text-ink-muted uppercase">
@@ -507,33 +508,88 @@ export default async function HomePage() {
       </section>
 
       {/* ========================= PROCESS STRIP ======================= */}
-      <section className="relative overflow-hidden bg-ink text-cream kk-grain">
-        <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8 py-16 lg:py-[88px]">
-          <div className="mb-10 max-w-[62ch]">
-            <div className="mb-3">
-              <Eyebrow tone="gold">{home.process.eyebrow}</Eyebrow>
-            </div>
-            <h2 className="font-display text-h1 font-normal leading-[1.06] text-balance text-cream">
-              {home.process.title}
-            </h2>
-          </div>
-          <ol className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {home.process.steps.map((movement) => (
-              <li
-                key={movement.step}
-                className="border-t border-[rgba(233,199,176,.22)] pt-5"
+      {/* Sits on the page background in the trust strip's card language —
+          cream-2 cards, hairline borders, espresso line icons — joined by a
+          numbered rail; a photo per step replaces the icon when a pack
+          supplies one. Phones get a snap rail (one card ≈ 78vw) so the
+          section stays about a screen tall instead of four stacked blocks. */}
+      <section
+        aria-labelledby="home-process"
+        className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:py-[72px]"
+      >
+        <div className="relative">
+          <div className="mb-9 grid gap-5 lg:mb-12 lg:grid-cols-[1.15fr_1fr] lg:items-end lg:gap-12">
+            <div className="max-w-[62ch]">
+              <div className="mb-3">
+                <Eyebrow>{home.process.eyebrow}</Eyebrow>
+              </div>
+              <h2
+                id="home-process"
+                className="font-display text-h1 font-normal leading-[1.06] text-balance text-ink"
               >
-                <div className="mb-4 font-mono text-[13px] font-medium tracking-[0.14em] text-gold-soft">
-                  {movement.step}
-                </div>
-                <h3 className="mb-2 font-display text-[24px] font-normal text-cream">
-                  {movement.title}
-                </h3>
-                <p className="font-body text-[14px] leading-[1.6] text-[#D8C7B0]">
-                  {movement.body}
-                </p>
-              </li>
-            ))}
+                {home.process.title}
+              </h2>
+            </div>
+            {home.process.lede ? (
+              <p className="max-w-[44ch] font-body text-[15px] leading-[1.65] text-ink-soft max-lg:hidden lg:justify-self-end lg:pb-2 lg:text-[16px]">
+                {home.process.lede}
+              </p>
+            ) : null}
+          </div>
+          <ol className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-5">
+            {home.process.steps.map((movement, index) => {
+              const isLast = index === home.process.steps.length - 1;
+              // The rail runs card to card. It must stop at the end of each
+              // row: the last card always, and the second card on the two-up
+              // tablet grid (where it comes back at four-up).
+              const railClass = isLast
+                ? "hidden"
+                : index % 2 === 1
+                  ? "sm:hidden lg:block"
+                  : "";
+              return (
+                <li
+                  key={movement.step}
+                  className="relative flex min-w-[78%] snap-start flex-col sm:min-w-0"
+                >
+                  <div className="relative mb-5 flex items-center">
+                    <span
+                      aria-hidden="true"
+                      className={`absolute top-1/2 right-[-16px] left-8 h-px bg-line sm:right-[-24px] lg:right-[-20px] ${railClass}`}
+                    />
+                    <span className="relative grid h-7 w-7 place-items-center rounded-full border border-line bg-cream-2 font-mono text-[11px] font-medium tracking-[0.08em] text-espresso">
+                      {movement.step}
+                    </span>
+                  </div>
+                  <div className="flex flex-1 flex-col rounded-[20px] border border-line bg-cream-2 p-5 shadow-soft sm:p-6">
+                    {movement.photo ? (
+                      <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-[14px] bg-cream">
+                        <SafeImage
+                          src={movement.photo.src}
+                          alt={movement.photo.alt}
+                          fill
+                          sizes="(min-width: 1024px) 280px, (min-width: 640px) 45vw, 78vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="mb-5 grid h-11 w-11 place-items-center rounded-[14px] border border-line-soft bg-cream text-espresso"
+                      >
+                        <CraftIcon name={movement.icon} />
+                      </span>
+                    )}
+                    <h3 className="mb-2 font-display text-[22px] leading-tight font-normal text-ink sm:text-[24px]">
+                      {movement.title}
+                    </h3>
+                    <p className="font-body text-[14px] leading-[1.6] text-ink-soft">
+                      {movement.body}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>
